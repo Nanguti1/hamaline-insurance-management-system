@@ -1,0 +1,76 @@
+import { Head } from '@inertiajs/react';
+
+import AppLayout from '@/layouts/app-layout';
+import Heading from '@/components/heading';
+import QuotationForm from '@/components/quotations/QuotationForm';
+import type { BreadcrumbItem } from '@/types';
+
+type ClientOption = { id: number; name?: string | null; company_name?: string | null };
+type UnderwriterOption = { id: number; name?: string | null };
+
+type Quotation = {
+    id: number;
+    client_id: number;
+    underwriter_id: number;
+    quotation_number: string;
+    status: 'draft' | 'issued' | 'approved' | 'rejected' | 'expired';
+    premium_amount: number | string;
+    currency: string;
+    valid_until: string;
+    notes?: string | null;
+};
+
+type Props = {
+    quotation: Quotation;
+    clients: ClientOption[];
+    underwriters: UnderwriterOption[];
+};
+
+export default function QuotationsEdit({ quotation, clients, underwriters }: Props) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Quotations', href: '/quotations' },
+        {
+            title: quotation.quotation_number,
+            href: `/quotations/${quotation.id}`,
+        },
+        { title: 'Edit', href: `/quotations/${quotation.id}/edit` },
+    ];
+
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Edit Quotation" />
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+                <Heading title="Edit quotation" description="Update quotation details" />
+                <QuotationForm
+                    title="Edit quotation"
+                    submitLabel="Save changes"
+                    method="put"
+                    submitUrl={`/quotations/${quotation.id}`}
+                    onCancelHref={`/quotations/${quotation.id}`}
+                    initialValues={{
+                        client_id: quotation.client_id,
+                        underwriter_id: quotation.underwriter_id,
+                        quotation_number: quotation.quotation_number,
+                        status: quotation.status,
+                        premium_amount:
+                            typeof quotation.premium_amount === 'number'
+                                ? quotation.premium_amount
+                                : Number(quotation.premium_amount),
+                        currency: quotation.currency,
+                        valid_until: quotation.valid_until,
+                        notes: quotation.notes ?? '',
+                    }}
+                    clients={clients.map((c) => ({
+                        id: c.id,
+                        label: c.name ?? c.company_name ?? 'Client',
+                    }))}
+                    underwriters={underwriters.map((u) => ({
+                        id: u.id,
+                        label: u.name ?? 'Underwriter',
+                    }))}
+                />
+            </div>
+        </AppLayout>
+    );
+}
+

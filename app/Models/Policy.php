@@ -1,0 +1,76 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+
+class Policy extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'client_id',
+        'underwriter_id',
+        'quotation_id',
+        'policy_number',
+        'policy_type',
+        'status',
+        'start_date',
+        'end_date',
+        'premium_amount',
+        'currency',
+        'notes',
+    ];
+
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'premium_amount' => 'decimal:2',
+        'quotation_id' => 'integer',
+    ];
+
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class, 'client_id');
+    }
+
+    public function underwriter(): BelongsTo
+    {
+        return $this->belongsTo(Underwriter::class, 'underwriter_id');
+    }
+
+    public function quotation(): BelongsTo
+    {
+        return $this->belongsTo('App\\Models\\Quotation', 'quotation_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany('App\\Models\\Payment', 'policy_id');
+    }
+
+    public function claims(): HasMany
+    {
+        return $this->hasMany('App\\Models\\Claim', 'policy_id');
+    }
+
+    public function commissions(): HasMany
+    {
+        return $this->hasMany('App\\Models\\Commission', 'policy_id');
+    }
+
+    public function renewals(): HasMany
+    {
+        return $this->hasMany('App\\Models\\Renewal', 'policy_id');
+    }
+
+    public function documents(): MorphMany
+    {
+        return $this->morphMany(Document::class, 'documentable');
+    }
+}
+
