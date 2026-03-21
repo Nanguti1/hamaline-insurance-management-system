@@ -13,12 +13,14 @@ use App\Http\Controllers\Renewals\RenewalController;
 use App\Http\Controllers\Reports\ReportsController;
 use App\Models\ReportRun;
 use App\Services\Reports\ReportsService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 
-Route::inertia('/', 'welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::get('/', function () {
+    return Auth::check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function (ReportsService $service) {
