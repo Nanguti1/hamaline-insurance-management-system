@@ -7,6 +7,7 @@ use App\Concerns\ProfileValidationRules;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
+use Spatie\Permission\Models\Role;
 
 class CreateNewUser implements CreatesNewUsers
 {
@@ -30,8 +31,8 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $input['password'],
         ]);
 
-        if (\Spatie\Permission\Models\Role::query()->where('name', 'Agent')->exists()) {
-            $user->assignRole('Agent');
+        if (Role::query()->where('name', 'underwriter')->exists()) {
+            $user->assignRole('underwriter');
         }
 
         return $user;

@@ -13,6 +13,10 @@ class Commission extends Model
     protected $fillable = [
         'policy_id',
         'underwriter_id',
+        'user_id',
+        'created_by',
+        'updated_by',
+        'approved_by',
         'commission_number',
         'percentage',
         'amount',
@@ -41,5 +45,24 @@ class Commission extends Model
     {
         return $this->belongsTo(Underwriter::class, 'underwriter_id');
     }
-}
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+}

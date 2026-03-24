@@ -10,7 +10,7 @@ class UpdateUnderwriterRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('underwriters.manage') ?? false;
     }
 
     /**
@@ -21,6 +21,7 @@ class UpdateUnderwriterRequest extends FormRequest
         /** @var Underwriter|null $underwriter */
         $underwriter = $this->route('underwriter');
         $underwriterId = $underwriter?->getKey();
+        $userId = $underwriter?->user_id;
 
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -30,10 +31,11 @@ class UpdateUnderwriterRequest extends FormRequest
                 'email:rfc,dns',
                 'max:255',
                 Rule::unique('underwriters', 'email')->ignore($underwriterId),
+                Rule::unique('users', 'email')->ignore($userId),
             ],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'address' => ['nullable', 'string', 'max:2000'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ];
     }
 }
-

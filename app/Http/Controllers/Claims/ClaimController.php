@@ -6,16 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Claims\StoreClaimRequest;
 use App\Http\Requests\Claims\UpdateClaimRequest;
 use App\Models\Claim;
-use App\Models\Policy;
+use App\Services\Access\ResourceAccessService;
 use App\Services\Claims\ClaimService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ClaimController extends Controller
 {
+    public function __construct(
+        private ResourceAccessService $access,
+    ) {}
+
     public function index(Request $request, ClaimService $service): Response
     {
         $claims = $service->paginate([
@@ -35,20 +39,21 @@ class ClaimController extends Controller
     public function create(): Response
     {
         return Inertia::render('claims/create', [
-            'policies' => Policy::query()
-                ->orderBy('policy_number')
-                ->get(['id', 'policy_number']),
+            'policies' => $this->access->policiesForClaimForm(auth()->user()),
         ]);
     }
 
     public function store(StoreClaimRequest $request, ClaimService $service): RedirectResponse
     {
         $claim = $service->create($request->validated());
+
         return to_route('claims.show', $claim);
     }
 
     public function show(Claim $claim): Response
     {
+        $this->access->assertCanViewClaim(auth()->user(), $claim);
+
         $claim->load(['policy.client', 'policy.underwriter', 'documents']);
 
         $documents = $claim->documents->map(fn ($doc) => [
@@ -67,11 +72,11 @@ class ClaimController extends Controller
 
     public function edit(Claim $claim): Response
     {
+        $this->access->assertCanViewClaim(auth()->user(), $claim);
+
         return Inertia::render('claims/edit', [
             'claim' => $claim->load(['policy.client', 'policy.underwriter']),
-            'policies' => Policy::query()
-                ->orderBy('policy_number')
-                ->get(['id', 'policy_number']),
+            'policies' => $this->access->policiesForClaimForm(auth()->user()),
         ]);
     }
 
@@ -80,14 +85,19 @@ class ClaimController extends Controller
         Claim $claim,
         ClaimService $service
     ): RedirectResponse {
+        $this->access->assertCanViewClaim(auth()->user(), $claim);
+
         $service->update($claim, $request->validated());
+
         return to_route('claims.show', $claim);
     }
 
     public function destroy(Claim $claim, ClaimService $service): RedirectResponse
     {
+        $this->access->assertCanViewClaim(auth()->user(), $claim);
+
         $service->delete($claim);
+
         return to_route('claims.index');
     }
 }
-

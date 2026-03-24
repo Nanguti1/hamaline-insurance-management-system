@@ -3,7 +3,9 @@
 namespace App\Services\Underwriters;
 
 use App\Models\Underwriter;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class UnderwriterService
 {
@@ -12,7 +14,7 @@ class UnderwriterService
      */
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = Underwriter::query();
+        $query = Underwriter::query()->with('user');
 
         $q = $filters['q'] ?? null;
         if ($q) {
@@ -31,7 +33,23 @@ class UnderwriterService
      */
     public function create(array $data): Underwriter
     {
-        return Underwriter::create($this->normalize($data));
+        return DB::transaction(function () use ($data) {
+            $password = $data['password'];
+            unset($data['password'], $data['password_confirmation']);
+
+            $user = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => $password,
+                'is_active' => true,
+            ]);
+            $user->assignRole('underwriter');
+
+            $row = $this->normalize($data);
+            $row['user_id'] = $user->id;
+
+            return Underwriter::create($row);
+        });
     }
 
     /**
@@ -39,13 +57,35 @@ class UnderwriterService
      */
     public function update(Underwriter $underwriter, array $data): Underwriter
     {
-        $underwriter->update($this->normalize($data));
-        return $underwriter->refresh();
+        return DB::transaction(function () use ($underwriter, $data) {
+            $password = $data['password'] ?? null;
+            unset($data['password'], $data['password_confirmation']);
+
+            $row = $this->normalize($data);
+            $underwriter->update($row);
+
+            if ($underwriter->user) {
+                $userData = [
+                    'name' => $row['name'],
+                    'email' => $row['email'],
+                ];
+                if (! empty($password)) {
+                    $userData['password'] = $password;
+                }
+                $underwriter->user->update($userData);
+            }
+
+            return $underwriter->refresh();
+        });
     }
 
     public function delete(Underwriter $underwriter): void
     {
-        $underwriter->delete();
+        DB::transaction(function () use ($underwriter) {
+            $user = $underwriter->user;
+            $underwriter->delete();
+            $user?->delete();
+        });
     }
 
     /**
@@ -66,4 +106,3 @@ class UnderwriterService
         return $data;
     }
 }
-

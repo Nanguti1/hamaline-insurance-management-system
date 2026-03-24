@@ -2,12 +2,15 @@
 
 namespace App\Http\Requests\Policies;
 
+use App\Http\Requests\Concerns\ValidatesUnderwriterBelongsToUser;
 use App\Models\Policy;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdatePolicyRequest extends FormRequest
 {
+    use ValidatesUnderwriterBelongsToUser;
+
     public function authorize(): bool
     {
         return true;
@@ -42,4 +45,3 @@ class UpdatePolicyRequest extends FormRequest
         ];
     }
 }
-

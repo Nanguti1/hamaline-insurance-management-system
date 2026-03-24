@@ -2,17 +2,26 @@
 
 namespace App\Services\Policies;
 
+use App\Concerns\TracksUserStamps;
 use App\Models\Policy;
+use App\Services\Access\ResourceAccessService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class PolicyService
 {
+    use TracksUserStamps;
+
+    public function __construct(
+        private ResourceAccessService $access,
+    ) {}
+
     /**
      * @param  array{q?: string|null,status?: string|null}  $filters
      */
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         $query = Policy::query()->with(['client', 'underwriter']);
+        $this->access->scopePoliciesQuery($query, auth()->user());
 
         $q = $filters['q'] ?? null;
         $status = $filters['status'] ?? null;
@@ -37,7 +46,7 @@ class PolicyService
      */
     public function create(array $data): Policy
     {
-        return Policy::create($this->normalize($data));
+        return Policy::create($this->withCreateAudit($this->normalize($data)));
     }
 
     /**
@@ -45,7 +54,8 @@ class PolicyService
      */
     public function update(Policy $policy, array $data): Policy
     {
-        $policy->update($this->normalize($data));
+        $policy->update($this->withUpdateAudit($this->normalize($data)));
+
         return $policy->refresh();
     }
 
@@ -76,4 +86,3 @@ class PolicyService
         return $data;
     }
 }
-

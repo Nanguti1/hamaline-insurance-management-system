@@ -12,6 +12,10 @@ class Payment extends Model
 
     protected $fillable = [
         'policy_id',
+        'created_by',
+        'updated_by',
+        'approved_by',
+        'received_by',
         'payment_number',
         'amount',
         'currency',
@@ -31,5 +35,24 @@ class Payment extends Model
     {
         return $this->belongsTo(Policy::class, 'policy_id');
     }
-}
 
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function receivedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'received_by');
+    }
+}

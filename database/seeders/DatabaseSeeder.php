@@ -18,14 +18,14 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         $user = User::firstOrCreate([
-            'email' => 'test@example.com',
+            'email' => 'g.nanguti@gmail.com',
         ], [
-            'name' => 'Test User',
-            'password' => bcrypt('password'),
+            'name' => 'Wafula Wanyonyi',
+            'password' => bcrypt('123123'),
         ]);
 
-        if (! $user->hasRole('Admin')) {
-            $user->assignRole('Admin');
+        if (! $user->hasRole('admin')) {
+            $user->assignRole('admin');
         }
     }
 }

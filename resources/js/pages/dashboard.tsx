@@ -9,7 +9,7 @@ import type { BreadcrumbItem } from '@/types';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Dashboard',
-        href: dashboard(),
+        href: dashboard.url(),
     },
 ];
 
@@ -29,9 +29,10 @@ type RecentReport = {
 type Props = {
     metrics?: Metrics;
     recentReports?: RecentReport[];
+    showReportsSection?: boolean;
 };
 
-export default function Dashboard({ metrics, recentReports }: Props) {
+export default function Dashboard({ metrics, recentReports, showReportsSection = true }: Props) {
     const overview = metrics ?? {
         active_policies_count: 0,
         clients_count: 0,
@@ -81,49 +82,51 @@ export default function Dashboard({ metrics, recentReports }: Props) {
                     </Card>
                 </div>
 
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center justify-between gap-3">
-                            <div>
-                                <div className="text-sm font-medium">Recent report runs</div>
-                                <div className="text-sm text-muted-foreground">
-                                    Latest stored snapshots
+                {showReportsSection ? (
+                    <Card>
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <div className="text-sm font-medium">Recent report runs</div>
+                                    <div className="text-sm text-muted-foreground">
+                                        Latest stored snapshots
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button asChild variant="secondary" size="sm">
+                                        <Link href="/reports/dashboard">View reports dashboard</Link>
+                                    </Button>
+                                    <Button asChild variant="secondary" size="sm">
+                                        <Link href="/reports/create">+ Run report</Link>
+                                    </Button>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <Button asChild variant="secondary" size="sm">
-                                    <Link href="/reports/dashboard">View reports dashboard</Link>
-                                </Button>
-                                <Button asChild variant="secondary" size="sm">
-                                    <Link href="/reports/create">+ Run report</Link>
-                                </Button>
-                            </div>
-                        </div>
 
-                        <div className="mt-4 space-y-3">
-                            {(recentReports ?? []).length === 0 ? (
-                                <div className="text-sm text-muted-foreground">No report runs yet.</div>
-                            ) : (
-                                (recentReports ?? []).map((r) => (
-                                    <div
-                                        key={r.id}
-                                        className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
-                                    >
-                                        <div>
-                                            <div className="text-sm font-medium">{r.title}</div>
-                                            <div className="text-xs text-muted-foreground">
-                                                {r.generated_at}
+                            <div className="mt-4 space-y-3">
+                                {(recentReports ?? []).length === 0 ? (
+                                    <div className="text-sm text-muted-foreground">No report runs yet.</div>
+                                ) : (
+                                    (recentReports ?? []).map((r) => (
+                                        <div
+                                            key={r.id}
+                                            className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                                        >
+                                            <div>
+                                                <div className="text-sm font-medium">{r.title}</div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {r.generated_at}
+                                                </div>
                                             </div>
+                                            <Button asChild variant="ghost" size="sm">
+                                                <Link href={`/reports/${r.id}`}>View</Link>
+                                            </Button>
                                         </div>
-                                        <Button asChild variant="ghost" size="sm">
-                                            <Link href={`/reports/${r.id}`}>View</Link>
-                                        </Button>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
+                                    ))
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                ) : null}
             </div>
         </AppLayout>
     );

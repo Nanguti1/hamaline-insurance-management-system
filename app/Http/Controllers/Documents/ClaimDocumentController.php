@@ -5,14 +5,21 @@ namespace App\Http\Controllers\Documents;
 use App\Http\Controllers\Controller;
 use App\Models\Claim;
 use App\Models\Document;
+use App\Services\Access\ResourceAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ClaimDocumentController extends Controller
 {
+    public function __construct(
+        private ResourceAccessService $access,
+    ) {}
+
     public function store(Request $request, Claim $claim): RedirectResponse
     {
+        $this->access->assertCanViewClaim($request->user(), $claim);
+
         $validated = $request->validate([
             'document' => ['required', 'file', 'max:10240'],
             'name' => ['nullable', 'string', 'max:255'],
@@ -32,8 +39,10 @@ class ClaimDocumentController extends Controller
         return back();
     }
 
-    public function destroy(Claim $claim, Document $document): RedirectResponse
+    public function destroy(Request $request, Claim $claim, Document $document): RedirectResponse
     {
+        $this->access->assertCanViewClaim($request->user(), $claim);
+
         if ($document->documentable_type !== Claim::class || (int) $document->documentable_id !== (int) $claim->id) {
             abort(404);
         }

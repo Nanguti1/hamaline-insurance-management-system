@@ -31,6 +31,7 @@ export default function UnderwritersEdit({ underwriter }: Props) {
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <Heading title="Edit underwriter" description="Update profile information" />
                 <UnderwriterForm
+                    variant="edit"
                     title="Edit underwriter"
                     submitLabel="Save changes"
                     method="put"

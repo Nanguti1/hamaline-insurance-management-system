@@ -2,17 +2,26 @@
 
 namespace App\Services\Commissions;
 
+use App\Concerns\TracksUserStamps;
 use App\Models\Commission;
+use App\Services\Access\ResourceAccessService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class CommissionService
 {
+    use TracksUserStamps;
+
+    public function __construct(
+        private ResourceAccessService $access,
+    ) {}
+
     /**
      * @param  array{q?: string|null,status?: string|null}  $filters
      */
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         $query = Commission::query()->with(['policy', 'underwriter']);
+        $this->access->scopeCommissionsQuery($query, auth()->user());
 
         $q = $filters['q'] ?? null;
         $status = $filters['status'] ?? null;
@@ -39,7 +48,12 @@ class CommissionService
      */
     public function create(array $data): Commission
     {
-        return Commission::create($this->normalize($data));
+        $data = $this->withCreateAudit($this->normalize($data));
+        if (auth()->id() && ! array_key_exists('user_id', $data)) {
+            $data['user_id'] = auth()->id();
+        }
+
+        return Commission::create($data);
     }
 
     /**
@@ -47,7 +61,8 @@ class CommissionService
      */
     public function update(Commission $commission, array $data): Commission
     {
-        $commission->update($this->normalize($data));
+        $commission->update($this->withUpdateAudit($this->normalize($data)));
+
         return $commission->refresh();
     }
 
@@ -80,4 +95,3 @@ class CommissionService
         return $data;
     }
 }
-

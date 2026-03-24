@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests\Quotations;
 
+use App\Http\Requests\Concerns\ValidatesUnderwriterBelongsToUser;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreQuotationRequest extends FormRequest
 {
+    use ValidatesUnderwriterBelongsToUser;
+
     public function authorize(): bool
     {
         return true;
@@ -29,4 +32,3 @@ class StoreQuotationRequest extends FormRequest
         ];
     }
 }
-

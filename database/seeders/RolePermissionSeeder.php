@@ -29,33 +29,34 @@ class RolePermissionSeeder extends Seeder
             Permission::findOrCreate($permission, 'web');
         }
 
-        $admin = Role::findOrCreate('Admin', 'web');
-        $agent = Role::findOrCreate('Agent', 'web');
-        $claimsOfficer = Role::findOrCreate('Claims Officer', 'web');
+        $admin = Role::findOrCreate('admin', 'web');
+        $underwriter = Role::findOrCreate('underwriter', 'web');
+        $claimsOfficer = Role::findOrCreate('claims_officer', 'web');
+        $financeOfficer = Role::findOrCreate('finance_officer', 'web');
+        $client = Role::findOrCreate('client', 'web');
 
         $admin->syncPermissions(Permission::all());
 
-        $agent->syncPermissions([
-            'clients.view', 'clients.manage',
-            'underwriters.view',
+        $underwriter->syncPermissions([
             'quotations.view', 'quotations.manage',
             'policies.view', 'policies.manage',
-            'payments.view', 'payments.manage',
-            'claims.view',
-            'commissions.view', 'commissions.manage',
-            'renewals.view', 'renewals.manage',
-            'reports.view',
-            'communications.send',
         ]);
 
         $claimsOfficer->syncPermissions([
-            'clients.view',
-            'policies.view',
             'claims.view', 'claims.manage',
-            'reports.view',
-            'communications.send',
         ]);
 
-        User::query()->orderBy('id')->first()?->assignRole('Admin');
+        $financeOfficer->syncPermissions([
+            'payments.view', 'payments.manage',
+            'commissions.view', 'commissions.manage',
+        ]);
+
+        $client->syncPermissions([
+            'policies.view',
+            'claims.view',
+            'payments.view',
+        ]);
+
+        User::query()->orderBy('id')->first()?->assignRole('admin');
     }
 }

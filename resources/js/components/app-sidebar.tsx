@@ -11,6 +11,7 @@ import {
     RefreshCw,
     Shield,
     Wallet,
+    UserCog,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -34,6 +35,12 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        id: 'm1',
+        title: 'Users',
+        href: '/users',
+        icon: UserCog,
     },
     {
         title: 'Clients',
@@ -83,16 +90,16 @@ const mainNavItems: NavItem[] = [
 ];
 
 const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
+    // {
+    //     title: 'Repository',
+    //     href: 'https://github.com/laravel/react-starter-kit',
+    //     icon: FolderGit2,
+    // },
+    // {
+    //     title: 'Documentation',
+    //     href: 'https://laravel.com/docs/starter-kits#react',
+    //     icon: BookOpen,
+    // },
 ];
 
 export function AppSidebar() {
@@ -101,6 +108,8 @@ export function AppSidebar() {
     const can = (permission: string) => permissions.includes(permission);
     const filteredItems = mainNavItems.filter((item) => {
         switch (item.title) {
+            case 'Users':
+                return can('users.manage');
             case 'Clients':
                 return can('clients.view');
             case 'Underwriters':

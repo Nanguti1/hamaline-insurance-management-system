@@ -2,17 +2,26 @@
 
 namespace App\Services\Payments;
 
+use App\Concerns\TracksUserStamps;
 use App\Models\Payment;
+use App\Services\Access\ResourceAccessService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class PaymentService
 {
+    use TracksUserStamps;
+
+    public function __construct(
+        private ResourceAccessService $access,
+    ) {}
+
     /**
      * @param  array{q?: string|null,status?: string|null}  $filters
      */
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         $query = Payment::query()->with(['policy.client', 'policy.underwriter']);
+        $this->access->scopePaymentsQuery($query, auth()->user());
 
         $q = $filters['q'] ?? null;
         $status = $filters['status'] ?? null;
@@ -40,7 +49,12 @@ class PaymentService
      */
     public function create(array $data): Payment
     {
-        return Payment::create($this->normalize($data));
+        $data = $this->withCreateAudit($this->normalize($data));
+        if (auth()->id()) {
+            $data['received_by'] = auth()->id();
+        }
+
+        return Payment::create($data);
     }
 
     /**
@@ -48,7 +62,8 @@ class PaymentService
      */
     public function update(Payment $payment, array $data): Payment
     {
-        $payment->update($this->normalize($data));
+        $payment->update($this->withUpdateAudit($this->normalize($data)));
+
         return $payment->refresh();
     }
 
@@ -75,4 +90,3 @@ class PaymentService
         return $data;
     }
 }
-

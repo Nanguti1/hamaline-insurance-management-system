@@ -16,6 +16,9 @@ class Policy extends Model
         'client_id',
         'underwriter_id',
         'quotation_id',
+        'created_by',
+        'updated_by',
+        'approved_by',
         'policy_number',
         'policy_type',
         'status',
@@ -48,6 +51,21 @@ class Policy extends Model
         return $this->belongsTo('App\\Models\\Quotation', 'quotation_id');
     }
 
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany('App\\Models\\Payment', 'policy_id');
@@ -73,4 +91,3 @@ class Policy extends Model
         return $this->morphMany(Document::class, 'documentable');
     }
 }
-

@@ -9,7 +9,7 @@ class StoreUnderwriterRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('underwriters.manage') ?? false;
     }
 
     /**
@@ -20,10 +20,16 @@ class StoreUnderwriterRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:50'],
-            'email' => ['required', 'email:rfc,dns', 'max:255', 'unique:underwriters,email'],
+            'email' => [
+                'required',
+                'email:rfc,dns',
+                'max:255',
+                Rule::unique('underwriters', 'email'),
+                Rule::unique('users', 'email'),
+            ],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
             'address' => ['nullable', 'string', 'max:2000'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ];
     }
 }
-

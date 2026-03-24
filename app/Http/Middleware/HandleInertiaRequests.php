@@ -41,6 +41,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
                 'roles' => $request->user()?->getRoleNames() ?? [],
+                'primary_role' => $request->user()?->getRoleNames()->first(),
                 'permissions' => $request->user()?->getAllPermissions()->pluck('name')->values()->all() ?? [],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

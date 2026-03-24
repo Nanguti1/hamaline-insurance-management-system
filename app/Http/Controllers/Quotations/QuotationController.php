@@ -8,14 +8,20 @@ use App\Http\Requests\Quotations\UpdateQuotationRequest;
 use App\Models\Client;
 use App\Models\Quotation;
 use App\Models\Underwriter;
+use App\Services\Access\ResourceAccessService;
 use App\Services\Quotations\QuotationService;
-use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class QuotationController extends Controller
 {
+    public function __construct(
+        private ResourceAccessService $access,
+    ) {}
+
     public function index(Request $request, QuotationService $service): Response
     {
         $quotations = $service->paginate([
@@ -38,9 +44,7 @@ class QuotationController extends Controller
             'clients' => Client::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'company_name']),
-            'underwriters' => Underwriter::query()
-                ->orderBy('name')
-                ->get(['id', 'name']),
+            'underwriters' => $this->underwriterSelectOptions(),
         ]);
     }
 
@@ -53,6 +57,8 @@ class QuotationController extends Controller
 
     public function show(Quotation $quotation): Response
     {
+        $this->access->assertCanViewQuotation(auth()->user(), $quotation);
+
         return Inertia::render('quotations/show', [
             'quotation' => $quotation->load(['client', 'underwriter']),
         ]);
@@ -60,19 +66,21 @@ class QuotationController extends Controller
 
     public function edit(Quotation $quotation): Response
     {
+        $this->access->assertCanViewQuotation(auth()->user(), $quotation);
+
         return Inertia::render('quotations/edit', [
             'quotation' => $quotation->load(['client', 'underwriter']),
             'clients' => Client::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'company_name']),
-            'underwriters' => Underwriter::query()
-                ->orderBy('name')
-                ->get(['id', 'name']),
+            'underwriters' => $this->underwriterSelectOptions(),
         ]);
     }
 
     public function update(UpdateQuotationRequest $request, Quotation $quotation, QuotationService $service): RedirectResponse
     {
+        $this->access->assertCanViewQuotation(auth()->user(), $quotation);
+
         $service->update($quotation, $request->validated());
 
         return to_route('quotations.show', $quotation);
@@ -80,9 +88,26 @@ class QuotationController extends Controller
 
     public function destroy(Quotation $quotation, QuotationService $service): RedirectResponse
     {
+        $this->access->assertCanViewQuotation(auth()->user(), $quotation);
+
         $service->delete($quotation);
 
         return to_route('quotations.index');
     }
-}
 
+    /**
+     * @return Collection<int, Underwriter>
+     */
+    private function underwriterSelectOptions()
+    {
+        $user = auth()->user();
+        if ($user?->hasRole('underwriter')) {
+            return Underwriter::query()
+                ->where('user_id', $user->id)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
+
+        return Underwriter::query()->orderBy('name')->get(['id', 'name']);
+    }
+}

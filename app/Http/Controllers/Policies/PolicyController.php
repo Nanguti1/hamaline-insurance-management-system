@@ -9,15 +9,21 @@ use App\Models\Client;
 use App\Models\Policy;
 use App\Models\Quotation;
 use App\Models\Underwriter;
+use App\Services\Access\ResourceAccessService;
 use App\Services\Policies\PolicyService;
-use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PolicyController extends Controller
 {
+    public function __construct(
+        private ResourceAccessService $access,
+    ) {}
+
     public function index(Request $request, PolicyService $service): Response
     {
         $policies = $service->paginate([
@@ -40,9 +46,7 @@ class PolicyController extends Controller
             'clients' => Client::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'company_name']),
-            'underwriters' => Underwriter::query()
-                ->orderBy('name')
-                ->get(['id', 'name']),
+            'underwriters' => $this->underwriterSelectOptions(),
             'quotations' => Quotation::query()
                 ->orderBy('quotation_number')
                 ->get(['id', 'quotation_number']),
@@ -58,6 +62,8 @@ class PolicyController extends Controller
 
     public function show(Policy $policy): Response
     {
+        $this->access->assertCanViewPolicy(auth()->user(), $policy);
+
         $policy->load(['client', 'underwriter', 'quotation', 'documents']);
 
         $documents = $policy->documents->map(fn ($doc) => [
@@ -76,14 +82,14 @@ class PolicyController extends Controller
 
     public function edit(Policy $policy): Response
     {
+        $this->access->assertCanViewPolicy(auth()->user(), $policy);
+
         return Inertia::render('policies/edit', [
             'policy' => $policy->load(['client', 'underwriter', 'quotation']),
             'clients' => Client::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'company_name']),
-            'underwriters' => Underwriter::query()
-                ->orderBy('name')
-                ->get(['id', 'name']),
+            'underwriters' => $this->underwriterSelectOptions(),
             'quotations' => Quotation::query()
                 ->orderBy('quotation_number')
                 ->get(['id', 'quotation_number']),
@@ -92,6 +98,8 @@ class PolicyController extends Controller
 
     public function update(UpdatePolicyRequest $request, Policy $policy, PolicyService $service): RedirectResponse
     {
+        $this->access->assertCanViewPolicy(auth()->user(), $policy);
+
         $service->update($policy, $request->validated());
 
         return to_route('policies.show', $policy);
@@ -99,8 +107,26 @@ class PolicyController extends Controller
 
     public function destroy(Policy $policy, PolicyService $service): RedirectResponse
     {
+        $this->access->assertCanViewPolicy(auth()->user(), $policy);
+
         $service->delete($policy);
+
         return to_route('policies.index');
     }
-}
 
+    /**
+     * @return Collection<int, Underwriter>
+     */
+    private function underwriterSelectOptions()
+    {
+        $user = auth()->user();
+        if ($user?->hasRole('underwriter')) {
+            return Underwriter::query()
+                ->where('user_id', $user->id)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
+
+        return Underwriter::query()->orderBy('name')->get(['id', 'name']);
+    }
+}

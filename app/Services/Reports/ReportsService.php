@@ -2,18 +2,145 @@
 
 namespace App\Services\Reports;
 
+use App\Models\Claim;
 use App\Models\Client;
 use App\Models\Payment;
 use App\Models\Policy;
-use App\Models\Claim;
 use App\Models\ReportRun;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ReportsService
 {
+    /**
+     * @param  array{range_start?: string|null, range_end?: string|null}  $filters
+     * @return array<string, mixed>
+     */
+    public function computeDashboardMetrics(User $user, array $filters = []): array
+    {
+        if ($user->hasRole('admin')) {
+            return $this->computeOverview($filters);
+        }
+
+        if ($user->hasRole('client')) {
+            return $this->computeClientDashboardMetrics($user, $filters);
+        }
+
+        if ($user->hasRole('underwriter')) {
+            return $this->computeUnderwriterDashboardMetrics($user, $filters);
+        }
+
+        return $this->emptyDashboardMetrics();
+    }
+
+    /**
+     * @param  array{range_start?: string|null, range_end?: string|null}  $filters
+     * @return array<string, mixed>
+     */
+    private function computeClientDashboardMetrics(User $user, array $filters): array
+    {
+        $base = $this->emptyDashboardMetrics();
+        $clientId = $user->clientRecord?->id;
+        if (! $clientId) {
+            return $base;
+        }
+
+        $rangeStart = $filters['range_start'] ?? null;
+        $rangeEnd = $filters['range_end'] ?? null;
+
+        $policyQuery = Policy::query()->where('client_id', $clientId);
+        $base['active_policies_count'] = (clone $policyQuery)->where('status', 'active')->count();
+        $base['clients_count'] = 1;
+
+        $premiumQuery = Payment::query()
+            ->where('status', 'received')
+            ->whereHas('policy', fn ($p) => $p->where('client_id', $clientId));
+
+        $claimQuery = Claim::query()->whereHas('policy', fn ($p) => $p->where('client_id', $clientId));
+
+        if ($rangeStart && $rangeEnd) {
+            $premiumQuery->whereBetween('paid_at', [$rangeStart, $rangeEnd]);
+            $claimQuery->whereBetween('reported_at', [$rangeStart, $rangeEnd]);
+        }
+
+        $premiumSum = (float) $premiumQuery->sum('amount');
+        $claimSum = (float) $claimQuery->sum('claim_amount');
+
+        $base['premium_total'] = $premiumSum;
+        $base['claim_total'] = $claimSum;
+        $base['claims_ratio'] = $premiumSum > 0 ? (float) (($claimSum / $premiumSum) * 100) : 0.0;
+
+        return $base;
+    }
+
+    /**
+     * @param  array{range_start?: string|null, range_end?: string|null}  $filters
+     * @return array<string, mixed>
+     */
+    private function computeUnderwriterDashboardMetrics(User $user, array $filters): array
+    {
+        $base = $this->emptyDashboardMetrics();
+        $uwId = $user->underwriterProfile?->id;
+        if (! $uwId) {
+            return $base;
+        }
+
+        $rangeStart = $filters['range_start'] ?? null;
+        $rangeEnd = $filters['range_end'] ?? null;
+
+        $policyQuery = Policy::query()->where('underwriter_id', $uwId);
+        $base['active_policies_count'] = (clone $policyQuery)->where('status', 'active')->count();
+        $base['clients_count'] = (int) Policy::query()
+            ->where('underwriter_id', $uwId)
+            ->distinct()
+            ->count('client_id');
+
+        $premiumQuery = Payment::query()
+            ->where('status', 'received')
+            ->whereHas('policy', fn ($p) => $p->where('underwriter_id', $uwId));
+
+        $claimQuery = Claim::query()->whereHas('policy', fn ($p) => $p->where('underwriter_id', $uwId));
+
+        if ($rangeStart && $rangeEnd) {
+            $premiumQuery->whereBetween('paid_at', [$rangeStart, $rangeEnd]);
+            $claimQuery->whereBetween('reported_at', [$rangeStart, $rangeEnd]);
+        }
+
+        $premiumSum = (float) $premiumQuery->sum('amount');
+        $claimSum = (float) $claimQuery->sum('claim_amount');
+
+        $base['premium_total'] = $premiumSum;
+        $base['claim_total'] = $claimSum;
+        $base['claims_ratio'] = $premiumSum > 0 ? (float) (($claimSum / $premiumSum) * 100) : 0.0;
+
+        return $base;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function emptyDashboardMetrics(): array
+    {
+        return [
+            'active_policies_count' => 0,
+            'clients_count' => 0,
+            'premium_total' => 0.0,
+            'claim_total' => 0.0,
+            'claims_ratio' => 0.0,
+            'policies_per_class' => collect(),
+            'expiry_pipeline' => [
+                'in_30_days' => 0,
+                'in_60_days' => 0,
+                'in_90_days' => 0,
+            ],
+            'monthly_sales' => collect(),
+            'agent_performance' => collect(),
+        ];
+    }
+
     /**
      * @param  array{q?: string|null}  $filters
      */
@@ -144,4 +271,3 @@ class ReportsService
         ];
     }
 }
-

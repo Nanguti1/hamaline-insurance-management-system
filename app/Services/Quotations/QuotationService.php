@@ -2,17 +2,26 @@
 
 namespace App\Services\Quotations;
 
+use App\Concerns\TracksUserStamps;
 use App\Models\Quotation;
+use App\Services\Access\ResourceAccessService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class QuotationService
 {
+    use TracksUserStamps;
+
+    public function __construct(
+        private ResourceAccessService $access,
+    ) {}
+
     /**
      * @param  array{q?: string|null,status?: string|null}  $filters
      */
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         $query = Quotation::query()->with(['client', 'underwriter']);
+        $this->access->scopeQuotationsQuery($query, auth()->user());
 
         $q = $filters['q'] ?? null;
         $status = $filters['status'] ?? null;
@@ -39,7 +48,7 @@ class QuotationService
      */
     public function create(array $data): Quotation
     {
-        return Quotation::create($this->normalize($data));
+        return Quotation::create($this->withCreateAudit($this->normalize($data)));
     }
 
     /**
@@ -47,7 +56,8 @@ class QuotationService
      */
     public function update(Quotation $quotation, array $data): Quotation
     {
-        $quotation->update($this->normalize($data));
+        $quotation->update($this->withUpdateAudit($this->normalize($data)));
+
         return $quotation->refresh();
     }
 
@@ -74,4 +84,3 @@ class QuotationService
         return $data;
     }
 }
-

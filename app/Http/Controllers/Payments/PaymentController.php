@@ -7,14 +7,19 @@ use App\Http\Requests\Payments\StorePaymentRequest;
 use App\Http\Requests\Payments\UpdatePaymentRequest;
 use App\Models\Payment;
 use App\Models\Policy;
+use App\Services\Access\ResourceAccessService;
 use App\Services\Payments\PaymentService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PaymentController extends Controller
 {
+    public function __construct(
+        private ResourceAccessService $access,
+    ) {}
+
     public function index(Request $request, PaymentService $service): Response
     {
         $payments = $service->paginate([
@@ -43,11 +48,14 @@ class PaymentController extends Controller
     public function store(StorePaymentRequest $request, PaymentService $service): RedirectResponse
     {
         $payment = $service->create($request->validated());
+
         return to_route('payments.show', $payment);
     }
 
     public function show(Payment $payment): Response
     {
+        $this->access->assertCanViewPayment(auth()->user(), $payment);
+
         return Inertia::render('payments/show', [
             'payment' => $payment->load(['policy.client', 'policy.underwriter']),
         ]);
@@ -55,6 +63,8 @@ class PaymentController extends Controller
 
     public function edit(Payment $payment): Response
     {
+        $this->access->assertCanViewPayment(auth()->user(), $payment);
+
         return Inertia::render('payments/edit', [
             'payment' => $payment->load(['policy.client', 'policy.underwriter']),
             'policies' => Policy::query()
@@ -68,14 +78,19 @@ class PaymentController extends Controller
         Payment $payment,
         PaymentService $service
     ): RedirectResponse {
+        $this->access->assertCanViewPayment(auth()->user(), $payment);
+
         $service->update($payment, $request->validated());
+
         return to_route('payments.show', $payment);
     }
 
     public function destroy(Payment $payment, PaymentService $service): RedirectResponse
     {
+        $this->access->assertCanViewPayment(auth()->user(), $payment);
+
         $service->delete($payment);
+
         return to_route('payments.index');
     }
 }
-

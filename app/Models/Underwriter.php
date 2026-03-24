@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Underwriter extends Model
@@ -11,12 +12,18 @@ class Underwriter extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'name',
         'phone',
         'email',
         'address',
         'notes',
     ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
     public function quotations(): HasMany
     {
@@ -34,4 +41,3 @@ class Underwriter extends Model
         return $this->hasMany('App\\Models\\Commission', 'underwriter_id');
     }
 }
-
