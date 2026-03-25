@@ -22,6 +22,7 @@ class UpdateClientRequest extends FormRequest
         $client = $this->route('client');
 
         $clientId = $client?->getKey();
+        $emailRule = app()->environment(['local', 'testing']) ? 'email:rfc' : 'email:rfc,dns';
 
         return [
             'type' => ['required', Rule::in(['individual', 'corporate'])],
@@ -49,7 +50,7 @@ class UpdateClientRequest extends FormRequest
             'phone' => ['required', 'string', 'max:50'],
             'email' => [
                 'required',
-                'email:rfc,dns',
+                $emailRule,
                 'max:255',
                 Rule::unique('clients', 'email')->ignore($clientId),
             ],

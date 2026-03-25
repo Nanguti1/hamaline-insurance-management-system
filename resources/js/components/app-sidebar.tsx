@@ -63,6 +63,21 @@ const mainNavItems: NavItem[] = [
         icon: FileCheck,
     },
     {
+        title: 'Medical Risks',
+        href: '/medical-risks',
+        icon: FileText,
+    },
+    {
+        title: 'Motor Risks',
+        href: '/motor-risks',
+        icon: FileText,
+    },
+    {
+        title: 'WIBA Risks',
+        href: '/wiba-risks',
+        icon: FileText,
+    },
+    {
         title: 'Payments',
         href: '/payments',
         icon: Wallet,
@@ -118,6 +133,12 @@ export function AppSidebar() {
                 return can('quotations.view');
             case 'Policies':
                 return can('policies.view');
+            case 'Medical Risks':
+                return can('medical_risks.view');
+            case 'Motor Risks':
+                return can('motor_risks.view');
+            case 'WIBA Risks':
+                return can('wiba_risks.view');
             case 'Payments':
                 return can('payments.view');
             case 'Claims':

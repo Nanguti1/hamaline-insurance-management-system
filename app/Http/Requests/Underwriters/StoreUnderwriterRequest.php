@@ -17,12 +17,14 @@ class StoreUnderwriterRequest extends FormRequest
      */
     public function rules(): array
     {
+        $emailRule = app()->environment(['local', 'testing']) ? 'email:rfc' : 'email:rfc,dns';
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:50'],
             'email' => [
                 'required',
-                'email:rfc,dns',
+                $emailRule,
                 'max:255',
                 Rule::unique('underwriters', 'email'),
                 Rule::unique('users', 'email'),

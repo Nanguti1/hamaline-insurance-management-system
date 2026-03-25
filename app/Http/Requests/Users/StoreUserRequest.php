@@ -19,10 +19,11 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         $roles = ['admin', 'underwriter', 'claims_officer', 'finance_officer', 'client'];
+        $emailRule = app()->environment(['local', 'testing']) ? 'email:rfc' : 'email:rfc,dns';
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email:rfc,dns', 'max:255', 'unique:users,email'],
+            'email' => ['required', $emailRule, 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', 'string', Rule::in($roles)],
             'is_active' => ['boolean'],

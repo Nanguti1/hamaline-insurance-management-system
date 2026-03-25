@@ -50,7 +50,7 @@ class ReportsController extends Controller
 
     public function store(StoreReportRunRequest $request, ReportsService $service): RedirectResponse
     {
-        $report = $service->runOverview($request->validated(), $request->user());
+        $report = $service->runReport($request->validated(), $request->user());
         return to_route('reports.show', $report);
     }
 

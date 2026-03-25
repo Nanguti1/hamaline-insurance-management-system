@@ -16,12 +16,16 @@ class ReportRun extends Model
         'title',
         'range_start',
         'range_end',
+        'filter_client_type',
+        'filter_policy_type',
+        'filter_status',
         'active_policies_count',
         'clients_count',
         'premium_total',
         'claim_total',
         'generated_at',
         'notes',
+        'report_data',
     ];
 
     protected $casts = [
@@ -30,6 +34,7 @@ class ReportRun extends Model
         'generated_at' => 'datetime',
         'premium_total' => 'decimal:2',
         'claim_total' => 'decimal:2',
+        'report_data' => 'array',
     ];
 
     public function user(): BelongsTo

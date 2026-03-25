@@ -12,6 +12,9 @@ use App\Http\Controllers\Renewals\RenewalController;
 use App\Http\Controllers\Reports\ReportsController;
 use App\Http\Controllers\Underwriters\UnderwriterController;
 use App\Http\Controllers\Users\UserController;
+use App\Http\Controllers\RiskNotes\MedicalRiskNoteController;
+use App\Http\Controllers\RiskNotes\MotorRiskNoteController;
+use App\Http\Controllers\RiskNotes\WibaRiskNoteController;
 use App\Models\ReportRun;
 use App\Services\Reports\ReportsService;
 use Illuminate\Http\Request;
@@ -138,6 +141,121 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::delete('policies/{policy}/documents/{document}', [PolicyDocumentController::class, 'destroy'])->middleware('permission:policies.manage')->name('policies.documents.destroy');
     Route::post('claims/{claim}/documents', [ClaimDocumentController::class, 'store'])->middleware('permission:claims.manage')->name('claims.documents.store');
     Route::delete('claims/{claim}/documents/{document}', [ClaimDocumentController::class, 'destroy'])->middleware('permission:claims.manage')->name('claims.documents.destroy');
+
+    // Medical underwriting workflow
+    Route::get('medical-risks', [MedicalRiskNoteController::class, 'index'])
+        ->middleware('permission:medical_risks.view')
+        ->name('medical-risks.index');
+
+    Route::get('medical-risks/create', [MedicalRiskNoteController::class, 'create'])
+        ->middleware('permission:medical_risks.manage')
+        ->name('medical-risks.create');
+
+    Route::post('medical-risks', [MedicalRiskNoteController::class, 'store'])
+        ->middleware('permission:medical_risks.manage')
+        ->name('medical-risks.store');
+
+    Route::get('medical-risks/{medicalRiskNote}', [MedicalRiskNoteController::class, 'show'])
+        ->middleware('permission:medical_risks.view')
+        ->name('medical-risks.show');
+
+    Route::post('medical-risks/{medicalRiskNote}/generate', [MedicalRiskNoteController::class, 'generate'])
+        ->middleware('permission:medical_risks.manage')
+        ->name('medical-risks.generate');
+
+    Route::post('medical-risks/{medicalRiskNote}/submit', [MedicalRiskNoteController::class, 'submit'])
+        ->middleware('permission:medical_risks.manage')
+        ->name('medical-risks.submit');
+
+    Route::post('medical-risks/{medicalRiskNote}/approve', [MedicalRiskNoteController::class, 'approve'])
+        ->middleware('permission:medical_risks.underwrite')
+        ->name('medical-risks.approve');
+
+    Route::post('medical-risks/{medicalRiskNote}/reject', [MedicalRiskNoteController::class, 'reject'])
+        ->middleware('permission:medical_risks.underwrite')
+        ->name('medical-risks.reject');
+
+    Route::post('medical-risks/{medicalRiskNote}/cancel', [MedicalRiskNoteController::class, 'cancel'])
+        ->middleware('permission:medical_risks.cancel')
+        ->name('medical-risks.cancel');
+
+    Route::patch('medical-risks/{medicalRiskNote}/assign-member-numbers', [MedicalRiskNoteController::class, 'assignMemberNumbers'])
+        ->middleware('permission:medical_risks.manage')
+        ->name('medical-risks.assign-member-numbers');
+
+    // Motor underwriting workflow
+    Route::get('motor-risks', [MotorRiskNoteController::class, 'index'])
+        ->middleware('permission:motor_risks.view')
+        ->name('motor-risks.index');
+
+    Route::get('motor-risks/create', [MotorRiskNoteController::class, 'create'])
+        ->middleware('permission:motor_risks.manage')
+        ->name('motor-risks.create');
+
+    Route::post('motor-risks', [MotorRiskNoteController::class, 'store'])
+        ->middleware('permission:motor_risks.manage')
+        ->name('motor-risks.store');
+
+    Route::get('motor-risks/{motorRiskNote}', [MotorRiskNoteController::class, 'show'])
+        ->middleware('permission:motor_risks.view')
+        ->name('motor-risks.show');
+
+    Route::post('motor-risks/{motorRiskNote}/generate', [MotorRiskNoteController::class, 'generate'])
+        ->middleware('permission:motor_risks.manage')
+        ->name('motor-risks.generate');
+
+    Route::post('motor-risks/{motorRiskNote}/submit', [MotorRiskNoteController::class, 'submit'])
+        ->middleware('permission:motor_risks.manage')
+        ->name('motor-risks.submit');
+
+    Route::post('motor-risks/{motorRiskNote}/approve', [MotorRiskNoteController::class, 'approve'])
+        ->middleware('permission:motor_risks.underwrite')
+        ->name('motor-risks.approve');
+
+    Route::post('motor-risks/{motorRiskNote}/reject', [MotorRiskNoteController::class, 'reject'])
+        ->middleware('permission:motor_risks.underwrite')
+        ->name('motor-risks.reject');
+
+    Route::post('motor-risks/{motorRiskNote}/cancel', [MotorRiskNoteController::class, 'cancel'])
+        ->middleware('permission:motor_risks.cancel')
+        ->name('motor-risks.cancel');
+
+    // WIBA underwriting workflow
+    Route::get('wiba-risks', [WibaRiskNoteController::class, 'index'])
+        ->middleware('permission:wiba_risks.view')
+        ->name('wiba-risks.index');
+
+    Route::get('wiba-risks/create', [WibaRiskNoteController::class, 'create'])
+        ->middleware('permission:wiba_risks.manage')
+        ->name('wiba-risks.create');
+
+    Route::post('wiba-risks', [WibaRiskNoteController::class, 'store'])
+        ->middleware('permission:wiba_risks.manage')
+        ->name('wiba-risks.store');
+
+    Route::get('wiba-risks/{wibaRiskNote}', [WibaRiskNoteController::class, 'show'])
+        ->middleware('permission:wiba_risks.view')
+        ->name('wiba-risks.show');
+
+    Route::post('wiba-risks/{wibaRiskNote}/generate', [WibaRiskNoteController::class, 'generate'])
+        ->middleware('permission:wiba_risks.manage')
+        ->name('wiba-risks.generate');
+
+    Route::post('wiba-risks/{wibaRiskNote}/submit', [WibaRiskNoteController::class, 'submit'])
+        ->middleware('permission:wiba_risks.manage')
+        ->name('wiba-risks.submit');
+
+    Route::post('wiba-risks/{wibaRiskNote}/approve', [WibaRiskNoteController::class, 'approve'])
+        ->middleware('permission:wiba_risks.underwrite')
+        ->name('wiba-risks.approve');
+
+    Route::post('wiba-risks/{wibaRiskNote}/reject', [WibaRiskNoteController::class, 'reject'])
+        ->middleware('permission:wiba_risks.underwrite')
+        ->name('wiba-risks.reject');
+
+    Route::post('wiba-risks/{wibaRiskNote}/cancel', [WibaRiskNoteController::class, 'cancel'])
+        ->middleware('permission:wiba_risks.cancel')
+        ->name('wiba-risks.cancel');
 });
 
 require __DIR__.'/settings.php';

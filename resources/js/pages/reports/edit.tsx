@@ -8,8 +8,12 @@ import type { BreadcrumbItem } from '@/types';
 type Report = {
     id: number;
     title: string;
+    report_type?: string;
     range_start?: string | null;
     range_end?: string | null;
+    filter_client_type?: string | null;
+    filter_policy_type?: string | null;
+    filter_status?: string | null;
     notes?: string | null;
 };
 
@@ -35,8 +39,12 @@ export default function ReportsEdit({ report }: Props) {
                     onCancelHref={`/reports/${report.id}`}
                     initialValues={{
                         title: report.title,
+                        report_type: (report.report_type as any) ?? 'overview',
                         range_start: report.range_start ?? '',
                         range_end: report.range_end ?? '',
+                        client_type: report.filter_client_type ?? '',
+                        policy_type: report.filter_policy_type ?? '',
+                        status: report.filter_status ?? '',
                         notes: report.notes ?? '',
                     }}
                 />

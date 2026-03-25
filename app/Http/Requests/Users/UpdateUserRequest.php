@@ -20,6 +20,7 @@ class UpdateUserRequest extends FormRequest
     public function rules(): array
     {
         $roles = ['admin', 'underwriter', 'claims_officer', 'finance_officer', 'client'];
+        $emailRule = app()->environment(['local', 'testing']) ? 'email:rfc' : 'email:rfc,dns';
 
         /** @var User|null $target */
         $target = $this->route('user');
@@ -28,7 +29,7 @@ class UpdateUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
-                'email:rfc,dns',
+                $emailRule,
                 'max:255',
                 Rule::unique('users', 'email')->ignore($target?->getKey()),
             ],

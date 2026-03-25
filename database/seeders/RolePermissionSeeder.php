@@ -16,6 +16,12 @@ class RolePermissionSeeder extends Seeder
             'underwriters.view', 'underwriters.manage',
             'quotations.view', 'quotations.manage',
             'policies.view', 'policies.manage',
+            'medical_risks.view', 'medical_risks.manage',
+            'medical_risks.underwrite', 'medical_risks.cancel',
+            'motor_risks.view', 'motor_risks.manage',
+            'motor_risks.underwrite', 'motor_risks.cancel',
+            'wiba_risks.view', 'wiba_risks.manage',
+            'wiba_risks.underwrite', 'wiba_risks.cancel',
             'payments.view', 'payments.manage',
             'claims.view', 'claims.manage',
             'commissions.view', 'commissions.manage',
@@ -40,6 +46,15 @@ class RolePermissionSeeder extends Seeder
         $underwriter->syncPermissions([
             'quotations.view', 'quotations.manage',
             'policies.view', 'policies.manage',
+            'medical_risks.view',
+            'medical_risks.underwrite',
+            'medical_risks.cancel',
+            'motor_risks.view',
+            'motor_risks.underwrite',
+            'motor_risks.cancel',
+            'wiba_risks.view',
+            'wiba_risks.underwrite',
+            'wiba_risks.cancel',
         ]);
 
         $claimsOfficer->syncPermissions([
@@ -55,8 +70,14 @@ class RolePermissionSeeder extends Seeder
             'policies.view',
             'claims.view',
             'payments.view',
+            'medical_risks.view',
+            'motor_risks.view',
+            'wiba_risks.view',
         ]);
 
-        User::query()->orderBy('id')->first()?->assignRole('admin');
+        $firstUser = User::query()->orderBy('id')->first();
+        if ($firstUser instanceof User) {
+            $firstUser->assignRole('admin');
+        }
     }
 }

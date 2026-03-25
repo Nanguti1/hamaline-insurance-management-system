@@ -1,0 +1,565 @@
+<?php
+
+namespace App\Services\RiskNotes;
+
+use App\Concerns\TracksUserStamps;
+use App\Models\MotorRiskNoteDetails;
+use App\Models\MedicalMember;
+use App\Models\MedicalMemberBenefit;
+use App\Models\MedicalRiskNoteDetails;
+use App\Models\Policy;
+use App\Models\RiskNote;
+use App\Models\RiskNoteUnderwritingDecision;
+use App\Models\User;
+use App\Models\WibaEmployee;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+
+class RiskNoteService
+{
+    use TracksUserStamps;
+
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_CANCELLED = 'cancelled';
+
+    /**
+     * Create a risk note with Medical details.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createMedicalRiskNote(array $data, User $user): RiskNote
+    {
+        return DB::transaction(function () use ($data, $user): RiskNote {
+            $lineType = 'medical';
+            $riskNote = RiskNote::create([
+                'line_type' => $lineType,
+                'risk_note_number' => $this->nextRiskNoteNumber($lineType),
+                'client_id' => $data['client_id'],
+                'underwriter_id' => $data['underwriter_id'],
+                'status' => self::STATUS_DRAFT,
+                'start_date' => $data['start_date'] ?? null,
+                'end_date' => $data['end_date'] ?? null,
+                'premium_amount' => $data['premium_amount'] ?? 0,
+                'currency' => $data['currency'] ?? 'KES',
+                'notes' => $data['notes'] ?? null,
+                ...$this->withCreateAudit([]),
+            ]);
+
+            $MedicalDetails = MedicalRiskNoteDetails::create([
+                'risk_note_id' => $riskNote->id,
+                'plan_type' => $data['plan_type'],
+                'corporate_category_code' => $data['corporate_category_code'] ?? null,
+                'junior_children_count' => $data['junior_children_count'] ?? null,
+            ]);
+
+            // Members
+            $members = $data['members'] ?? [];
+            foreach ($members as $member) {
+                $memberRow = $riskNote->medicalMembers()->create([
+                    'member_sequence' => (int) $member['member_sequence'],
+                    'is_principal' => (bool) ($member['is_principal'] ?? false),
+                    'member_number' => $member['member_number'] ?? null,
+                    'relationship' => $member['relationship'],
+                    'name' => $member['name'],
+                    'date_of_birth' => $member['date_of_birth'],
+                    'phone' => $member['phone'],
+                    'id_number' => $member['id_number'] ?? null,
+                    'birth_certificate_number' => $member['birth_certificate_number'] ?? null,
+                ]);
+
+                foreach (($member['benefits'] ?? []) as $benefit) {
+                    $memberRow->benefits()->create([
+                        'benefit_type' => $benefit['benefit_type'],
+                        'amount' => $benefit['amount'],
+                    ]);
+                }
+            }
+
+            // Ensure the details relation is actually created
+            $riskNote->setRelation('medicalDetails', $MedicalDetails);
+            return $riskNote->refresh();
+        });
+    }
+
+    /**
+     * Create a Motor risk note.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createMotorRiskNote(array $data, User $user): RiskNote
+    {
+        return DB::transaction(function () use ($data, $user): RiskNote {
+            $lineType = 'motor';
+            $riskNote = RiskNote::create([
+                'line_type' => $lineType,
+                'risk_note_number' => $this->nextRiskNoteNumber($lineType),
+                'client_id' => $data['client_id'],
+                'underwriter_id' => $data['underwriter_id'],
+                'status' => self::STATUS_DRAFT,
+                'start_date' => $data['start_date'] ?? null,
+                'end_date' => $data['end_date'] ?? null,
+                'premium_amount' => $data['premium_amount'] ?? 0,
+                'currency' => $data['currency'] ?? 'KES',
+                'notes' => $data['notes'] ?? null,
+            ] + $this->withCreateAudit([]));
+
+            MotorRiskNoteDetails::create([
+                'risk_note_id' => $riskNote->id,
+
+                'insured_name' => $data['insured_name'],
+                'insured_id_number' => $data['insured_id_number'],
+                'insured_phone' => $data['insured_phone'],
+                'insured_email' => $data['insured_email'],
+                'insured_postal_address' => $data['insured_postal_address'],
+
+                'registration_number' => $data['registration_number'],
+                'make_model' => $data['make_model'],
+                'year_of_manufacture' => $data['year_of_manufacture'],
+                'chassis_number' => $data['chassis_number'],
+                'engine_number' => $data['engine_number'],
+                'body_type' => $data['body_type'],
+                'vehicle_use' => $data['vehicle_use'],
+
+                'cover_type' => $data['cover_type'],
+                'sum_insured' => $data['sum_insured'] ?? 0,
+            ]);
+
+            return $riskNote->refresh();
+        });
+    }
+
+    /**
+     * Create a WIBA risk note.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createWibaRiskNote(array $data, User $user): RiskNote
+    {
+        return DB::transaction(function () use ($data, $user): RiskNote {
+            $lineType = 'wiba';
+
+            $riskNote = RiskNote::create([
+                'line_type' => $lineType,
+                'risk_note_number' => $this->nextRiskNoteNumber($lineType),
+                'client_id' => $data['client_id'],
+                'underwriter_id' => $data['underwriter_id'],
+                'status' => self::STATUS_DRAFT,
+                'start_date' => $data['start_date'] ?? null,
+                'end_date' => $data['end_date'] ?? null,
+                'premium_amount' => $data['premium_amount'] ?? 0,
+                'currency' => $data['currency'] ?? 'KES',
+                'notes' => $data['notes'] ?? null,
+            ] + $this->withCreateAudit([]));
+
+            foreach (($data['employees'] ?? []) as $emp) {
+                WibaEmployee::create([
+                    'risk_note_id' => $riskNote->id,
+                    'employee_sequence' => (int) $emp['employee_sequence'],
+                    'name' => $emp['name'],
+                    'payroll_number' => $emp['payroll_number'],
+                    'id_number' => $emp['id_number'],
+                    'date_of_birth' => $emp['date_of_birth'],
+                    'annual_salary' => $emp['annual_salary'] ?? 0,
+                ]);
+            }
+
+            return $riskNote->refresh();
+        });
+    }
+
+    public function generateMotorRiskNoteContent(RiskNote $riskNote): RiskNote
+    {
+        if ($riskNote->line_type !== 'motor') {
+            throw new \InvalidArgumentException('Risk note line_type must be motor.');
+        }
+
+        $riskNote->load(['client', 'underwriter', 'motorDetails']);
+
+        $period = ($riskNote->start_date && $riskNote->end_date)
+            ? sprintf('%s - %s', $riskNote->start_date->format('Y-m-d'), $riskNote->end_date->format('Y-m-d'))
+            : '-';
+
+        $d = $riskNote->motorDetails;
+        $coverLabel = match ($d?->cover_type) {
+            'third_party_only' => 'Third Party Only',
+            'third_party_fire_theft' => 'Third Party Fire & Theft',
+            'comprehensive' => 'Comprehensive',
+            default => $d?->cover_type ?? '-',
+        };
+
+        $riskNoteContent = implode(PHP_EOL, [
+            '=== MOTOR RISK NOTE ===',
+            'Header',
+            sprintf('Risk Note Number: %s', $riskNote->risk_note_number),
+            sprintf('Date of Issue: %s', now()->format('Y-m-d')),
+            sprintf('Agency Name: %s', config('app.name', 'Hamaline Insurance')),
+            '',
+            'Insured Information',
+            sprintf('Name: %s', $d?->insured_name ?? '-'),
+            sprintf('Underwriter: %s', $riskNote->underwriter?->name ?? '-'),
+            sprintf('Period of Insurance: %s', $period),
+            '',
+            'Vehicle Details',
+            sprintf('Registration Number: %s', $d?->registration_number ?? '-'),
+            sprintf('Make & Model: %s', $d?->make_model ?? '-'),
+            sprintf('Year of Manufacture: %s', $d?->year_of_manufacture ?? '-'),
+            sprintf('Chassis Number: %s', $d?->chassis_number ?? '-'),
+            sprintf('Engine Number: %s', $d?->engine_number ?? '-'),
+            sprintf('Body Type: %s', $d?->body_type ?? '-'),
+            sprintf('Use of Vehicle: %s', $d?->vehicle_use ?? '-'),
+            '',
+            'Insurance Cover',
+            sprintf('Cover Type: %s', $coverLabel),
+            sprintf('Sum Insured: %s', $d?->sum_insured ?? 0),
+            '',
+            'Financials',
+            sprintf('Premium Payable: %s %s', sprintf('%.2f', (float) $riskNote->premium_amount), $riskNote->currency),
+            '',
+            'Conditions',
+            '- Subject to full premium payment',
+            '- Waiting periods / exclusions apply per underwriting rules',
+            '',
+            'Notes',
+            '- This is not the final policy document',
+            '- Serves as temporary confirmation of cover',
+        ]);
+
+        $riskNote->update([
+            'risk_note_content' => $riskNoteContent,
+            'notes' => $riskNote->notes,
+        ]);
+
+        return $riskNote->refresh();
+    }
+
+    public function generateWibaRiskNoteContent(RiskNote $riskNote): RiskNote
+    {
+        if ($riskNote->line_type !== 'wiba') {
+            throw new \InvalidArgumentException('Risk note line_type must be wiba.');
+        }
+
+        $riskNote->load(['client', 'underwriter', 'wibaEmployees']);
+
+        $period = ($riskNote->start_date && $riskNote->end_date)
+            ? sprintf('%s - %s', $riskNote->start_date->format('Y-m-d'), $riskNote->end_date->format('Y-m-d'))
+            : '-';
+
+        $employees = $riskNote->wibaEmployees->sortBy('employee_sequence')->values();
+        $employeeLines = [];
+        foreach ($employees as $i => $e) {
+            $employeeLines[] = sprintf(
+                '| %d | %s | Payroll %s | %s | %s | %s |',
+                $i + 1,
+                $e->name,
+                $e->payroll_number,
+                $e->id_number,
+                $e->date_of_birth?->format('Y-m-d') ?? '-',
+                sprintf('%.2f', (float) $e->annual_salary)
+            );
+        }
+
+        $employeeTable = implode(PHP_EOL, [
+            '| No | Name | Payroll | ID Number | DOB | Annual Salary |',
+            ...($employeeLines ?: ['| - | - | - | - | - | - |']),
+        ]);
+
+        $riskNoteContent = implode(PHP_EOL, [
+            '=== WIBA RISK NOTE ===',
+            'Header',
+            sprintf('Risk Note Number: %s', $riskNote->risk_note_number),
+            sprintf('Date of Issue: %s', now()->format('Y-m-d')),
+            sprintf('Agency Name: %s', config('app.name', 'Hamaline Insurance')),
+            '',
+            'Insured Information',
+            sprintf('Corporate Name: %s', $riskNote->client?->display_name ?? '-'),
+            sprintf('Underwriter: %s', $riskNote->underwriter?->name ?? '-'),
+            sprintf('Period of Insurance: %s', $period),
+            '',
+            'Employees',
+            $employeeTable,
+            '',
+            'Conditions',
+            '- Subject to full premium payment',
+            '- Waiting periods / exclusions apply per underwriting rules',
+            '',
+            'Notes',
+            '- This is not the final policy document',
+            '- Serves as temporary confirmation of cover',
+        ]);
+
+        $riskNote->update([
+            'risk_note_content' => $riskNoteContent,
+            'notes' => $riskNote->notes,
+        ]);
+
+        return $riskNote->refresh();
+    }
+
+    public function generateMedicalRiskNoteContent(RiskNote $riskNote): RiskNote
+    {
+        if ($riskNote->line_type !== 'medical') {
+            throw new \InvalidArgumentException('Risk note line_type must be medical.');
+        }
+
+        $riskNote->load(['client', 'underwriter', 'medicalDetails', 'medicalMembers.benefits']);
+
+        $principal = $riskNote->medicalMembers->firstWhere('is_principal', true);
+        if (! $principal) {
+            $principal = $riskNote->medicalMembers->sortBy('member_sequence')->first();
+        }
+
+        $dependants = $riskNote->medicalMembers
+            ->filter(fn (MedicalMember $m) => ! $m->is_principal)
+            ->sortBy('member_sequence')
+            ->values();
+
+        $benefitTypes = ['inpatient', 'outpatient', 'maternity', 'dental', 'optical'];
+        $principalBenefits = $principal?->benefits ?? collect();
+
+        $benefitSummary = [];
+        foreach ($benefitTypes as $bt) {
+            $label = match ($bt) {
+                'inpatient' => 'Inpatient Cover',
+                'outpatient' => 'Outpatient Cover',
+                'maternity' => 'Maternity Cover',
+                'dental' => 'Dental Cover',
+                'optical' => 'Optical Cover',
+                default => ucfirst($bt),
+            };
+
+            $row = $principalBenefits->firstWhere('benefit_type', $bt);
+            $benefitSummary[] = sprintf('%s: %s', $label, $row ? (string) $row->amount : '-');
+        }
+
+        $period = ($riskNote->start_date && $riskNote->end_date)
+            ? sprintf('%s - %s', $riskNote->start_date->format('Y-m-d'), $riskNote->end_date->format('Y-m-d'))
+            : '-';
+
+        $issueDate = now()->format('Y-m-d');
+        $agencyName = config('app.name', 'Hamaline Insurance');
+
+        $dependantsTableLines = [];
+        foreach ($dependants as $i => $d) {
+            $dependantsTableLines[] = sprintf(
+                '| %d | %s | %s | %s |',
+                $i + 1,
+                $d->name,
+                $d->relationship,
+                $d->date_of_birth?->format('Y-m-d') ?? '-'
+            );
+        }
+
+        $dependantsTable = implode(PHP_EOL, [
+            '| No | Name | Relationship | Date of Birth |',
+            ...($dependantsTableLines ?: ['| - | - | - | - |']),
+        ]);
+
+        $principalName = $principal?->name ?? '-';
+        $underwriterName = $riskNote->underwriter?->name ?? '-';
+
+        $riskNoteContent = implode(PHP_EOL, [
+            '=== MEDICAL RISK NOTE ===',
+            'Header',
+            sprintf('Risk Note Number: %s', $riskNote->risk_note_number),
+            sprintf('Date of Issue: %s', $issueDate),
+            sprintf('Agency Name: %s', $agencyName),
+            '',
+            'Insured Information',
+            sprintf('Name: %s', $principalName),
+            sprintf('Underwriter: %s', $underwriterName),
+            sprintf('Period of Insurance: %s', $period),
+            '',
+            'Dependants',
+            $dependantsTable,
+            '',
+            'Benefits Summary',
+            ...$benefitSummary,
+            '',
+            'Conditions',
+            '- Subject to full premium payment',
+            '- Waiting periods apply',
+            '- Pre-existing conditions handled per underwriting rules',
+            '- Treatment limited to approved providers',
+            '',
+            'Notes',
+            '- This is not the final policy document',
+            '- Serves as temporary confirmation of cover',
+        ]);
+
+        $riskNote->update([
+            'risk_note_content' => $riskNoteContent,
+            'notes' => $riskNote->notes,
+        ]);
+
+        return $riskNote->refresh();
+    }
+
+    public function submitForUnderwriting(RiskNote $riskNote, User $user): RiskNote
+    {
+        if ($riskNote->status !== self::STATUS_DRAFT) {
+            throw new \DomainException('Only draft risk notes can be submitted.');
+        }
+
+        $riskNote->update([
+            'status' => self::STATUS_PENDING,
+            'submitted_at' => now(),
+            'updated_by' => $user->id,
+        ]);
+
+        return $riskNote->refresh();
+    }
+
+    public function approveUnderwriting(RiskNote $riskNote, User $user, ?string $decisionNotes = null): RiskNote
+    {
+        return DB::transaction(function () use ($riskNote, $user, $decisionNotes): RiskNote {
+            if ($riskNote->status !== self::STATUS_PENDING) {
+                throw new \DomainException('Only pending risk notes can be decided.');
+            }
+
+            $policyStatus = self::STATUS_ACTIVE; // will be mapped to Policy.status = active
+
+            $decision = $riskNote->underwritingDecisions()->create([
+                'underwriter_id' => $riskNote->underwriter_id,
+                'decided_by' => $user->id,
+                'decision' => 'approved',
+                'decision_notes' => $decisionNotes,
+                'decided_at' => now(),
+            ]);
+
+            $policyNumber = $this->nextPolicyNumber();
+
+            $policy = Policy::create([
+                'client_id' => $riskNote->client_id,
+                'underwriter_id' => $riskNote->underwriter_id,
+                'quotation_id' => null,
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+                'approved_by' => $user->id,
+                'policy_number' => $policyNumber,
+                'policy_type' => $riskNote->line_type,
+                'status' => $policyStatus === self::STATUS_ACTIVE ? 'active' : 'cancelled',
+                'start_date' => $riskNote->start_date ?? now()->toDateString(),
+                'end_date' => $riskNote->end_date ?? now()->toDateString(),
+                'premium_amount' => $riskNote->premium_amount ?? 0,
+                'currency' => $riskNote->currency ?? 'KES',
+                'notes' => $riskNote->notes,
+            ]);
+
+            $riskNote->update([
+                'status' => self::STATUS_ACTIVE,
+                'decided_at' => now(),
+                'approved_by' => $user->id,
+                'policy_id' => $policy->id,
+            ]);
+
+            return $riskNote->refresh()->setRelation('policy', $policy);
+        });
+    }
+
+    public function rejectUnderwriting(RiskNote $riskNote, User $user, ?string $decisionNotes = null): RiskNote
+    {
+        return DB::transaction(function () use ($riskNote, $user, $decisionNotes): RiskNote {
+            if ($riskNote->status !== self::STATUS_PENDING) {
+                throw new \DomainException('Only pending risk notes can be decided.');
+            }
+
+            $decision = $riskNote->underwritingDecisions()->create([
+                'underwriter_id' => $riskNote->underwriter_id,
+                'decided_by' => $user->id,
+                'decision' => 'rejected',
+                'decision_notes' => $decisionNotes,
+                'decided_at' => now(),
+            ]);
+
+            $policyNumber = $this->nextPolicyNumber();
+
+            $policy = Policy::create([
+                'client_id' => $riskNote->client_id,
+                'underwriter_id' => $riskNote->underwriter_id,
+                'quotation_id' => null,
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+                'approved_by' => $user->id,
+                'policy_number' => $policyNumber,
+                'policy_type' => $riskNote->line_type,
+                'status' => 'cancelled',
+                'start_date' => $riskNote->start_date ?? now()->toDateString(),
+                'end_date' => $riskNote->end_date ?? now()->toDateString(),
+                'premium_amount' => $riskNote->premium_amount ?? 0,
+                'currency' => $riskNote->currency ?? 'KES',
+                'notes' => $riskNote->notes,
+            ]);
+
+            $riskNote->update([
+                'status' => self::STATUS_CANCELLED,
+                'decided_at' => now(),
+                'approved_by' => $user->id,
+                'policy_id' => $policy->id,
+            ]);
+
+            return $riskNote->refresh()->setRelation('policy', $policy);
+        });
+    }
+
+    public function cancelRiskNote(RiskNote $riskNote, User $user, ?string $reason = null): RiskNote
+    {
+        if (! in_array($riskNote->status, [self::STATUS_DRAFT, self::STATUS_PENDING], true)) {
+            throw new \DomainException('Only draft/pending risk notes can be cancelled.');
+        }
+
+        $riskNote->update([
+            'status' => self::STATUS_CANCELLED,
+            'cancelled_at' => now(),
+            'updated_by' => $user->id,
+        ]);
+
+        return $riskNote->refresh();
+    }
+
+    private function nextRiskNoteNumber(string $lineType): string
+    {
+        $prefix = match ($lineType) {
+            'medical' => 'MRN',
+            'motor' => 'MTRN',
+            'wiba' => 'WRN',
+            default => strtoupper(substr($lineType, 0, 4)),
+        };
+
+        $year = now()->format('Y');
+        $like = "{$prefix}-{$year}-%";
+
+        $last = RiskNote::query()
+            ->where('risk_note_number', 'like', $like)
+            ->orderByDesc('id')
+            ->first();
+
+        $seq = 1;
+        if ($last && preg_match('/-(\d+)$/', $last->risk_note_number, $m)) {
+            $seq = (int) $m[1] + 1;
+        }
+
+        return sprintf('%s-%s-%04d', $prefix, $year, $seq);
+    }
+
+    private function nextPolicyNumber(): string
+    {
+        $year = now()->format('Y');
+        $prefix = 'POL';
+        $like = "{$prefix}-{$year}-%";
+
+        $last = Policy::query()
+            ->where('policy_number', 'like', $like)
+            ->orderByDesc('id')
+            ->first();
+
+        $seq = 1;
+        if ($last && preg_match('/-(\d+)$/', $last->policy_number, $m)) {
+            $seq = (int) $m[1] + 1;
+        }
+
+        return sprintf('%s-%s-%04d', $prefix, $year, $seq);
+    }
+}
+

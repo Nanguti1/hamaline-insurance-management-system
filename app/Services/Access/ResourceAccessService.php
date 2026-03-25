@@ -6,6 +6,7 @@ use App\Models\Claim;
 use App\Models\Commission;
 use App\Models\Payment;
 use App\Models\Policy;
+use App\Models\RiskNote;
 use App\Models\Quotation;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,6 +14,110 @@ use Illuminate\Database\Eloquent\Collection;
 
 class ResourceAccessService
 {
+    private function lineTypeToRiskPermissionBase(string $lineType): string
+    {
+        return match ($lineType) {
+            'medical' => 'medical_risks',
+            'motor' => 'motor_risks',
+            'wiba' => 'wiba_risks',
+            default => 'medical_risks',
+        };
+    }
+
+    public function assertCanViewRiskNote(?User $user, RiskNote $riskNote): void
+    {
+        abort_unless($this->canViewRiskNote($user, $riskNote), 403);
+    }
+
+    public function canViewRiskNote(?User $user, RiskNote $riskNote): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('underwriter')) {
+            $uwId = $user->underwriterProfile?->id;
+
+            return $uwId && (int) $riskNote->underwriter_id === (int) $uwId;
+        }
+
+        if ($user->hasRole('client')) {
+            $clientId = $user->clientRecord?->id;
+
+            return $clientId && (int) $riskNote->client_id === (int) $clientId;
+        }
+
+        $base = $this->lineTypeToRiskPermissionBase($riskNote->line_type);
+        return $user->can($base . '.view');
+    }
+
+    public function assertCanUnderwriteRiskNote(?User $user, RiskNote $riskNote): void
+    {
+        abort_unless($this->canUnderwriteRiskNote($user, $riskNote), 403);
+    }
+
+    public function canUnderwriteRiskNote(?User $user, RiskNote $riskNote): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('underwriter')) {
+            $uwId = $user->underwriterProfile?->id;
+
+            return $uwId && (int) $riskNote->underwriter_id === (int) $uwId;
+        }
+
+        $base = $this->lineTypeToRiskPermissionBase($riskNote->line_type);
+        return $user->can($base . '.underwrite');
+    }
+
+    /**
+     * @param  Builder<RiskNote>  $query
+     * @return Builder<RiskNote>
+     */
+    public function scopeRiskNotesQuery(Builder $query, ?User $user, string $lineType): Builder
+    {
+        $query->where('line_type', $lineType);
+
+        if (! $user) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        if ($user->hasRole('admin')) {
+            return $query;
+        }
+
+        if ($user->hasRole('underwriter')) {
+            $uwId = $user->underwriterProfile?->id;
+
+            // Underwriters primarily review pending risks.
+            return $uwId
+                ? $query->where('underwriter_id', $uwId)->where('status', 'pending')
+                : $query->whereRaw('0 = 1');
+        }
+
+        if ($user->hasRole('client')) {
+            $clientId = $user->clientRecord?->id;
+
+            return $clientId
+                ? $query->where('client_id', $clientId)
+                : $query->whereRaw('0 = 1');
+        }
+
+        // Fallback to permissions-based access if required.
+        $base = $this->lineTypeToRiskPermissionBase($lineType);
+        return $user->can($base . '.view') ? $query : $query->whereRaw('0 = 1');
+    }
+
     public function assertCanViewPolicy(?User $user, Policy $policy): void
     {
         abort_unless($this->canViewPolicy($user, $policy), 403);

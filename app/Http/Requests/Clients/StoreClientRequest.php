@@ -17,6 +17,8 @@ class StoreClientRequest extends FormRequest
      */
     public function rules(): array
     {
+        $emailRule = app()->environment(['local', 'testing']) ? 'email:rfc' : 'email:rfc,dns';
+
         return [
             'type' => ['required', Rule::in(['individual', 'corporate'])],
 
@@ -41,7 +43,7 @@ class StoreClientRequest extends FormRequest
             'kra_pin' => ['nullable', 'string', 'max:50'],
 
             'phone' => ['required', 'string', 'max:50'],
-            'email' => ['required', 'email:rfc,dns', 'max:255', 'unique:clients,email'],
+            'email' => ['required', $emailRule, 'max:255', 'unique:clients,email'],
             'address' => ['required', 'string', 'max:1000'],
 
             'notes' => ['nullable', 'string', 'max:2000'],

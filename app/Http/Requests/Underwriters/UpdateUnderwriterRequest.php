@@ -22,13 +22,14 @@ class UpdateUnderwriterRequest extends FormRequest
         $underwriter = $this->route('underwriter');
         $underwriterId = $underwriter?->getKey();
         $userId = $underwriter?->user_id;
+        $emailRule = app()->environment(['local', 'testing']) ? 'email:rfc' : 'email:rfc,dns';
 
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:50'],
             'email' => [
                 'required',
-                'email:rfc,dns',
+                $emailRule,
                 'max:255',
                 Rule::unique('underwriters', 'email')->ignore($underwriterId),
                 Rule::unique('users', 'email')->ignore($userId),
