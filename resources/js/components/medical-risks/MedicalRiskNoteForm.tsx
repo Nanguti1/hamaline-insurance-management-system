@@ -138,15 +138,20 @@ export default function MedicalRiskNoteForm({
         },
     });
 
+    type MedicalMemberBenefit = NonNullable<MedicalRiskNoteFormValues['members'][number]['benefits']>[number];
+
     const { fields, append, remove, replace } = useFieldArray({ control, name: 'members' });
 
     const currentMembers = watch('members');
-    const selectedPrincipal = useMemo(() => currentMembers.find((m) => m.is_principal), [currentMembers]);
+    const principalIndex = currentMembers.findIndex((m) => m.is_principal);
 
-    const principalBenefits = useMemo(() => selectedPrincipal?.benefits ?? [], [selectedPrincipal]);
+    // React Hook Form won't re-render reliably off `watch('members')` if `benefits` is not registered.
+    // Watching the exact benefits path ensures checkbox toggles update the UI instantly.
+    const principalBenefitsPath = `members.${Math.max(principalIndex, 0)}.benefits` as any;
+    const principalBenefits = watch(principalBenefitsPath) as MedicalMemberBenefit[] | undefined;
     const principalBenefitsByType = useMemo(() => {
         const map: Partial<Record<BenefitType, number>> = {};
-        for (const b of principalBenefits) {
+        for (const b of principalBenefits ?? []) {
             map[b.benefit_type] = b.amount;
         }
         return map;
@@ -164,33 +169,33 @@ export default function MedicalRiskNoteForm({
     }, [principalBenefitsByType]);
 
     const toggleBenefit = (type: BenefitType, enabled: boolean) => {
-        const principalIndex = currentMembers.findIndex((m) => m.is_principal);
-        if (principalIndex < 0) return;
+        const idx = currentMembers.findIndex((m) => m.is_principal);
+        if (idx < 0) return;
 
         if (planType === 'corporate' && !allowedBenefitsForCorporate.includes(type)) return;
 
-        const existing = currentMembers[principalIndex].benefits ?? [];
+        const existing = principalBenefits ?? [];
         const without = existing.filter((b) => b.benefit_type !== type);
         if (!enabled) {
-            setValue(`members.${principalIndex}.benefits`, without);
+            setValue(`members.${idx}.benefits`, without);
             return;
         }
 
         const nextAmount = principalBenefitsByType[type] ?? 0;
-        setValue(`members.${principalIndex}.benefits`, [...without, { benefit_type: type, amount: nextAmount }]);
+        setValue(`members.${idx}.benefits`, [...without, { benefit_type: type, amount: nextAmount }]);
     };
 
     const setBenefitAmount = (type: BenefitType, amount: number) => {
-        const principalIndex = currentMembers.findIndex((m) => m.is_principal);
-        if (principalIndex < 0) return;
+        const idx = currentMembers.findIndex((m) => m.is_principal);
+        if (idx < 0) return;
 
         if (planType === 'corporate' && !allowedBenefitsForCorporate.includes(type)) return;
 
-        const existing = currentMembers[principalIndex].benefits ?? [];
+        const existing = principalBenefits ?? [];
         const next = existing.some((b) => b.benefit_type === type)
             ? existing.map((b) => (b.benefit_type === type ? { ...b, amount } : b))
             : [...existing, { benefit_type: type, amount }];
-        setValue(`members.${principalIndex}.benefits`, next);
+        setValue(`members.${idx}.benefits`, next);
     };
 
     const juniorChildrenCount = watch('junior_children_count') ?? 0;
