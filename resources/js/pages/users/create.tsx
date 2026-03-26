@@ -24,8 +24,8 @@ const schema = z
         email: z.string().trim().email().max(255),
         password: z.string().min(8).max(255),
         password_confirmation: z.string().min(8).max(255),
-        role: z.enum(['admin', 'underwriter', 'claims_officer', 'finance_officer', 'client']),
-        client_id: z.coerce.number().int().positive().optional().nullable(),
+        role: z.string().trim().min(1),
+        client_id: z.number().int().positive().optional().nullable(),
         is_active: z.boolean(),
     })
     .refine((d) => d.password === d.password_confirmation, {
@@ -53,6 +53,9 @@ type Props = {
 };
 
 export default function UsersCreate({ roles, clients }: Props) {
+    const defaultRole =
+        roles.find((r) => r.value === 'underwriter')?.value ?? roles[0]?.value ?? '';
+
     const {
         register,
         handleSubmit,
@@ -67,7 +70,7 @@ export default function UsersCreate({ roles, clients }: Props) {
             email: '',
             password: '',
             password_confirmation: '',
-            role: 'underwriter',
+            role: defaultRole,
             client_id: null,
             is_active: true,
         },
@@ -78,17 +81,15 @@ export default function UsersCreate({ roles, clients }: Props) {
     const isActive = watch('is_active');
 
     const onSubmit = (values: FormValues) => {
-        const payload: Record<string, unknown> = {
+        const payload = {
             name: values.name,
             email: values.email,
             password: values.password,
             password_confirmation: values.password_confirmation,
             role: values.role,
             is_active: values.is_active,
+            ...(values.role === 'client' && values.client_id ? { client_id: values.client_id } : {}),
         };
-        if (values.role === 'client' && values.client_id) {
-            payload.client_id = values.client_id;
-        }
 
         router.post('/users', payload, {
             preserveScroll: true,

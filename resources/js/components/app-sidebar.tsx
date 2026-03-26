@@ -3,12 +3,11 @@ import {
     AlertTriangle,
     BarChart3,
     BadgePercent,
-    BookOpen,
     FileCheck,
     FileText,
-    FolderGit2,
     LayoutGrid,
     RefreshCw,
+    ShieldCheck,
     Shield,
     Wallet,
     UserCog,
@@ -30,77 +29,143 @@ import {
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+type NavItemWithPermission = NavItem & {
+    requiredPermission?: string;
+};
+
+type NavGroupWithPermission = {
+    title: string;
+    icon?: NavItem['icon'];
+    items: NavItemWithPermission[];
+};
+
+const navGroups: NavGroupWithPermission[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
+        title: 'Overview',
         icon: LayoutGrid,
+        items: [
+            {
+                title: 'Dashboard',
+                href: dashboard(),
+                icon: LayoutGrid,
+            },
+        ],
     },
     {
-        id: 'm1',
-        title: 'Users',
-        href: '/users',
+        title: 'Administration',
         icon: UserCog,
+        items: [
+            {
+                id: 'm-users',
+                title: 'Users',
+                href: '/users',
+                icon: UserCog,
+                requiredPermission: 'users.manage',
+            },
+            {
+                id: 'm-rbac',
+                title: 'Roles & Permissions',
+                href: '/roles-permissions',
+                icon: ShieldCheck,
+                requiredPermission: 'users.manage',
+            },
+        ],
     },
     {
-        title: 'Clients',
-        href: '/clients',
+        title: 'Clients & Underwriting',
         icon: Users,
+        items: [
+            {
+                title: 'Clients',
+                href: '/clients',
+                icon: Users,
+                requiredPermission: 'clients.view',
+            },
+            {
+                title: 'Underwriters',
+                href: '/underwriters',
+                icon: Shield,
+                requiredPermission: 'underwriters.view',
+            },
+            {
+                title: 'Quotations',
+                href: '/quotations',
+                icon: FileText,
+                requiredPermission: 'quotations.view',
+            },
+            {
+                title: 'Policies',
+                href: '/policies',
+                icon: FileCheck,
+                requiredPermission: 'policies.view',
+            },
+        ],
     },
     {
-        title: 'Underwriters',
-        href: '/underwriters',
-        icon: Shield,
-    },
-    {
-        title: 'Quotations',
-        href: '/quotations',
+        title: 'Risk Notes',
         icon: FileText,
+        items: [
+            {
+                title: 'Medical Risks',
+                href: '/medical-risks',
+                icon: FileText,
+                requiredPermission: 'medical_risks.view',
+            },
+            {
+                title: 'Motor Risks',
+                href: '/motor-risks',
+                icon: FileText,
+                requiredPermission: 'motor_risks.view',
+            },
+            {
+                title: 'WIBA Risks',
+                href: '/wiba-risks',
+                icon: FileText,
+                requiredPermission: 'wiba_risks.view',
+            },
+        ],
     },
     {
-        title: 'Policies',
-        href: '/policies',
-        icon: FileCheck,
-    },
-    {
-        title: 'Medical Risks',
-        href: '/medical-risks',
-        icon: FileText,
-    },
-    {
-        title: 'Motor Risks',
-        href: '/motor-risks',
-        icon: FileText,
-    },
-    {
-        title: 'WIBA Risks',
-        href: '/wiba-risks',
-        icon: FileText,
-    },
-    {
-        title: 'Payments',
-        href: '/payments',
-        icon: Wallet,
-    },
-    {
-        title: 'Claims',
-        href: '/claims',
+        title: 'Operations',
         icon: AlertTriangle,
-    },
-    {
-        title: 'Commissions',
-        href: '/commissions',
-        icon: BadgePercent,
-    },
-    {
-        title: 'Renewals',
-        href: '/renewals',
-        icon: RefreshCw,
+        items: [
+            {
+                title: 'Claims',
+                href: '/claims',
+                icon: AlertTriangle,
+                requiredPermission: 'claims.view',
+            },
+            {
+                title: 'Payments',
+                href: '/payments',
+                icon: Wallet,
+                requiredPermission: 'payments.view',
+            },
+            {
+                title: 'Commissions',
+                href: '/commissions',
+                icon: BadgePercent,
+                requiredPermission: 'commissions.view',
+            },
+            {
+                title: 'Renewals',
+                href: '/renewals',
+                icon: RefreshCw,
+                requiredPermission: 'renewals.view',
+            },
+        ],
     },
     {
         title: 'Reports',
-        href: '/reports/dashboard',
         icon: BarChart3,
+        items: [
+            {
+                title: 'Reports',
+                href: '/reports/dashboard',
+                icon: BarChart3,
+                requiredPermission: 'reports.view',
+            },
+        ],
     },
 ];
 
@@ -121,38 +186,20 @@ export function AppSidebar() {
     const permissions = ((usePage().props as { auth?: { permissions?: string[] } }).auth?.permissions ?? []);
 
     const can = (permission: string) => permissions.includes(permission);
-    const filteredItems = mainNavItems.filter((item) => {
-        switch (item.title) {
-            case 'Users':
-                return can('users.manage');
-            case 'Clients':
-                return can('clients.view');
-            case 'Underwriters':
-                return can('underwriters.view');
-            case 'Quotations':
-                return can('quotations.view');
-            case 'Policies':
-                return can('policies.view');
-            case 'Medical Risks':
-                return can('medical_risks.view');
-            case 'Motor Risks':
-                return can('motor_risks.view');
-            case 'WIBA Risks':
-                return can('wiba_risks.view');
-            case 'Payments':
-                return can('payments.view');
-            case 'Claims':
-                return can('claims.view');
-            case 'Commissions':
-                return can('commissions.view');
-            case 'Renewals':
-                return can('renewals.view');
-            case 'Reports':
-                return can('reports.view');
-            default:
-                return true;
-        }
-    });
+    const visibleGroups = navGroups
+        .map((group) => ({
+            ...group,
+            items: group.items.filter((item) => {
+                if (!item.requiredPermission) return true;
+                return can(item.requiredPermission);
+            }),
+        }))
+        .filter((group) => group.items.length > 0)
+        .map((group) => ({
+            title: group.title,
+            icon: group.icon,
+            items: group.items.map(({ requiredPermission: _rp, ...item }) => item),
+        }));
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -169,7 +216,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={filteredItems} />
+                <NavMain groups={visibleGroups} />
             </SidebarContent>
 
             <SidebarFooter>

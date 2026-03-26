@@ -17,8 +17,8 @@ const mainSchema = z
     .object({
         name: z.string().trim().min(1).max(255),
         email: z.string().trim().email().max(255),
-        role: z.enum(['admin', 'underwriter', 'claims_officer', 'finance_officer', 'client']),
-        client_id: z.coerce.number().int().positive().optional().nullable(),
+        role: z.string().trim().min(1),
+        client_id: z.number().int().positive().optional().nullable(),
         is_active: z.boolean(),
     })
     .superRefine((d, ctx) => {
@@ -67,12 +67,15 @@ export default function UsersEdit({ user, roles, clients }: Props) {
         { title: user.name, href: `/users/${user.id}/edit` },
     ];
 
+    const defaultRole =
+        (user.role ?? null) ?? roles.find((r) => r.value === 'underwriter')?.value ?? roles[0]?.value ?? 'underwriter';
+
     const mainForm = useForm<MainFormValues>({
         resolver: zodResolver(mainSchema),
         defaultValues: {
             name: user.name,
             email: user.email,
-            role: (user.role as MainFormValues['role']) ?? 'underwriter',
+            role: defaultRole,
             client_id: user.client_id,
             is_active: user.is_active,
         },
@@ -88,15 +91,13 @@ export default function UsersEdit({ user, roles, clients }: Props) {
     const isActive = mainForm.watch('is_active');
 
     const onSaveProfile = (values: MainFormValues) => {
-        const payload: Record<string, unknown> = {
+        const payload = {
             name: values.name,
             email: values.email,
             role: values.role,
             is_active: values.is_active,
+            ...(values.role === 'client' ? { client_id: values.client_id } : {}),
         };
-        if (values.role === 'client') {
-            payload.client_id = values.client_id;
-        }
 
         router.put(`/users/${user.id}`, payload, {
             preserveScroll: true,

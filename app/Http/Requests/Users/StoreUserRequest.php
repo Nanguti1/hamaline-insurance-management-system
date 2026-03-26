@@ -5,6 +5,7 @@ namespace App\Http\Requests\Users;
 use App\Models\Client;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Spatie\Permission\Models\Role;
 
 class StoreUserRequest extends FormRequest
 {
@@ -18,7 +19,11 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $roles = ['admin', 'underwriter', 'claims_officer', 'finance_officer', 'client'];
+        $roles = Role::query()
+            ->where('guard_name', 'web')
+            ->pluck('name')
+            ->values()
+            ->all();
         $emailRule = app()->environment(['local', 'testing']) ? 'email:rfc' : 'email:rfc,dns';
 
         return [

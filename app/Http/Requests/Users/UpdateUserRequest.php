@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Spatie\Permission\Models\Role;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -19,7 +20,11 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $roles = ['admin', 'underwriter', 'claims_officer', 'finance_officer', 'client'];
+        $roles = Role::query()
+            ->where('guard_name', 'web')
+            ->pluck('name')
+            ->values()
+            ->all();
         $emailRule = app()->environment(['local', 'testing']) ? 'email:rfc' : 'email:rfc,dns';
 
         /** @var User|null $target */

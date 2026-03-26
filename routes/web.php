@@ -11,6 +11,7 @@ use App\Http\Controllers\Quotations\QuotationController;
 use App\Http\Controllers\Renewals\RenewalController;
 use App\Http\Controllers\Reports\ReportsController;
 use App\Http\Controllers\Underwriters\UnderwriterController;
+use App\Http\Controllers\Settings\RolesPermissionsController;
 use App\Http\Controllers\Users\UserController;
 use App\Http\Controllers\RiskNotes\MedicalRiskNoteController;
 use App\Http\Controllers\RiskNotes\MotorRiskNoteController;
@@ -54,6 +55,18 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update.patch');
         Route::post('users/{user}/password', [UserController::class, 'resetPassword'])->name('users.password.reset');
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        Route::get('roles-permissions', [RolesPermissionsController::class, 'index'])
+            ->name('roles-permissions.index');
+
+        Route::post('roles-permissions/roles', [RolesPermissionsController::class, 'createRole'])
+            ->name('roles-permissions.roles.store');
+
+        Route::post('roles-permissions/permissions', [RolesPermissionsController::class, 'createPermission'])
+            ->name('roles-permissions.permissions.store');
+
+        Route::put('roles-permissions/roles/{role}/permissions', [RolesPermissionsController::class, 'syncRolePermissions'])
+            ->name('roles-permissions.roles.permissions.sync');
     });
 
     Route::get('clients', [ClientController::class, 'index'])->middleware('permission:clients.view')->name('clients.index');

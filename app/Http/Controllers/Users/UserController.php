@@ -13,23 +13,17 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    private const ROLE_OPTIONS = [
-        ['value' => 'admin', 'label' => 'Admin'],
-        ['value' => 'underwriter', 'label' => 'Underwriter'],
-        ['value' => 'claims_officer', 'label' => 'Claims officer'],
-        ['value' => 'finance_officer', 'label' => 'Finance officer'],
-        ['value' => 'client', 'label' => 'Client'],
-    ];
-
     public function __construct(
         private UserService $users,
     ) {}
 
     public function index(Request $request): Response
     {
+        /** @var \Illuminate\Pagination\LengthAwarePaginator $paginator */
         $paginator = $this->users->paginate([
             'q' => $request->query('q'),
         ]);
@@ -55,7 +49,7 @@ class UserController extends Controller
     public function create(): Response
     {
         return Inertia::render('users/create', [
-            'roles' => self::ROLE_OPTIONS,
+            'roles' => $this->roleOptions(),
             'clients' => $this->clientOptions(),
         ]);
     }
@@ -80,7 +74,7 @@ class UserController extends Controller
                 'role' => $user->getRoleNames()->first(),
                 'client_id' => Client::query()->where('user_id', $user->id)->value('id'),
             ],
-            'roles' => self::ROLE_OPTIONS,
+            'roles' => $this->roleOptions(),
             'clients' => $this->clientOptions($user),
         ]);
     }
@@ -129,5 +123,22 @@ class UserController extends Controller
             'id' => $c->id,
             'label' => $c->display_name.' — '.$c->email,
         ])->values()->all();
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private function roleOptions(): array
+    {
+        return Role::query()
+            ->where('guard_name', 'web')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Role $role) => [
+                'value' => $role->name,
+                'label' => ucwords(str_replace('_', ' ', $role->name)),
+            ])
+            ->values()
+            ->all();
     }
 }
