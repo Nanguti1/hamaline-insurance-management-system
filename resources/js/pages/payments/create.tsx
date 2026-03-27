@@ -19,7 +19,7 @@ export default function PaymentsCreate({ policies }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="New Payment" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <Heading title="New payment" description="Record a premium payment" />
+                <Heading title="New payment" description="Record money received (in) or paid out (out)" />
                 <PaymentForm
                     title="Create payment"
                     submitLabel="Create"

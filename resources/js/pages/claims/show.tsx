@@ -6,6 +6,7 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { formatDate } from '@/lib/date';
 import type { BreadcrumbItem } from '@/types';
 
 type Policy = { policy_number?: string | null };
@@ -69,11 +70,11 @@ export default function ClaimsShow({ claim, documents = [] }: Props) {
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="text-muted-foreground">Loss date</TableCell>
-                                    <TableCell>{claim.loss_date}</TableCell>
+                                    <TableCell>{formatDate(claim.loss_date)}</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="text-muted-foreground">Reported at</TableCell>
-                                    <TableCell>{claim.reported_at}</TableCell>
+                                    <TableCell>{formatDate(claim.reported_at)}</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="text-muted-foreground">Amount</TableCell>

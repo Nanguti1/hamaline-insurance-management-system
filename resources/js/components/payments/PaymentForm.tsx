@@ -13,14 +13,18 @@ import { Textarea } from '@/components/ui/textarea';
 
 export const paymentSchema = z.object({
     policy_id: z.coerce.number().int().min(1),
+    flow: z.enum(['in', 'out']),
     payment_number: z.string().trim().min(1).max(50),
     amount: z.coerce.number().nonnegative(),
     currency: z.string().trim().max(3),
     method: z.string().trim().min(1).max(30),
     status: z.enum(['pending', 'received', 'reversed']),
     paid_at: z.string().trim().optional().or(z.literal('')),
-    reference: z.string().trim().optional().or(z.literal('')),
+    reference: z.string().trim().min(1).max(255),
     notes: z.string().trim().max(2000).optional().or(z.literal('')),
+    proof: z.any().optional().refine((f) => f instanceof File || f === null || f === undefined, {
+        message: 'Attach proof of payment.',
+    }),
 });
 
 export type PaymentFormValues = z.infer<typeof paymentSchema>;
@@ -61,6 +65,7 @@ export default function PaymentForm({
         resolver: zodResolver(paymentSchema) as any,
         defaultValues: {
             policy_id: initialValues?.policy_id ?? 0,
+            flow: initialValues?.flow ?? 'in',
             payment_number: initialValues?.payment_number ?? '',
             amount: initialValues?.amount ?? 0,
             currency: initialValues?.currency ?? 'KES',
@@ -69,14 +74,16 @@ export default function PaymentForm({
             paid_at: initialValues?.paid_at ?? '',
             reference: initialValues?.reference ?? '',
             notes: initialValues?.notes ?? '',
+            proof: undefined,
         },
     });
 
     const policyId = watch('policy_id');
+    const flow = watch('flow');
     const status = watch('status');
 
     const submit = (values: PaymentFormValues) => {
-        const payload = {
+        const payload: Record<string, unknown> = {
             ...values,
             paid_at: values.paid_at ? values.paid_at : null,
             reference: values.reference ? values.reference : null,
@@ -90,11 +97,11 @@ export default function PaymentForm({
         };
 
         if (method === 'post') {
-            router.post(submitUrl, payload, { preserveScroll: true, onError });
+            router.post(submitUrl, payload, { preserveScroll: true, onError, forceFormData: true });
             return;
         }
 
-        router.put(submitUrl, payload, { preserveScroll: true, onError });
+        router.put(submitUrl, payload, { preserveScroll: true, onError, forceFormData: true });
     };
 
     return (
@@ -126,6 +133,29 @@ export default function PaymentForm({
                             </SelectContent>
                         </Select>
                         <InputError message={errors.policy_id?.message} />
+                    </div>
+
+                    <div className="grid gap-2 md:grid-cols-2">
+                        <div className="grid gap-2">
+                            <Label>Payment type</Label>
+                            <Select
+                                value={flow}
+                                onValueChange={(value) =>
+                                    setValue('flow', value as PaymentFormValues['flow'], {
+                                        shouldValidate: true,
+                                    })
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="in">Payment in (from client)</SelectItem>
+                                    <SelectItem value="out">Payment out (to insurer/vendor)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <InputError message={errors.flow?.message as string | undefined} />
+                        </div>
                     </div>
 
                     <div className="grid gap-2">
@@ -187,8 +217,8 @@ export default function PaymentForm({
                             <InputError message={errors.paid_at?.message} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="reference">Reference (optional)</Label>
-                            <Input id="reference" {...register('reference')} placeholder="Bank reference" />
+                            <Label htmlFor="reference">Reference (receipt / MPESA / bank code)</Label>
+                            <Input id="reference" {...register('reference')} placeholder="e.g. QWE123XYZ" />
                             <InputError message={errors.reference?.message} />
                         </div>
                     </div>
@@ -197,6 +227,12 @@ export default function PaymentForm({
                         <Label htmlFor="notes">Notes (optional)</Label>
                         <Textarea id="notes" {...register('notes')} />
                         <InputError message={errors.notes?.message} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="proof">Proof of payment (required)</Label>
+                        <Input id="proof" type="file" onChange={(e) => setValue('proof', e.target.files?.[0] ?? null)} />
+                        <InputError message={(errors as any).proof?.message} />
                     </div>
 
                     <CardFooter className="px-0">

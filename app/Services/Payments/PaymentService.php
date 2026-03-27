@@ -6,6 +6,9 @@ use App\Concerns\TracksUserStamps;
 use App\Models\Payment;
 use App\Services\Access\ResourceAccessService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PaymentService
 {
@@ -21,7 +24,7 @@ class PaymentService
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         $query = Payment::query()->with(['policy.client', 'policy.underwriter']);
-        $this->access->scopePaymentsQuery($query, auth()->user());
+        $this->access->scopePaymentsQuery($query, Auth::user());
 
         $q = $filters['q'] ?? null;
         $status = $filters['status'] ?? null;
@@ -49,9 +52,19 @@ class PaymentService
      */
     public function create(array $data): Payment
     {
+        $proof = $data['proof'] ?? null;
+        if (array_key_exists('proof', $data)) {
+            unset($data['proof']);
+        }
+
         $data = $this->withCreateAudit($this->normalize($data));
-        if (auth()->id()) {
-            $data['received_by'] = auth()->id();
+
+        if ($proof instanceof UploadedFile) {
+            $data = array_merge($data, $this->storeProof($proof));
+        }
+
+        if (Auth::id()) {
+            $data['received_by'] = Auth::id();
         }
 
         return Payment::create($data);
@@ -62,13 +75,31 @@ class PaymentService
      */
     public function update(Payment $payment, array $data): Payment
     {
-        $payment->update($this->withUpdateAudit($this->normalize($data)));
+        $proof = $data['proof'] ?? null;
+        if (array_key_exists('proof', $data)) {
+            unset($data['proof']);
+        }
+
+        $payload = $this->withUpdateAudit($this->normalize($data));
+
+        if ($proof instanceof UploadedFile) {
+            if ($payment->proof_file_path) {
+                Storage::disk('public')->delete($payment->proof_file_path);
+            }
+            $payload = array_merge($payload, $this->storeProof($proof));
+        }
+
+        $payment->update($payload);
 
         return $payment->refresh();
     }
 
     public function delete(Payment $payment): void
     {
+        if ($payment->proof_file_path) {
+            Storage::disk('public')->delete($payment->proof_file_path);
+        }
+
         $payment->delete();
     }
 
@@ -88,5 +119,20 @@ class PaymentService
         }
 
         return $data;
+    }
+
+    /**
+     * @return array{proof_file_path: string, proof_file_name: string, proof_mime_type: string|null, proof_size: int}
+     */
+    private function storeProof(UploadedFile $proof): array
+    {
+        $path = $proof->store('payment-proofs', 'public');
+
+        return [
+            'proof_file_path' => $path,
+            'proof_file_name' => $proof->getClientOriginalName(),
+            'proof_mime_type' => $proof->getClientMimeType(),
+            'proof_size' => $proof->getSize() ?? 0,
+        ];
     }
 }

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatDateRange } from '@/lib/date';
 import type { BreadcrumbItem } from '@/types';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -129,7 +130,7 @@ export default function WibaRiskNotesIndex({ riskNotes, filters }: Props) {
                                 <TableBody>
                                     {riskNotes?.data.map((r) => {
                                         const clientName = r.client?.name ?? r.client?.company_name ?? '-';
-                                        const period = r.start_date && r.end_date ? `${r.start_date} - ${r.end_date}` : '-';
+                                        const period = formatDateRange(r.start_date, r.end_date);
 
                                         return (
                                             <TableRow key={r.id}>

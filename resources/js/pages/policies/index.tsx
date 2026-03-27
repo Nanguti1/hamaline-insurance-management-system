@@ -16,6 +16,7 @@ import {
     DialogHeader,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { formatDateRange } from '@/lib/date';
 import type { BreadcrumbItem } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -175,7 +176,7 @@ export default function PoliciesIndex({ policies, filters }: Props) {
                                                     {Number(p.premium_amount).toFixed(2)} {p.currency}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {p.start_date} - {p.end_date}
+                                                    {formatDateRange(p.start_date, p.end_date)}
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex justify-end gap-2">

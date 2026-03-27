@@ -5,6 +5,7 @@ use App\Http\Controllers\Clients\ClientController;
 use App\Http\Controllers\Commissions\CommissionController;
 use App\Http\Controllers\Documents\ClaimDocumentController;
 use App\Http\Controllers\Documents\PolicyDocumentController;
+use App\Http\Controllers\Documents\RiskNoteDocumentController;
 use App\Http\Controllers\Payments\PaymentController;
 use App\Http\Controllers\Policies\PolicyController;
 use App\Http\Controllers\Quotations\QuotationController;
@@ -154,6 +155,8 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::delete('policies/{policy}/documents/{document}', [PolicyDocumentController::class, 'destroy'])->middleware('permission:policies.manage')->name('policies.documents.destroy');
     Route::post('claims/{claim}/documents', [ClaimDocumentController::class, 'store'])->middleware('permission:claims.manage')->name('claims.documents.store');
     Route::delete('claims/{claim}/documents/{document}', [ClaimDocumentController::class, 'destroy'])->middleware('permission:claims.manage')->name('claims.documents.destroy');
+    Route::post('motor-risks/{motorRiskNote}/documents', [RiskNoteDocumentController::class, 'store'])->middleware('permission:motor_risks.manage')->name('motor-risks.documents.store');
+    Route::delete('motor-risks/{motorRiskNote}/documents/{document}', [RiskNoteDocumentController::class, 'destroy'])->middleware('permission:motor_risks.manage')->name('motor-risks.documents.destroy');
 
     // Medical underwriting workflow
     Route::get('medical-risks', [MedicalRiskNoteController::class, 'index'])

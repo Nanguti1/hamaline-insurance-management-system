@@ -5,12 +5,14 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { formatDate } from '@/lib/date';
 import type { BreadcrumbItem } from '@/types';
 
 type Policy = { policy_number?: string | null };
 
 type Payment = {
     id: number;
+    flow: 'in' | 'out';
     payment_number: string;
     amount: number | string;
     currency: string;
@@ -19,12 +21,13 @@ type Payment = {
     paid_at?: string | null;
     reference?: string | null;
     notes?: string | null;
+    proof_file_name?: string | null;
     policy?: Policy;
 };
 
-type Props = { payment: Payment };
+type Props = { payment: Payment; proofUrl?: string | null };
 
-export default function PaymentsShow({ payment }: Props) {
+export default function PaymentsShow({ payment, proofUrl }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Payments', href: '/payments' },
         { title: payment.payment_number, href: `/payments/${payment.id}` },
@@ -58,16 +61,32 @@ export default function PaymentsShow({ payment }: Props) {
                                     <TableCell>{payment.method}</TableCell>
                                 </TableRow>
                                 <TableRow>
+                                    <TableCell className="text-muted-foreground">Type</TableCell>
+                                    <TableCell>{payment.flow === 'in' ? 'Payment in' : 'Payment out'}</TableCell>
+                                </TableRow>
+                                <TableRow>
                                     <TableCell className="text-muted-foreground">Status</TableCell>
                                     <TableCell className="capitalize">{payment.status}</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="text-muted-foreground">Paid at</TableCell>
-                                    <TableCell>{payment.paid_at ?? '-'}</TableCell>
+                                    <TableCell>{formatDate(payment.paid_at)}</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="text-muted-foreground">Reference</TableCell>
                                     <TableCell>{payment.reference ?? '-'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="text-muted-foreground">Proof</TableCell>
+                                    <TableCell>
+                                        {proofUrl ? (
+                                            <a className="underline" href={proofUrl} target="_blank" rel="noreferrer">
+                                                {payment.proof_file_name ?? 'Open proof'}
+                                            </a>
+                                        ) : (
+                                            '-'
+                                        )}
+                                    </TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="text-muted-foreground">Notes</TableCell>

@@ -11,6 +11,7 @@ type Payment = {
     payment_number: string;
     amount: number | string;
     currency: string;
+    flow: 'in' | 'out';
     method: string;
     status: 'pending' | 'received' | 'reversed';
     paid_at?: string | null;
@@ -49,6 +50,7 @@ export default function PaymentsEdit({ payment, policies }: Props) {
                                 ? payment.amount
                                 : Number(payment.amount),
                         currency: payment.currency,
+                        flow: payment.flow,
                         method: payment.method,
                         status: payment.status,
                         paid_at: payment.paid_at ?? '',

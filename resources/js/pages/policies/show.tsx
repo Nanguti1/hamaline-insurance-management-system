@@ -6,6 +6,7 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { formatDateRange } from '@/lib/date';
 import type { BreadcrumbItem } from '@/types';
 
 type Client = { name?: string | null; company_name?: string | null };
@@ -87,9 +88,7 @@ export default function PoliciesShow({ policy, documents = [] }: Props) {
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="text-muted-foreground">Period</TableCell>
-                                    <TableCell>
-                                        {policy.start_date} - {policy.end_date}
-                                    </TableCell>
+                                    <TableCell>{formatDateRange(policy.start_date, policy.end_date)}</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="text-muted-foreground">Premium</TableCell>

@@ -11,6 +11,8 @@ use App\Services\Access\ResourceAccessService;
 use App\Services\Payments\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -54,16 +56,20 @@ class PaymentController extends Controller
 
     public function show(Payment $payment): Response
     {
-        $this->access->assertCanViewPayment(auth()->user(), $payment);
+        $this->access->assertCanViewPayment(Auth::user(), $payment);
+
+        $payment->load(['policy.client', 'policy.underwriter']);
+        $proofUrl = $payment->proof_file_path ? Storage::url($payment->proof_file_path) : null;
 
         return Inertia::render('payments/show', [
-            'payment' => $payment->load(['policy.client', 'policy.underwriter']),
+            'payment' => $payment,
+            'proofUrl' => $proofUrl,
         ]);
     }
 
     public function edit(Payment $payment): Response
     {
-        $this->access->assertCanViewPayment(auth()->user(), $payment);
+        $this->access->assertCanViewPayment(Auth::user(), $payment);
 
         return Inertia::render('payments/edit', [
             'payment' => $payment->load(['policy.client', 'policy.underwriter']),
@@ -78,7 +84,7 @@ class PaymentController extends Controller
         Payment $payment,
         PaymentService $service
     ): RedirectResponse {
-        $this->access->assertCanViewPayment(auth()->user(), $payment);
+        $this->access->assertCanViewPayment(Auth::user(), $payment);
 
         $service->update($payment, $request->validated());
 
@@ -87,7 +93,7 @@ class PaymentController extends Controller
 
     public function destroy(Payment $payment, PaymentService $service): RedirectResponse
     {
-        $this->access->assertCanViewPayment(auth()->user(), $payment);
+        $this->access->assertCanViewPayment(Auth::user(), $payment);
 
         $service->delete($payment);
 

@@ -12,6 +12,7 @@ class Payment extends Model
 
     protected $fillable = [
         'policy_id',
+        'flow',
         'created_by',
         'updated_by',
         'approved_by',
@@ -24,6 +25,10 @@ class Payment extends Model
         'paid_at',
         'reference',
         'notes',
+        'proof_file_path',
+        'proof_file_name',
+        'proof_mime_type',
+        'proof_size',
     ];
 
     protected $casts = [

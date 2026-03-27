@@ -18,9 +18,12 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class MotorRiskNoteController extends Controller
 {
+    private const REQUIRED_DOCUMENT_LABELS = ['Log book', 'ID copy', 'KRA PIN'];
+
     public function __construct(
         private ResourceAccessService $access,
         private RiskNoteService $riskNoteService,
@@ -85,10 +88,18 @@ class MotorRiskNoteController extends Controller
             'motorDetails',
             'underwritingDecisions',
             'policy',
+            'documents',
         ]);
 
         return Inertia::render('motor-risks/show', [
             'riskNote' => $motorRiskNote,
+            'documents' => $motorRiskNote->documents->map(fn ($doc) => [
+                'id' => $doc->id,
+                'name' => $doc->name,
+                'url' => Storage::url($doc->file_path),
+                'mime_type' => $doc->mime_type,
+                'size' => $doc->size,
+            ])->values(),
         ]);
     }
 
@@ -117,6 +128,18 @@ class MotorRiskNoteController extends Controller
 
         if (! $motorRiskNote->risk_note_content) {
             $this->riskNoteService->generateMotorRiskNoteContent($motorRiskNote);
+        }
+
+        $uploadedLabels = $motorRiskNote->documents()
+            ->pluck('name')
+            ->map(fn ($name) => trim((string) $name))
+            ->all();
+
+        $missing = array_values(array_diff(self::REQUIRED_DOCUMENT_LABELS, $uploadedLabels));
+        if ($missing !== []) {
+            return back()->withErrors([
+                'documents' => 'Upload required documents before submission: '.implode(', ', $missing),
+            ]);
         }
 
         $this->riskNoteService->submitForUnderwriting($motorRiskNote, $user);

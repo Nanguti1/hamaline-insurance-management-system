@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { formatDateRange } from '@/lib/date';
 import type { BreadcrumbItem } from '@/types';
 
 type BenefitAmount = { benefit_type: string; amount: number | string };
@@ -55,7 +56,7 @@ export default function MedicalRiskNoteShow({ riskNote }: Props) {
     ];
 
     const clientName = riskNote.client?.name ?? riskNote.client?.company_name ?? '-';
-    const period = riskNote.start_date && riskNote.end_date ? `${riskNote.start_date} - ${riskNote.end_date}` : '-';
+    const period = formatDateRange(riskNote.start_date, riskNote.end_date);
 
     const members = riskNote.medicalMembers ?? [];
     const principal = useMemo(() => members.find((m) => m.is_principal) ?? null, [members]);

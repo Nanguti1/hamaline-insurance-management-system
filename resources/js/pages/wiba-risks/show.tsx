@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { formatDateRange } from '@/lib/date';
 import type { BreadcrumbItem } from '@/types';
 
 type Props = {
@@ -47,7 +48,7 @@ export default function WibaRiskNoteShow({ riskNote }: Props) {
     const [decisionNotes, setDecisionNotes] = useState('');
     const [cancelReason, setCancelReason] = useState('');
 
-    const period = riskNote.start_date && riskNote.end_date ? `${riskNote.start_date} - ${riskNote.end_date}` : '-';
+    const period = formatDateRange(riskNote.start_date, riskNote.end_date);
     const clientName = riskNote.client?.name ?? riskNote.client?.company_name ?? '-';
 
     const hasPolicy = Boolean(riskNote.policy);

@@ -16,6 +16,7 @@ import {
     DialogHeader,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { formatDate } from '@/lib/date';
 import type { BreadcrumbItem } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,6 +25,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Payments', href: '/payments' }]
 
 type PaymentRow = {
     id: number;
+    flow: 'in' | 'out';
     payment_number: string;
     amount: number | string;
     currency: string;
@@ -150,6 +152,7 @@ export default function PaymentsIndex({ payments, filters }: Props) {
                                         <TableHead>Policy</TableHead>
                                         <TableHead>Amount</TableHead>
                                         <TableHead>Method</TableHead>
+                                        <TableHead>Type</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead>Paid at</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
@@ -164,8 +167,9 @@ export default function PaymentsIndex({ payments, filters }: Props) {
                                                 {Number(pay.amount).toFixed(2)} {pay.currency}
                                             </TableCell>
                                             <TableCell>{pay.method}</TableCell>
+                                            <TableCell>{pay.flow === 'in' ? 'In' : 'Out'}</TableCell>
                                             <TableCell className="capitalize">{pay.status}</TableCell>
-                                            <TableCell>{pay.paid_at ?? '-'}</TableCell>
+                                            <TableCell>{formatDate(pay.paid_at)}</TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Button asChild variant="ghost" size="sm">
