@@ -35,7 +35,7 @@ class StoreReportRunRequest extends FormRequest
 
             'client_type' => ['nullable', Rule::in(['individual', 'corporate'])],
             'policy_type' => ['nullable', Rule::in(['medical', 'motor', 'wiba'])],
-            'status' => ['nullable', Rule::in(['active', 'cancelled', 'lapsed', 'expired', 'renewed'])],
+            'status' => ['nullable', Rule::in(['pending', 'active', 'cancelled', 'lapsed', 'expired', 'renewed'])],
 
             'notes' => ['nullable', 'string', 'max:2000'],
         ];

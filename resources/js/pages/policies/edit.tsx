@@ -7,7 +7,17 @@ import type { BreadcrumbItem } from '@/types';
 
 type ClientOption = { id: number; name?: string | null; company_name?: string | null };
 type UnderwriterOption = { id: number; name?: string | null };
-type QuotationOption = { id: number; quotation_number: string };
+type QuotationOption = {
+    id: number;
+    quotation_number: string;
+    client_id: number;
+    underwriter_id: number;
+    premium_amount: number | string;
+    currency: string;
+    valid_until: string;
+    policy_type?: string | null;
+    notes?: string | null;
+};
 
 type Policy = {
     id: number;
@@ -16,12 +26,19 @@ type Policy = {
     quotation_id?: number | null;
     policy_number: string;
     policy_type?: string | null;
-    status: 'active' | 'lapsed' | 'cancelled' | 'expired' | 'renewed';
+    status:
+        | 'pending'
+        | 'active'
+        | 'lapsed'
+        | 'cancelled'
+        | 'expired'
+        | 'renewed';
     start_date: string;
     end_date: string;
     premium_amount: number | string;
     currency: string;
     notes?: string | null;
+    risk_note_content?: string | null;
 };
 
 type Props = {
@@ -64,6 +81,7 @@ export default function PoliciesEdit({ policy, clients, underwriters, quotations
                                 : Number(policy.premium_amount),
                         currency: policy.currency,
                         notes: policy.notes ?? '',
+                        risk_note_content: policy.risk_note_content ?? '',
                     }}
                     clients={clients.map((c) => ({
                         id: c.id,
@@ -73,13 +91,9 @@ export default function PoliciesEdit({ policy, clients, underwriters, quotations
                         id: u.id,
                         label: u.name ?? 'Underwriter',
                     }))}
-                    quotations={quotations.map((q) => ({
-                        id: q.id,
-                        label: q.quotation_number,
-                    }))}
+                    quotations={quotations}
                 />
             </div>
         </AppLayout>
     );
 }
-

@@ -37,20 +37,21 @@ type PaymentRow = {
 
 type Props = {
     payments?: { data: PaymentRow[]; links?: Array<{ url: string | null; label: string; active: boolean }> };
-    filters?: { q?: string | null; status?: string | null };
+    filters?: { q?: string | null; status?: string | null; flow?: string | null };
 };
 
 export default function PaymentsIndex({ payments, filters }: Props) {
     const [q, setQ] = useState(filters?.q ?? '');
     const [status, setStatus] = useState<string>(filters?.status ?? '');
+    const [flow, setFlow] = useState<string>(filters?.flow ?? '');
 
     const emptyState = !payments || payments.data.length === 0;
     const resultCount = payments?.data.length ?? 0;
 
     const pageTitle = useMemo(() => {
-        if (!q && !status) return 'Payments';
+        if (!q && !status && !flow) return 'Payments';
         return 'Payments • Filtered';
-    }, [q, status]);
+    }, [q, status, flow]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -69,12 +70,16 @@ export default function PaymentsIndex({ payments, filters }: Props) {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <form
-                            className="grid gap-4 md:grid-cols-3"
+                            className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
                             onSubmit={(e) => {
                                 e.preventDefault();
                                 router.get(
                                     '/payments',
-                                    { q: q || undefined, status: status || undefined },
+                                    {
+                                        q: q || undefined,
+                                        status: status || undefined,
+                                        flow: flow || undefined,
+                                    },
                                     { preserveState: true, replace: true },
                                 );
                             }}
@@ -107,7 +112,24 @@ export default function PaymentsIndex({ payments, filters }: Props) {
                                 </Select>
                             </div>
 
-                            <div className="flex items-end gap-2">
+                            <div className="grid gap-2">
+                                <Label>Payment direction</Label>
+                                <Select
+                                    value={flow || 'all'}
+                                    onValueChange={(value) => setFlow(value === 'all' ? '' : value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="All" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All directions</SelectItem>
+                                        <SelectItem value="in">In (from client)</SelectItem>
+                                        <SelectItem value="out">Out (to insurer/vendor)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="flex items-end gap-2 lg:col-span-1">
                                 <Button type="submit">Search</Button>
                                 <Button
                                     type="button"
@@ -115,6 +137,7 @@ export default function PaymentsIndex({ payments, filters }: Props) {
                                     onClick={() => {
                                         setQ('');
                                         setStatus('');
+                                        setFlow('');
                                         router.get('/payments', {}, { replace: true });
                                     }}
                                 >

@@ -18,6 +18,9 @@ type Quotation = {
     currency: string;
     valid_until: string;
     notes?: string | null;
+    policy_type?: string | null;
+    payment_plan?: string | null;
+    installment_count?: number | null;
 };
 
 type Props = {
@@ -57,8 +60,11 @@ export default function QuotationsEdit({ quotation, clients, underwriters }: Pro
                                 ? quotation.premium_amount
                                 : Number(quotation.premium_amount),
                         currency: quotation.currency,
-                        valid_until: quotation.valid_until,
+                        valid_until: quotation.valid_until?.slice(0, 10) ?? quotation.valid_until,
                         notes: quotation.notes ?? '',
+                        policy_type: quotation.policy_type ?? '',
+                        payment_plan: (quotation.payment_plan as 'one_off' | 'installments') ?? 'one_off',
+                        installment_count: quotation.installment_count ?? undefined,
                     }}
                     clients={clients.map((c) => ({
                         id: c.id,
@@ -73,4 +79,3 @@ export default function QuotationsEdit({ quotation, clients, underwriters }: Pro
         </AppLayout>
     );
 }
-

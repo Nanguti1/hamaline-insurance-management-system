@@ -19,7 +19,7 @@ class PaymentService
     ) {}
 
     /**
-     * @param  array{q?: string|null,status?: string|null}  $filters
+     * @param  array{q?: string|null,status?: string|null,flow?: string|null}  $filters
      */
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
@@ -28,9 +28,14 @@ class PaymentService
 
         $q = $filters['q'] ?? null;
         $status = $filters['status'] ?? null;
+        $flow = $filters['flow'] ?? null;
 
         if ($status && in_array($status, ['pending', 'received', 'reversed'], true)) {
             $query->where('status', $status);
+        }
+
+        if ($flow && in_array($flow, ['in', 'out'], true)) {
+            $query->where('flow', $flow);
         }
 
         if ($q) {

@@ -23,11 +23,15 @@ class Quotation extends Model
         'currency',
         'valid_until',
         'notes',
+        'policy_type',
+        'payment_plan',
+        'installment_count',
     ];
 
     protected $casts = [
         'valid_until' => 'date',
         'premium_amount' => 'decimal:2',
+        'installment_count' => 'integer',
     ];
 
     public function client(): BelongsTo

@@ -100,6 +100,7 @@ export default function PoliciesIndex({ policies, filters }: Props) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All statuses</SelectItem>
+                                        <SelectItem value="pending">Pending</SelectItem>
                                         <SelectItem value="active">Active</SelectItem>
                                         <SelectItem value="lapsed">Lapsed</SelectItem>
                                         <SelectItem value="cancelled">Cancelled</SelectItem>

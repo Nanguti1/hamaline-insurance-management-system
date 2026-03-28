@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -18,18 +19,31 @@ export const policySchema = z
         quotation_id: z.coerce.number().int().min(0),
         policy_number: z.string().trim().min(1).max(50),
         policy_type: z.string().trim().max(100).optional().or(z.literal('')),
-        status: z.enum(['active', 'lapsed', 'cancelled', 'expired', 'renewed']),
+        status: z.enum(['pending', 'active', 'lapsed', 'cancelled', 'expired', 'renewed']),
         start_date: z.string().trim().min(1),
         end_date: z.string().trim().min(1),
         premium_amount: z.coerce.number().nonnegative(),
         currency: z.string().trim().max(3),
         notes: z.string().trim().max(5000).optional().or(z.literal('')),
+        risk_note_content: z.string().trim().max(65000).optional().or(z.literal('')),
     })
     .strict();
 
 export type PolicyFormValues = z.infer<typeof policySchema>;
 
 type SelectOption = { id: number; label: string };
+
+export type QuotationDetailOption = {
+    id: number;
+    quotation_number: string;
+    client_id: number;
+    underwriter_id: number;
+    premium_amount: number | string;
+    currency: string;
+    valid_until: string;
+    policy_type?: string | null;
+    notes?: string | null;
+};
 
 type Props = {
     title: string;
@@ -41,10 +55,11 @@ type Props = {
         quotation_id?: number | null;
         policy_type?: string | null;
         notes?: string | null;
+        risk_note_content?: string | null;
     };
     clients: SelectOption[];
     underwriters: SelectOption[];
-    quotations: SelectOption[];
+    quotations: QuotationDetailOption[];
 };
 
 export default function PolicyForm({
@@ -73,12 +88,13 @@ export default function PolicyForm({
             quotation_id: initialValues?.quotation_id ?? 0,
             policy_number: initialValues?.policy_number ?? '',
             policy_type: initialValues?.policy_type ?? '',
-            status: initialValues?.status ?? 'active',
+            status: initialValues?.status ?? 'pending',
             start_date: initialValues?.start_date ?? '',
             end_date: initialValues?.end_date ?? '',
             premium_amount: initialValues?.premium_amount ?? 0,
             currency: initialValues?.currency ?? 'KES',
             notes: initialValues?.notes ?? '',
+            risk_note_content: initialValues?.risk_note_content ?? '',
         },
     });
 
@@ -87,12 +103,53 @@ export default function PolicyForm({
     const quotationId = watch('quotation_id');
     const status = watch('status');
 
+    const filteredQuotations = useMemo(
+        () =>
+            quotations.filter(
+                (q) => q.client_id === clientId && q.underwriter_id === underwriterId,
+            ),
+        [quotations, clientId, underwriterId],
+    );
+
+    useEffect(() => {
+        if (!quotationId) {
+            return;
+        }
+        const q = quotations.find((x) => x.id === quotationId);
+        if (!q || q.client_id !== clientId || q.underwriter_id !== underwriterId) {
+            setValue('quotation_id', 0, { shouldValidate: true });
+        }
+    }, [clientId, underwriterId, quotationId, quotations, setValue]);
+
+    useEffect(() => {
+        if (!quotationId) {
+            return;
+        }
+        const q = quotations.find((x) => x.id === quotationId);
+        if (!q) {
+            return;
+        }
+        setValue('premium_amount', Number(q.premium_amount), { shouldValidate: true });
+        setValue('currency', q.currency, { shouldValidate: true });
+        if (q.policy_type) {
+            setValue('policy_type', q.policy_type, { shouldValidate: true });
+        }
+        const vu = q.valid_until?.slice(0, 10);
+        if (vu) {
+            setValue('end_date', vu, { shouldValidate: true });
+        }
+        if (q.notes) {
+            setValue('notes', q.notes, { shouldValidate: true });
+        }
+    }, [quotationId, quotations, setValue]);
+
     const submit = (values: PolicyFormValues) => {
         const payload = {
             ...values,
             quotation_id: values.quotation_id ? values.quotation_id : null,
             policy_type: values.policy_type ? values.policy_type : null,
             notes: values.notes ? values.notes : null,
+            risk_note_content: values.risk_note_content ? values.risk_note_content : null,
         };
 
         const onError = (serverErrors: Record<string, unknown>) => {
@@ -187,13 +244,18 @@ export default function PolicyForm({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="0">No quotation</SelectItem>
-                                {quotations.map((q) => (
+                                {filteredQuotations.map((q) => (
                                     <SelectItem key={q.id} value={String(q.id)}>
-                                        {q.label}
+                                        {q.quotation_number}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
+                        {clientId > 0 && underwriterId > 0 && filteredQuotations.length === 0 && (
+                            <p className="text-xs text-muted-foreground">
+                                No quotations for this client and underwriter. Fields below can be filled manually.
+                            </p>
+                        )}
                         <InputError message={errors.quotation_id?.message} />
                     </div>
 
@@ -209,7 +271,7 @@ export default function PolicyForm({
 
                     <div className="grid gap-2">
                         <Label htmlFor="policy_type">Policy type (optional)</Label>
-                        <Input id="policy_type" {...register('policy_type')} />
+                        <Input id="policy_type" {...register('policy_type')} placeholder="e.g. motor, medical" />
                         <InputError message={errors.policy_type?.message} />
                     </div>
 
@@ -227,6 +289,7 @@ export default function PolicyForm({
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>
                                 <SelectItem value="lapsed">Lapsed</SelectItem>
                                 <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -269,6 +332,17 @@ export default function PolicyForm({
                     </div>
 
                     <div className="grid gap-2">
+                        <Label htmlFor="risk_note_content">Risk note details</Label>
+                        <Textarea
+                            id="risk_note_content"
+                            rows={8}
+                            placeholder="Cover details, sums insured, and wording that should appear on the risk note…"
+                            {...register('risk_note_content')}
+                        />
+                        <InputError message={errors.risk_note_content?.message} />
+                    </div>
+
+                    <div className="grid gap-2">
                         <Label htmlFor="notes">Notes (optional)</Label>
                         <Textarea id="notes" {...register('notes')} />
                         <InputError message={errors.notes?.message} />
@@ -294,4 +368,3 @@ export default function PolicyForm({
         </Card>
     );
 }
-

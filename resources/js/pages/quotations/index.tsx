@@ -162,7 +162,7 @@ export default function QuotationsIndex({ quotations, filters }: Props) {
                                     <TableRow>
                                         <TableHead>Quotation</TableHead>
                                         <TableHead>Client</TableHead>
-                                        <TableHead>Underwriter</TableHead>
+                                        <TableHead>Company</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead>Premium</TableHead>
                                         <TableHead>Valid until</TableHead>

@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -42,7 +43,7 @@ type Props = {
         period_end?: string | null;
         paid_at?: string | null;
     };
-    policies: SelectOption[];
+    policies: PolicyOption[];
     underwriters: SelectOption[];
 };
 
@@ -83,6 +84,18 @@ export default function CommissionForm({
     const policyId = watch('policy_id');
     const underwriterId = watch('underwriter_id');
     const status = watch('status');
+
+    useEffect(() => {
+        const p = policies.find((x) => x.id === policyId);
+        if (!p) {
+            return;
+        }
+        const premium = Number(p.premium_amount);
+        setValue('underwriter_id', p.underwriter_id, { shouldValidate: true });
+        setValue('percentage', 10, { shouldValidate: true });
+        setValue('amount', Math.round(premium * 0.1 * 100) / 100, { shouldValidate: true });
+        setValue('currency', p.currency, { shouldValidate: true });
+    }, [policyId, policies, setValue]);
 
     const submit = (values: CommissionFormValues) => {
         const payload = {
@@ -171,19 +184,28 @@ export default function CommissionForm({
 
                     <div className="grid gap-2 md:grid-cols-3">
                         <div className="grid gap-2 md:col-span-2">
-                            <Label htmlFor="percentage">Percentage (optional)</Label>
+                            <Label htmlFor="percentage">Percentage (fixed)</Label>
                             <Input
                                 id="percentage"
                                 type="number"
                                 step="0.01"
+                                readOnly
+                                className="bg-muted"
                                 {...register('percentage')}
-                                placeholder="e.g. 5.00"
+                                placeholder="10"
                             />
                             <InputError message={errors.percentage?.message} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="amount">Amount</Label>
-                            <Input id="amount" type="number" step="0.01" {...register('amount')} />
+                            <Label htmlFor="amount">Amount (10% of premium)</Label>
+                            <Input
+                                id="amount"
+                                type="number"
+                                step="0.01"
+                                readOnly
+                                className="bg-muted"
+                                {...register('amount')}
+                            />
                             <InputError message={errors.amount?.message} />
                         </div>
                     </div>

@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useRef } from 'react';
 
 import AppLayout from '@/layouts/app-layout';
 import Heading from '@/components/heading';
@@ -23,10 +23,27 @@ type Policy = {
     premium_amount: number | string;
     currency: string;
     notes?: string | null;
+    risk_note_content?: string | null;
     client?: Client;
     underwriter?: Underwriter;
     quotation?: Quotation | null;
 };
+
+type LinkedRiskNote = {
+    id: number;
+    line_type: string;
+    risk_note_number: string;
+};
+
+function riskNoteHref(rn: LinkedRiskNote): string {
+    if (rn.line_type === 'medical') {
+        return `/medical-risks/${rn.id}`;
+    }
+    if (rn.line_type === 'wiba') {
+        return `/wiba-risks/${rn.id}`;
+    }
+    return `/motor-risks/${rn.id}`;
+}
 
 type DocumentItem = {
     id: number;
@@ -39,10 +56,11 @@ type DocumentItem = {
 type Props = {
     policy: Policy;
     documents?: DocumentItem[];
+    linkedRiskNote?: LinkedRiskNote | null;
 };
 
-export default function PoliciesShow({ policy, documents = [] }: Props) {
-    const [file, setFile] = useState<File | null>(null);
+export default function PoliciesShow({ policy, documents = [], linkedRiskNote = null }: Props) {
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const canManage = ((usePage().props as { auth?: { permissions?: string[] } }).auth?.permissions ?? []).includes('policies.manage');
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -96,6 +114,28 @@ export default function PoliciesShow({ policy, documents = [] }: Props) {
                                         {Number(policy.premium_amount).toFixed(2)} {policy.currency}
                                     </TableCell>
                                 </TableRow>
+                                {linkedRiskNote && (
+                                    <TableRow>
+                                        <TableCell className="text-muted-foreground">Risk note</TableCell>
+                                        <TableCell>
+                                            <Button variant="link" className="h-auto p-0" asChild>
+                                                <Link href={riskNoteHref(linkedRiskNote)}>
+                                                    {linkedRiskNote.risk_note_number}
+                                                </Link>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                                <TableRow>
+                                    <TableCell className="align-top text-muted-foreground">
+                                        Risk note details
+                                    </TableCell>
+                                    <TableCell className="whitespace-pre-line">
+                                        {policy.risk_note_content?.trim()
+                                            ? policy.risk_note_content
+                                            : '-'}
+                                    </TableCell>
+                                </TableRow>
                                 <TableRow>
                                     <TableCell className="text-muted-foreground">Notes</TableCell>
                                     <TableCell className="whitespace-pre-line">
@@ -111,23 +151,27 @@ export default function PoliciesShow({ policy, documents = [] }: Props) {
                             {canManage && (
                                 <div className="flex items-center gap-2">
                                     <input
+                                        ref={fileInputRef}
                                         type="file"
-                                        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                                        className="text-sm"
+                                        multiple
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files ?? []);
+                                            if (files.length === 0) return;
+
+                                            const form = new FormData();
+                                            files.forEach((file) => form.append('documents[]', file));
+
+                                            router.post(`/policies/${policy.id}/documents`, form, {
+                                                onSuccess: () => {
+                                                    if (fileInputRef.current) fileInputRef.current.value = '';
+                                                },
+                                            });
+                                        }}
+                                        className="hidden"
                                     />
                                     <Button
                                         size="sm"
-                                        onClick={() => {
-                                            if (!file) return;
-                                            router.post(
-                                                `/policies/${policy.id}/documents`,
-                                                { document: file },
-                                                {
-                                                    forceFormData: true,
-                                                    onSuccess: () => setFile(null),
-                                                },
-                                            );
-                                        }}
+                                        onClick={() => fileInputRef.current?.click()}
                                     >
                                         Upload document
                                     </Button>

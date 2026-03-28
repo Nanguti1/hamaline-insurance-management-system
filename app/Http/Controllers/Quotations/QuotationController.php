@@ -9,10 +9,12 @@ use App\Models\Client;
 use App\Models\Quotation;
 use App\Models\Underwriter;
 use App\Services\Access\ResourceAccessService;
+use App\Mail\QuotationIssuedMail;
 use App\Services\Quotations\QuotationService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -51,6 +53,12 @@ class QuotationController extends Controller
     public function store(StoreQuotationRequest $request, QuotationService $service): RedirectResponse
     {
         $quotation = $service->create($request->validated());
+        $quotation->load(['client', 'underwriter']);
+
+        $email = $quotation->client?->email;
+        if (is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Mail::to($email)->send(new QuotationIssuedMail($quotation));
+        }
 
         return to_route('quotations.show', $quotation);
     }

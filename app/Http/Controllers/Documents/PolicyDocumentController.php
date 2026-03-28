@@ -21,20 +21,33 @@ class PolicyDocumentController extends Controller
         $this->access->assertCanViewPolicy($request->user(), $policy);
 
         $validated = $request->validate([
-            'document' => ['required', 'file', 'max:10240'],
+            'documents' => ['nullable', 'array', 'min:1'],
+            'documents.*' => ['file', 'max:10240'],
+            'document' => ['nullable', 'file', 'max:10240'],
             'name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $file = $validated['document'];
-        $path = $file->store('policy-documents', 'public');
+        /** @var array<int, \Illuminate\Http\UploadedFile> $files */
+        $files = $request->file('documents', []);
+        if (empty($files) && $request->hasFile('document')) {
+            $files = [$request->file('document')];
+        }
 
-        $policy->documents()->create([
-            'uploaded_by' => $request->user()?->id,
-            'name' => $validated['name'] ?: $file->getClientOriginalName(),
-            'file_path' => $path,
-            'mime_type' => $file->getClientMimeType(),
-            'size' => $file->getSize() ?? 0,
-        ]);
+        if (empty($files)) {
+            return back()->withErrors(['documents' => 'Please select at least one file to upload.']);
+        }
+
+        foreach ($files as $file) {
+            $path = $file->store('policy-documents', 'public');
+
+            $policy->documents()->create([
+                'uploaded_by' => $request->user()?->id,
+                'name' => ($validated['name'] ?? null) ?: $file->getClientOriginalName(),
+                'file_path' => $path,
+                'mime_type' => $file->getClientMimeType(),
+                'size' => $file->getSize() ?? 0,
+            ]);
+        }
 
         return back();
     }

@@ -34,6 +34,9 @@ class UpdateQuotationRequest extends FormRequest
             'currency' => ['required', 'string', 'max:3'],
             'valid_until' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'policy_type' => ['nullable', 'string', Rule::in(['motor', 'medical', 'wiba', 'other'])],
+            'payment_plan' => ['required', Rule::in(['one_off', 'installments'])],
+            'installment_count' => ['nullable', 'integer', 'min:2', 'max:120', 'required_if:payment_plan,installments'],
         ];
     }
 }

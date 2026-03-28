@@ -22,7 +22,13 @@ type Commission = {
 
 type Props = {
     commission: Commission;
-    policies: Array<{ id: number; policy_number: string }>;
+    policies: Array<{
+        id: number;
+        policy_number: string;
+        premium_amount: number | string;
+        currency: string;
+        underwriter_id: number;
+    }>;
     underwriters: Array<{ id: number; name: string }>;
 };
 
@@ -71,6 +77,9 @@ export default function CommissionsEdit({ commission, policies, underwriters }: 
                     policies={policies.map((p) => ({
                         id: p.id,
                         label: p.policy_number,
+                        premium_amount: p.premium_amount,
+                        currency: p.currency,
+                        underwriter_id: p.underwriter_id,
                     }))}
                     underwriters={underwriters.map((u) => ({
                         id: u.id,

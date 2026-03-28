@@ -7,7 +7,17 @@ import type { BreadcrumbItem } from '@/types';
 
 type ClientOption = { id: number; name?: string | null; company_name?: string | null };
 type UnderwriterOption = { id: number; name?: string | null };
-type QuotationOption = { id: number; quotation_number: string };
+type QuotationOption = {
+    id: number;
+    quotation_number: string;
+    client_id: number;
+    underwriter_id: number;
+    premium_amount: number | string;
+    currency: string;
+    valid_until: string;
+    policy_type?: string | null;
+    notes?: string | null;
+};
 
 type Props = {
     clients: ClientOption[];
@@ -40,13 +50,9 @@ export default function PoliciesCreate({ clients, underwriters, quotations }: Pr
                         id: u.id,
                         label: u.name ?? 'Underwriter',
                     }))}
-                    quotations={quotations.map((q) => ({
-                        id: q.id,
-                        label: q.quotation_number,
-                    }))}
+                    quotations={quotations}
                 />
             </div>
         </AppLayout>
     );
 }
-

@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useRef } from 'react';
 
 import AppLayout from '@/layouts/app-layout';
 import Heading from '@/components/heading';
@@ -38,7 +38,7 @@ type Props = {
 };
 
 export default function ClaimsShow({ claim, documents = [] }: Props) {
-    const [file, setFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const canManage = ((usePage().props as { auth?: { permissions?: string[] } }).auth?.permissions ?? []).includes('claims.manage');
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -99,23 +99,27 @@ export default function ClaimsShow({ claim, documents = [] }: Props) {
                             {canManage && (
                                 <div className="flex items-center gap-2">
                                     <input
+                                        ref={fileInputRef}
                                         type="file"
-                                        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                                        className="text-sm"
+                                        multiple
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files ?? []);
+                                            if (files.length === 0) return;
+
+                                            const form = new FormData();
+                                            files.forEach((file) => form.append('documents[]', file));
+
+                                            router.post(`/claims/${claim.id}/documents`, form, {
+                                                onSuccess: () => {
+                                                    if (fileInputRef.current) fileInputRef.current.value = '';
+                                                },
+                                            });
+                                        }}
+                                        className="hidden"
                                     />
                                     <Button
                                         size="sm"
-                                        onClick={() => {
-                                            if (!file) return;
-                                            router.post(
-                                                `/claims/${claim.id}/documents`,
-                                                { document: file },
-                                                {
-                                                    forceFormData: true,
-                                                    onSuccess: () => setFile(null),
-                                                },
-                                            );
-                                        }}
+                                        onClick={() => fileInputRef.current?.click()}
                                     >
                                         Upload document
                                     </Button>

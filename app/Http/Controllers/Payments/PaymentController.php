@@ -27,6 +27,7 @@ class PaymentController extends Controller
         $payments = $service->paginate([
             'q' => $request->query('q'),
             'status' => $request->query('status'),
+            'flow' => $request->query('flow'),
         ]);
 
         return Inertia::render('payments/index', [
@@ -34,6 +35,7 @@ class PaymentController extends Controller
             'filters' => [
                 'q' => $request->query('q'),
                 'status' => $request->query('status'),
+                'flow' => $request->query('flow'),
             ],
         ]);
     }

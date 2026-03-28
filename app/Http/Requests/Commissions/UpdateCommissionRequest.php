@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Commissions;
 
 use App\Models\Commission;
+use App\Models\Policy;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -11,6 +12,26 @@ class UpdateCommissionRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $policyId = (int) $this->input('policy_id');
+        if ($policyId <= 0) {
+            return;
+        }
+
+        $policy = Policy::query()->find($policyId);
+        if (! $policy) {
+            return;
+        }
+
+        $this->merge([
+            'percentage' => 10,
+            'amount' => round((float) $policy->premium_amount * 0.1, 2),
+            'currency' => $policy->currency,
+            'underwriter_id' => $policy->underwriter_id,
+        ]);
     }
 
     /**

@@ -11,20 +11,51 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
-export const quotationSchema = z
-    .object({
-        client_id: z.coerce.number().int().min(1),
-        underwriter_id: z.coerce.number().int().min(1),
-        quotation_number: z.string().trim().min(1).max(50),
-        status: z.enum(['draft', 'issued', 'approved', 'rejected', 'expired']),
-        premium_amount: z.coerce.number().nonnegative(),
-        currency: z.string().trim().max(3).default('KES'),
-        valid_until: z.string().trim().min(1),
-        notes: z.string().trim().max(2000).optional().or(z.literal('')),
-    })
-    .strict();
+const policyTypeOptions = ['motor', 'medical', 'wiba', 'other'] as const;
+const policyTypeSelectValues = [...policyTypeOptions, '_unspecified'] as const;
 
-export type QuotationFormValues = z.infer<typeof quotationSchema>;
+function buildQuotationSchema(method: 'post' | 'put') {
+    return z
+        .object({
+            client_id: z.coerce.number().int().min(1),
+            underwriter_id: z.coerce.number().int().min(1),
+            quotation_number:
+                method === 'put'
+                    ? z.string().trim().min(1).max(50)
+                    : z.string().trim().max(50).optional().or(z.literal('')),
+            status: z.enum(['draft', 'issued', 'approved', 'rejected', 'expired']),
+            premium_amount: z.coerce.number().nonnegative(),
+            currency: z.string().trim().max(3).default('KES'),
+            valid_until: z.string().trim().min(1),
+            notes: z.string().trim().max(2000).optional().or(z.literal('')),
+            policy_type: z.enum(policyTypeSelectValues),
+            payment_plan: z.enum(['one_off', 'installments']),
+            installment_count: z.preprocess(
+                (val) => {
+                    if (val === '' || val === undefined || val === null) {
+                        return undefined;
+                    }
+                    const n = Number(val);
+                    return Number.isNaN(n) ? undefined : n;
+                },
+                z.number().int().min(2).max(120).optional(),
+            ),
+        })
+        .superRefine((data, ctx) => {
+            if (data.payment_plan === 'installments') {
+                const c = data.installment_count;
+                if (c === undefined || c < 2) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: 'Enter the number of installments (at least 2).',
+                        path: ['installment_count'],
+                    });
+                }
+            }
+        });
+}
+
+export type QuotationFormValues = z.infer<ReturnType<typeof buildQuotationSchema>>;
 
 type SelectOption = {
     id: number;
@@ -43,6 +74,7 @@ type Props = {
         premium_amount?: number | null;
         notes?: string | null;
         currency?: string | null;
+        policy_type?: string | null;
     };
     clients: SelectOption[];
     underwriters: SelectOption[];
@@ -58,6 +90,8 @@ export default function QuotationForm({
     clients,
     underwriters,
 }: Props) {
+    const schema = buildQuotationSchema(method);
+
     const {
         register,
         setValue,
@@ -66,7 +100,7 @@ export default function QuotationForm({
         formState: { errors, isSubmitting },
         setError,
     } = useForm<QuotationFormValues>({
-        resolver: zodResolver(quotationSchema) as any,
+        resolver: zodResolver(schema) as any,
         defaultValues: {
             client_id: initialValues?.client_id ?? 0,
             underwriter_id: initialValues?.underwriter_id ?? 0,
@@ -76,18 +110,42 @@ export default function QuotationForm({
             currency: initialValues?.currency ?? 'KES',
             valid_until: initialValues?.valid_until ?? '',
             notes: initialValues?.notes ?? '',
+            policy_type:
+                initialValues?.policy_type && initialValues.policy_type !== ''
+                    ? (initialValues.policy_type as QuotationFormValues['policy_type'])
+                    : '_unspecified',
+            payment_plan: initialValues?.payment_plan ?? 'one_off',
+            installment_count: initialValues?.installment_count ?? undefined,
         },
     });
 
     const clientId = watch('client_id');
     const underwriterId = watch('underwriter_id');
     const status = watch('status');
+    const paymentPlan = watch('payment_plan');
 
     const submit = (values: QuotationFormValues) => {
-        const payload = {
-            ...values,
+        const payload: Record<string, unknown> = {
+            client_id: values.client_id,
+            underwriter_id: values.underwriter_id,
+            status: values.status,
+            premium_amount: values.premium_amount,
+            currency: values.currency,
+            valid_until: values.valid_until,
             notes: values.notes ? values.notes : null,
+            policy_type: values.policy_type === '_unspecified' ? null : values.policy_type,
+            payment_plan: values.payment_plan,
+            installment_count:
+                values.payment_plan === 'installments' && values.installment_count && !Number.isNaN(values.installment_count)
+                    ? values.installment_count
+                    : null,
         };
+
+        if (method === 'put') {
+            payload.quotation_number = values.quotation_number;
+        } else if (values.quotation_number && String(values.quotation_number).trim() !== '') {
+            payload.quotation_number = String(values.quotation_number).trim();
+        }
 
         const onError = (serverErrors: Record<string, unknown>) => {
             Object.entries(serverErrors).forEach(([key, message]) => {
@@ -143,7 +201,7 @@ export default function QuotationForm({
                     </div>
 
                     <div className="grid gap-2">
-                        <Label>Underwriter</Label>
+                        <Label>Company (insurer)</Label>
                         <Select
                             value={underwriterId ? String(underwriterId) : ''}
                             onValueChange={(value) => {
@@ -153,7 +211,7 @@ export default function QuotationForm({
                             }}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Select underwriter" />
+                                <SelectValue placeholder="Select company" />
                             </SelectTrigger>
                             <SelectContent>
                                 {underwriters.map((u) => (
@@ -166,14 +224,40 @@ export default function QuotationForm({
                         <InputError message={errors.underwriter_id?.message} />
                     </div>
 
+                    {method === 'put' ? (
+                        <div className="grid gap-2">
+                            <Label htmlFor="quotation_number">Quotation number</Label>
+                            <Input id="quotation_number" {...register('quotation_number')} />
+                            <InputError message={errors.quotation_number?.message} />
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground">
+                            Quotation number will be assigned automatically when you create this quote.
+                        </p>
+                    )}
+
                     <div className="grid gap-2">
-                        <Label htmlFor="quotation_number">Quotation number</Label>
-                        <Input
-                            id="quotation_number"
-                            placeholder="e.g. QTN-0001"
-                            {...register('quotation_number')}
-                        />
-                        <InputError message={errors.quotation_number?.message} />
+                        <Label>Type of policy</Label>
+                        <Select
+                            value={String(watch('policy_type'))}
+                            onValueChange={(value) =>
+                                setValue('policy_type', value as QuotationFormValues['policy_type'], {
+                                    shouldValidate: true,
+                                })
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="_unspecified">Not specified</SelectItem>
+                                <SelectItem value="motor">Motor</SelectItem>
+                                <SelectItem value="medical">Medical</SelectItem>
+                                <SelectItem value="wiba">WIBA</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <InputError message={errors.policy_type?.message as string | undefined} />
                     </div>
 
                     <div className="grid gap-2">
@@ -218,6 +302,46 @@ export default function QuotationForm({
                         </div>
                     </div>
 
+                    <div className="grid gap-2 md:grid-cols-2">
+                        <div className="grid gap-2">
+                            <Label>Payment terms</Label>
+                            <Select
+                                value={paymentPlan}
+                                onValueChange={(value) => {
+                                    setValue('payment_plan', value as QuotationFormValues['payment_plan'], {
+                                        shouldValidate: true,
+                                    });
+                                    if (value === 'one_off') {
+                                        setValue('installment_count', undefined, { shouldValidate: true });
+                                    }
+                                }}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="one_off">One-off payment</SelectItem>
+                                    <SelectItem value="installments">Installments (equal amounts)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <InputError message={errors.payment_plan?.message} />
+                        </div>
+                        {paymentPlan === 'installments' && (
+                            <div className="grid gap-2">
+                                <Label htmlFor="installment_count">Number of installments</Label>
+                                <Input
+                                    id="installment_count"
+                                    type="number"
+                                    min={2}
+                                    step={1}
+                                    placeholder="e.g. 12"
+                                    {...register('installment_count')}
+                                />
+                                <InputError message={errors.installment_count?.message} />
+                            </div>
+                        )}
+                    </div>
+
                     <div className="grid gap-2">
                         <Label htmlFor="valid_until">Valid until</Label>
                         <Input id="valid_until" type="date" {...register('valid_until')} />
@@ -250,4 +374,3 @@ export default function QuotationForm({
         </Card>
     );
 }
-

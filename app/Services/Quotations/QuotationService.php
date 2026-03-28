@@ -48,7 +48,13 @@ class QuotationService
      */
     public function create(array $data): Quotation
     {
-        return Quotation::create($this->withCreateAudit($this->normalize($data)));
+        $data = $this->normalize($data);
+
+        if (empty($data['quotation_number'] ?? null)) {
+            $data['quotation_number'] = $this->nextQuotationNumber();
+        }
+
+        return Quotation::create($this->withCreateAudit($data));
     }
 
     /**
@@ -72,7 +78,7 @@ class QuotationService
      */
     private function normalize(array $data): array
     {
-        foreach (['notes'] as $key) {
+        foreach (['notes', 'policy_type'] as $key) {
             if (array_key_exists($key, $data) && is_string($data[$key])) {
                 $data[$key] = trim($data[$key]);
                 if ($data[$key] === '') {
@@ -81,6 +87,24 @@ class QuotationService
             }
         }
 
+        $plan = $data['payment_plan'] ?? 'one_off';
+        if ($plan !== 'installments') {
+            $data['installment_count'] = null;
+        }
+
         return $data;
+    }
+
+    private function nextQuotationNumber(): string
+    {
+        $i = (int) Quotation::query()->max('id') + 1;
+
+        do {
+            $candidate = sprintf('QTN-%05d', $i);
+            if (! Quotation::query()->where('quotation_number', $candidate)->exists()) {
+                return $candidate;
+            }
+            $i++;
+        } while (true);
     }
 }

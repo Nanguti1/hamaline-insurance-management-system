@@ -23,12 +23,15 @@ class StoreQuotationRequest extends FormRequest
         return [
             'client_id' => ['required', 'integer', 'exists:clients,id'],
             'underwriter_id' => ['required', 'integer', 'exists:underwriters,id'],
-            'quotation_number' => ['required', 'string', 'max:50', 'unique:quotations,quotation_number'],
+            'quotation_number' => ['nullable', 'string', 'max:50', Rule::unique('quotations', 'quotation_number')],
             'status' => ['required', Rule::in(['draft', 'issued', 'approved', 'rejected', 'expired'])],
             'premium_amount' => ['required', 'numeric', 'min:0'],
             'currency' => ['required', 'string', 'max:3'],
             'valid_until' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'policy_type' => ['nullable', 'string', Rule::in(['motor', 'medical', 'wiba', 'other'])],
+            'payment_plan' => ['required', Rule::in(['one_off', 'installments'])],
+            'installment_count' => ['nullable', 'integer', 'min:2', 'max:120', 'required_if:payment_plan,installments'],
         ];
     }
 }

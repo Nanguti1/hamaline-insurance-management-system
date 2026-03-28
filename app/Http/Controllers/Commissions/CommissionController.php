@@ -37,7 +37,7 @@ class CommissionController extends Controller
         return Inertia::render('commissions/create', [
             'policies' => Policy::query()
                 ->orderBy('policy_number')
-                ->get(['id', 'policy_number']),
+                ->get(['id', 'policy_number', 'premium_amount', 'currency', 'underwriter_id']),
             'underwriters' => Underwriter::query()
                 ->orderBy('name')
                 ->get(['id', 'name']),
@@ -63,7 +63,7 @@ class CommissionController extends Controller
             'commission' => $commission->load(['policy', 'underwriter']),
             'policies' => Policy::query()
                 ->orderBy('policy_number')
-                ->get(['id', 'policy_number']),
+                ->get(['id', 'policy_number', 'premium_amount', 'currency', 'underwriter_id']),
             'underwriters' => Underwriter::query()
                 ->orderBy('name')
                 ->get(['id', 'name']),

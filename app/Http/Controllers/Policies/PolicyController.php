@@ -49,7 +49,17 @@ class PolicyController extends Controller
             'underwriters' => $this->underwriterSelectOptions(),
             'quotations' => Quotation::query()
                 ->orderBy('quotation_number')
-                ->get(['id', 'quotation_number']),
+                ->get([
+                    'id',
+                    'quotation_number',
+                    'client_id',
+                    'underwriter_id',
+                    'premium_amount',
+                    'currency',
+                    'valid_until',
+                    'policy_type',
+                    'notes',
+                ]),
         ]);
     }
 
@@ -64,7 +74,7 @@ class PolicyController extends Controller
     {
         $this->access->assertCanViewPolicy(auth()->user(), $policy);
 
-        $policy->load(['client', 'underwriter', 'quotation', 'documents']);
+        $policy->load(['client', 'underwriter', 'quotation', 'documents', 'riskNotes']);
 
         $documents = $policy->documents->map(fn ($doc) => [
             'id' => $doc->id,
@@ -74,9 +84,16 @@ class PolicyController extends Controller
             'size' => $doc->size,
         ]);
 
+        $riskNote = $policy->riskNotes->first();
+
         return Inertia::render('policies/show', [
             'policy' => $policy,
             'documents' => $documents,
+            'linkedRiskNote' => $riskNote ? [
+                'id' => $riskNote->id,
+                'line_type' => $riskNote->line_type,
+                'risk_note_number' => $riskNote->risk_note_number,
+            ] : null,
         ]);
     }
 
@@ -92,7 +109,17 @@ class PolicyController extends Controller
             'underwriters' => $this->underwriterSelectOptions(),
             'quotations' => Quotation::query()
                 ->orderBy('quotation_number')
-                ->get(['id', 'quotation_number']),
+                ->get([
+                    'id',
+                    'quotation_number',
+                    'client_id',
+                    'underwriter_id',
+                    'premium_amount',
+                    'currency',
+                    'valid_until',
+                    'policy_type',
+                    'notes',
+                ]),
         ]);
     }
 

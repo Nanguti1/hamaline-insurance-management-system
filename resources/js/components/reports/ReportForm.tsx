@@ -30,7 +30,7 @@ export const reportSchema = z.object({
     client_type: z.enum(['individual', 'corporate']).optional().or(z.literal('')),
     policy_type: z.enum(['medical', 'motor', 'wiba']).optional().or(z.literal('')),
     status: z
-        .enum(['active', 'cancelled', 'lapsed', 'expired', 'renewed'])
+        .enum(['pending', 'active', 'cancelled', 'lapsed', 'expired', 'renewed'])
         .optional()
         .or(z.literal('')),
     notes: z.string().trim().max(2000).optional().or(z.literal('')),
@@ -188,6 +188,7 @@ export default function ReportForm({
                                 {...register('status')}
                             >
                                 <option value="">All</option>
+                                <option value="pending">Pending</option>
                                 <option value="active">Active</option>
                                 <option value="cancelled">Cancelled</option>
                                 <option value="lapsed">Lapsed</option>

@@ -27,6 +27,7 @@ class Policy extends Model
         'premium_amount',
         'currency',
         'notes',
+        'risk_note_content',
     ];
 
     protected $casts = [
@@ -89,5 +90,10 @@ class Policy extends Model
     public function documents(): MorphMany
     {
         return $this->morphMany(Document::class, 'documentable');
+    }
+
+    public function riskNotes(): HasMany
+    {
+        return $this->hasMany(RiskNote::class, 'policy_id');
     }
 }
