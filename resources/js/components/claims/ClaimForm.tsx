@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 export const claimSchema = z.object({
     policy_id: z.coerce.number().int().min(1),
-    claim_number: z.string().trim().min(1).max(50),
+    claim_number: z.string().trim().max(50).optional().or(z.literal('')),
     claimant_name: z.string().trim().min(1).max(255),
     loss_date: z.string().trim().min(1),
     reported_at: z.string().trim().min(1),
@@ -74,6 +74,7 @@ export default function ClaimForm({
     const submit = (values: ClaimFormValues) => {
         const payload = {
             ...values,
+            claim_number: values.claim_number ? values.claim_number : null,
             notes: values.notes ? values.notes : null,
         };
 
@@ -121,8 +122,8 @@ export default function ClaimForm({
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="claim_number">Claim number</Label>
-                        <Input id="claim_number" placeholder="e.g. CLM-0001" {...register('claim_number')} />
+                        <Label htmlFor="claim_number">Claim number (optional)</Label>
+                        <Input id="claim_number" placeholder="Auto-generated if blank (e.g. CLM-2026-0001)" {...register('claim_number')} />
                         <InputError message={errors.claim_number?.message} />
                     </div>
 

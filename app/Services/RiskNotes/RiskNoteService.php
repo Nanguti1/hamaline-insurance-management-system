@@ -420,6 +420,11 @@ class RiskNoteService
 
             $policyStatus = self::STATUS_ACTIVE; // will be mapped to Policy.status = active
 
+            $insurerId = DB::table('insurer_underwriter')
+                ->where('underwriter_id', (int) $riskNote->underwriter_id)
+                ->orderBy('insurer_id')
+                ->value('insurer_id');
+
             $decision = $riskNote->underwritingDecisions()->create([
                 'underwriter_id' => $riskNote->underwriter_id,
                 'decided_by' => $user->id,
@@ -434,6 +439,7 @@ class RiskNoteService
                 'client_id' => $riskNote->client_id,
                 'underwriter_id' => $riskNote->underwriter_id,
                 'quotation_id' => null,
+                'insurer_id' => $insurerId,
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
                 'approved_by' => $user->id,
@@ -465,6 +471,11 @@ class RiskNoteService
                 throw new \DomainException('Only pending risk notes can be decided.');
             }
 
+            $insurerId = DB::table('insurer_underwriter')
+                ->where('underwriter_id', (int) $riskNote->underwriter_id)
+                ->orderBy('insurer_id')
+                ->value('insurer_id');
+
             $decision = $riskNote->underwritingDecisions()->create([
                 'underwriter_id' => $riskNote->underwriter_id,
                 'decided_by' => $user->id,
@@ -479,6 +490,7 @@ class RiskNoteService
                 'client_id' => $riskNote->client_id,
                 'underwriter_id' => $riskNote->underwriter_id,
                 'quotation_id' => null,
+                'insurer_id' => $insurerId,
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
                 'approved_by' => $user->id,

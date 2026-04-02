@@ -22,7 +22,7 @@ class PolicyService
      */
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = Policy::query()->with(['client', 'underwriter']);
+        $query = Policy::query()->with(['client', 'underwriter', 'insurer']);
         $this->access->scopePoliciesQuery($query, auth()->user());
 
         $q = $filters['q'] ?? null;
@@ -48,7 +48,13 @@ class PolicyService
      */
     public function create(array $data): Policy
     {
-        $policy = Policy::create($this->withCreateAudit($this->normalize($data)));
+        $data = $this->normalize($data);
+
+        if (empty($data['policy_number'] ?? null)) {
+            $data['policy_number'] = $this->nextPolicyNumber();
+        }
+
+        $policy = Policy::create($this->withCreateAudit($data));
         $this->syncRiskNoteFromPolicy($policy);
 
         return $policy;
@@ -76,7 +82,7 @@ class PolicyService
      */
     private function normalize(array $data): array
     {
-        foreach (['policy_type', 'notes', 'risk_note_content'] as $key) {
+        foreach (['policy_type', 'notes', 'risk_note_content', 'policy_number'] as $key) {
             if (array_key_exists($key, $data) && is_string($data[$key])) {
                 $data[$key] = trim($data[$key]);
                 if ($data[$key] === '') {
@@ -90,6 +96,25 @@ class PolicyService
         }
 
         return $data;
+    }
+
+    private function nextPolicyNumber(): string
+    {
+        $year = now()->format('Y');
+        $prefix = 'POL';
+        $like = "{$prefix}-{$year}-%";
+
+        $last = Policy::query()
+            ->where('policy_number', 'like', $like)
+            ->orderByDesc('id')
+            ->first();
+
+        $seq = 1;
+        if ($last && preg_match('/-(\d+)$/', $last->policy_number, $m)) {
+            $seq = (int) $m[1] + 1;
+        }
+
+        return sprintf('%s-%s-%04d', $prefix, $year, $seq);
     }
 
     private function syncRiskNoteFromPolicy(Policy $policy): void

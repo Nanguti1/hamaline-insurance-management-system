@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Policies\StorePolicyRequest;
 use App\Http\Requests\Policies\UpdatePolicyRequest;
 use App\Models\Client;
+use App\Models\Insurer;
 use App\Models\Policy;
 use App\Models\Quotation;
 use App\Models\Underwriter;
@@ -46,7 +47,8 @@ class PolicyController extends Controller
             'clients' => Client::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'company_name']),
-            'underwriters' => $this->underwriterSelectOptions(),
+            'underwriters' => $this->underwriterSelectOptionsWithInsurers(),
+            'insurers' => $this->insurerSelectOptions(),
             'quotations' => Quotation::query()
                 ->orderBy('quotation_number')
                 ->get([
@@ -54,6 +56,7 @@ class PolicyController extends Controller
                     'quotation_number',
                     'client_id',
                     'underwriter_id',
+                    'insurer_id',
                     'premium_amount',
                     'currency',
                     'valid_until',
@@ -74,7 +77,7 @@ class PolicyController extends Controller
     {
         $this->access->assertCanViewPolicy(auth()->user(), $policy);
 
-        $policy->load(['client', 'underwriter', 'quotation', 'documents', 'riskNotes']);
+        $policy->load(['client', 'underwriter', 'insurer', 'quotation', 'documents', 'riskNotes']);
 
         $documents = $policy->documents->map(fn ($doc) => [
             'id' => $doc->id,
@@ -102,11 +105,12 @@ class PolicyController extends Controller
         $this->access->assertCanViewPolicy(auth()->user(), $policy);
 
         return Inertia::render('policies/edit', [
-            'policy' => $policy->load(['client', 'underwriter', 'quotation']),
+            'policy' => $policy->load(['client', 'underwriter', 'insurer', 'quotation']),
             'clients' => Client::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'company_name']),
-            'underwriters' => $this->underwriterSelectOptions(),
+            'underwriters' => $this->underwriterSelectOptionsWithInsurers(),
+            'insurers' => $this->insurerSelectOptions(),
             'quotations' => Quotation::query()
                 ->orderBy('quotation_number')
                 ->get([
@@ -114,6 +118,7 @@ class PolicyController extends Controller
                     'quotation_number',
                     'client_id',
                     'underwriter_id',
+                    'insurer_id',
                     'premium_amount',
                     'currency',
                     'valid_until',
@@ -144,16 +149,45 @@ class PolicyController extends Controller
     /**
      * @return Collection<int, Underwriter>
      */
-    private function underwriterSelectOptions()
+    private function underwriterSelectOptionsWithInsurers()
     {
         $user = auth()->user();
         if ($user?->hasRole('underwriter')) {
             return Underwriter::query()
                 ->where('user_id', $user->id)
+                ->with(['insurers:id,name'])
                 ->orderBy('name')
                 ->get(['id', 'name']);
         }
 
-        return Underwriter::query()->orderBy('name')->get(['id', 'name']);
+        return Underwriter::query()
+            ->with(['insurers:id,name'])
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
+    /**
+     * @return Collection<int, Insurer>
+     */
+    private function insurerSelectOptions()
+    {
+        $user = auth()->user();
+        if ($user?->hasRole('underwriter')) {
+            $uwId = $user->underwriterProfile?->id;
+            if (! $uwId) {
+                return collect();
+            }
+
+            return Insurer::query()
+                ->whereIn('id', function ($q) use ($uwId) {
+                    $q->select('insurer_id')
+                        ->from('insurer_underwriter')
+                        ->where('underwriter_id', (int) $uwId);
+                })
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
+
+        return Insurer::query()->orderBy('name')->get(['id', 'name']);
     }
 }

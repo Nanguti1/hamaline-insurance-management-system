@@ -14,6 +14,7 @@ class Quotation extends Model
     protected $fillable = [
         'client_id',
         'underwriter_id',
+        'insurer_id',
         'created_by',
         'updated_by',
         'approved_by',
@@ -42,6 +43,11 @@ class Quotation extends Model
     public function underwriter(): BelongsTo
     {
         return $this->belongsTo(Underwriter::class, 'underwriter_id');
+    }
+
+    public function insurer(): BelongsTo
+    {
+        return $this->belongsTo(Insurer::class, 'insurer_id');
     }
 
     public function createdBy(): BelongsTo

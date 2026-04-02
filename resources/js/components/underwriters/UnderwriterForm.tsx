@@ -16,6 +16,7 @@ const baseFields = {
     email: z.string().trim().email().max(255),
     address: z.string().trim().max(2000).optional().or(z.literal('')),
     notes: z.string().trim().max(5000).optional().or(z.literal('')),
+    insurer_ids: z.array(z.coerce.number().int()).min(1),
 };
 
 const createSchema = z
@@ -75,8 +76,10 @@ type Props = {
     initialValues?: Partial<CreateValues> & {
         address?: string | null;
         notes?: string | null;
+        insurer_ids?: number[] | null;
     };
     onCancelHref: string;
+    insurers: Array<{ id: number; label: string }>;
 };
 
 export default function UnderwriterForm({
@@ -87,12 +90,15 @@ export default function UnderwriterForm({
     submitUrl,
     initialValues,
     onCancelHref,
+    insurers,
 }: Props) {
     const schema = variant === 'create' ? createSchema : editSchema;
 
     const {
         register,
         handleSubmit,
+        watch,
+        setValue,
         formState: { errors, isSubmitting },
         setError,
     } = useForm<CreateValues | EditValues>({
@@ -103,10 +109,13 @@ export default function UnderwriterForm({
             email: initialValues?.email ?? '',
             address: initialValues?.address ?? '',
             notes: initialValues?.notes ?? '',
+            insurer_ids: initialValues?.insurer_ids ?? [],
             password: '',
             password_confirmation: '',
         },
     });
+
+    const selectedInsurerIds = watch('insurer_ids');
 
     const submit = (values: CreateValues | EditValues) => {
         const payload: Record<string, unknown> = {
@@ -115,6 +124,7 @@ export default function UnderwriterForm({
             email: values.email,
             address: values.address ? values.address : null,
             notes: values.notes ? values.notes : null,
+            insurer_ids: values.insurer_ids,
         };
 
         if (variant === 'create') {
@@ -236,6 +246,31 @@ export default function UnderwriterForm({
                         <Label htmlFor="notes">Notes (optional)</Label>
                         <Textarea id="notes" {...register('notes')} placeholder="Internal notes" />
                         <InputError message={errors.notes?.message} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label>Companies (insurers)</Label>
+                        <div className="space-y-2">
+                            {insurers.map((i) => {
+                                const checked = selectedInsurerIds?.includes(i.id) ?? false;
+                                return (
+                                    <label key={i.id} className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={(e) => {
+                                                const next = e.target.checked
+                                                    ? [...(selectedInsurerIds ?? []), i.id]
+                                                    : (selectedInsurerIds ?? []).filter((x) => x !== i.id);
+                                                setValue('insurer_ids', next, { shouldValidate: true });
+                                            }}
+                                        />
+                                        <span className="text-sm">{i.label}</span>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                        <InputError message={errors.insurer_ids?.message as string | undefined} />
                     </div>
 
                     <CardFooter className="px-0">

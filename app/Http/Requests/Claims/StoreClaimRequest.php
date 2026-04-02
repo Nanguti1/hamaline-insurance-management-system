@@ -19,7 +19,7 @@ class StoreClaimRequest extends FormRequest
     {
         return [
             'policy_id' => ['required', 'integer', 'exists:policies,id'],
-            'claim_number' => ['required', 'string', 'max:50', 'unique:claims,claim_number'],
+            'claim_number' => ['nullable', 'string', 'max:50', 'unique:claims,claim_number'],
             'claimant_name' => ['required', 'string', 'max:255'],
             'loss_date' => ['required', 'date'],
             'reported_at' => ['required', 'date'],

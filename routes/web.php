@@ -89,6 +89,7 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
 
     Route::get('quotations', [QuotationController::class, 'index'])->middleware('permission:quotations.view')->name('quotations.index');
     Route::get('quotations/create', [QuotationController::class, 'create'])->middleware('permission:quotations.manage')->name('quotations.create');
+    Route::get('quotations/suggestions', [QuotationController::class, 'suggestions'])->middleware('permission:quotations.manage')->name('quotations.suggestions');
     Route::post('quotations', [QuotationController::class, 'store'])->middleware('permission:quotations.manage')->name('quotations.store');
     Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->middleware('permission:quotations.view')->name('quotations.show');
     Route::get('quotations/{quotation}/edit', [QuotationController::class, 'edit'])->middleware('permission:quotations.manage')->name('quotations.edit');

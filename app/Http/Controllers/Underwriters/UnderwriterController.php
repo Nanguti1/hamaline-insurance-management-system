@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Underwriters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Underwriters\StoreUnderwriterRequest;
 use App\Http\Requests\Underwriters\UpdateUnderwriterRequest;
+use App\Models\Insurer;
 use App\Models\Underwriter;
 use App\Services\Underwriters\UnderwriterService;
 use Illuminate\Http\RedirectResponse;
@@ -30,7 +31,11 @@ class UnderwriterController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('underwriters/create');
+        return Inertia::render('underwriters/create', [
+            'insurers' => Insurer::query()
+                ->orderBy('name')
+                ->get(['id', 'name']),
+        ]);
     }
 
     public function store(StoreUnderwriterRequest $request, UnderwriterService $service): RedirectResponse
@@ -49,8 +54,13 @@ class UnderwriterController extends Controller
 
     public function edit(Underwriter $underwriter): Response
     {
+        $underwriter->load('insurers:id,name');
+
         return Inertia::render('underwriters/edit', [
             'underwriter' => $underwriter,
+            'insurers' => Insurer::query()
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 

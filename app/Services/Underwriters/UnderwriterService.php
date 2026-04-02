@@ -35,7 +35,9 @@ class UnderwriterService
     {
         return DB::transaction(function () use ($data) {
             $password = $data['password'];
+            $insurerIds = $data['insurer_ids'] ?? [];
             unset($data['password'], $data['password_confirmation']);
+            unset($data['insurer_ids']);
 
             $user = User::create([
                 'name' => $data['name'],
@@ -48,7 +50,10 @@ class UnderwriterService
             $row = $this->normalize($data);
             $row['user_id'] = $user->id;
 
-            return Underwriter::create($row);
+            $underwriter = Underwriter::create($row);
+            $underwriter->insurers()->sync($insurerIds);
+
+            return $underwriter;
         });
     }
 
@@ -59,7 +64,9 @@ class UnderwriterService
     {
         return DB::transaction(function () use ($underwriter, $data) {
             $password = $data['password'] ?? null;
+            $insurerIds = $data['insurer_ids'] ?? [];
             unset($data['password'], $data['password_confirmation']);
+            unset($data['insurer_ids']);
 
             $row = $this->normalize($data);
             $underwriter->update($row);
@@ -74,6 +81,8 @@ class UnderwriterService
                 }
                 $underwriter->user->update($userData);
             }
+
+            $underwriter->insurers()->sync($insurerIds);
 
             return $underwriter->refresh();
         });

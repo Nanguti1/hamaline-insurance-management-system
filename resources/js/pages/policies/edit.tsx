@@ -6,12 +6,14 @@ import PolicyForm from '@/components/policies/PolicyForm';
 import type { BreadcrumbItem } from '@/types';
 
 type ClientOption = { id: number; name?: string | null; company_name?: string | null };
-type UnderwriterOption = { id: number; name?: string | null };
+type SelectOption = { id: number; label: string };
+type UnderwriterOption = { id: number; name?: string | null; insurers?: Array<SelectOption> };
 type QuotationOption = {
     id: number;
     quotation_number: string;
     client_id: number;
     underwriter_id: number;
+    insurer_id: number | null;
     premium_amount: number | string;
     currency: string;
     valid_until: string;
@@ -23,6 +25,7 @@ type Policy = {
     id: number;
     client_id: number;
     underwriter_id: number;
+    insurer_id: number;
     quotation_id?: number | null;
     policy_number: string;
     policy_type?: string | null;
@@ -46,9 +49,10 @@ type Props = {
     clients: ClientOption[];
     underwriters: UnderwriterOption[];
     quotations: QuotationOption[];
+    insurers: Array<SelectOption>;
 };
 
-export default function PoliciesEdit({ policy, clients, underwriters, quotations }: Props) {
+export default function PoliciesEdit({ policy, clients, underwriters, quotations, insurers }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Policies', href: '/policies' },
         { title: policy.policy_number, href: `/policies/${policy.id}` },
@@ -69,6 +73,7 @@ export default function PoliciesEdit({ policy, clients, underwriters, quotations
                     initialValues={{
                         client_id: policy.client_id,
                         underwriter_id: policy.underwriter_id,
+                        insurer_id: policy.insurer_id ?? 0,
                         quotation_id: policy.quotation_id ?? 0,
                         policy_number: policy.policy_number,
                         policy_type: policy.policy_type ?? '',
@@ -90,8 +95,10 @@ export default function PoliciesEdit({ policy, clients, underwriters, quotations
                     underwriters={underwriters.map((u) => ({
                         id: u.id,
                         label: u.name ?? 'Underwriter',
+                        insurers: u.insurers,
                     }))}
                     quotations={quotations}
+                    insurers={insurers}
                 />
             </div>
         </AppLayout>

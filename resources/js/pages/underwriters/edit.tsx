@@ -12,13 +12,17 @@ type Underwriter = {
     email?: string | null;
     address?: string | null;
     notes?: string | null;
+    insurers?: Array<{ id: number; name?: string | null }>;
 };
+
+type Insurer = { id: number; name?: string | null };
 
 type Props = {
     underwriter: Underwriter;
+    insurers: Insurer[];
 };
 
-export default function UnderwritersEdit({ underwriter }: Props) {
+export default function UnderwritersEdit({ underwriter, insurers }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Underwriters', href: '/underwriters' },
         { title: underwriter.name, href: `/underwriters/${underwriter.id}` },
@@ -42,8 +46,10 @@ export default function UnderwritersEdit({ underwriter }: Props) {
                         email: underwriter.email ?? '',
                         address: underwriter.address ?? '',
                         notes: underwriter.notes ?? '',
+                        insurer_ids: underwriter.insurers?.map((i) => i.id) ?? [],
                     }}
                     onCancelHref={`/underwriters/${underwriter.id}`}
+                    insurers={insurers.map((i) => ({ id: i.id, label: i.name ?? 'Insurer' }))}
                 />
             </div>
         </AppLayout>

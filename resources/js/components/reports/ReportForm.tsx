@@ -188,7 +188,7 @@ export default function ReportForm({
                                 {...register('status')}
                             >
                                 <option value="">All</option>
-                                <option value="pending">Pending</option>
+                                <option value="pending">Pending (Policies Not yet processed)</option>
                                 <option value="active">Active</option>
                                 <option value="cancelled">Cancelled</option>
                                 <option value="lapsed">Lapsed</option>

@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -11,14 +12,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
-const policyTypeOptions = ['motor', 'medical', 'wiba', 'other'] as const;
-const policyTypeSelectValues = [...policyTypeOptions, '_unspecified'] as const;
+const policyTypeOptions = ['motor', 'medical', 'wiba'] as const;
+const policyTypeSelectValues = policyTypeOptions;
 
 function buildQuotationSchema(method: 'post' | 'put') {
     return z
         .object({
             client_id: z.coerce.number().int().min(1),
             underwriter_id: z.coerce.number().int().min(1),
+            insurer_id: z.coerce.number().int().min(1),
             quotation_number:
                 method === 'put'
                     ? z.string().trim().min(1).max(50)
@@ -38,16 +40,16 @@ function buildQuotationSchema(method: 'post' | 'put') {
                     const n = Number(val);
                     return Number.isNaN(n) ? undefined : n;
                 },
-                z.number().int().min(2).max(120).optional(),
+                z.number().int().min(4).max(4).optional(),
             ),
         })
         .superRefine((data, ctx) => {
             if (data.payment_plan === 'installments') {
                 const c = data.installment_count;
-                if (c === undefined || c < 2) {
+                if (c === undefined || c !== 4) {
                     ctx.addIssue({
                         code: z.ZodIssueCode.custom,
-                        message: 'Enter the number of installments (at least 2).',
+                        message: 'Installments must be 4 equal parts.',
                         path: ['installment_count'],
                     });
                 }
@@ -71,13 +73,17 @@ type Props = {
     initialValues?: Partial<QuotationFormValues> & {
         client_id?: number | null;
         underwriter_id?: number | null;
+        insurer_id?: number | null;
         premium_amount?: number | null;
         notes?: string | null;
         currency?: string | null;
         policy_type?: string | null;
+        payment_plan?: 'one_off' | 'installments' | null;
+        installment_count?: number | null;
     };
     clients: SelectOption[];
-    underwriters: SelectOption[];
+    underwriters: Array<SelectOption & { insurers?: Array<SelectOption> }>;
+    insurers?: SelectOption[];
 };
 
 export default function QuotationForm({
@@ -89,6 +95,7 @@ export default function QuotationForm({
     initialValues,
     clients,
     underwriters,
+    insurers,
 }: Props) {
     const schema = buildQuotationSchema(method);
 
@@ -104,41 +111,106 @@ export default function QuotationForm({
         defaultValues: {
             client_id: initialValues?.client_id ?? 0,
             underwriter_id: initialValues?.underwriter_id ?? 0,
+            insurer_id: initialValues?.insurer_id ?? 0,
             quotation_number: initialValues?.quotation_number ?? '',
             status: initialValues?.status ?? 'draft',
             premium_amount: initialValues?.premium_amount ?? 0,
             currency: initialValues?.currency ?? 'KES',
             valid_until: initialValues?.valid_until ?? '',
             notes: initialValues?.notes ?? '',
-            policy_type:
-                initialValues?.policy_type && initialValues.policy_type !== ''
-                    ? (initialValues.policy_type as QuotationFormValues['policy_type'])
-                    : '_unspecified',
+            policy_type: (initialValues?.policy_type as QuotationFormValues['policy_type']) ?? 'motor',
             payment_plan: initialValues?.payment_plan ?? 'one_off',
-            installment_count: initialValues?.installment_count ?? undefined,
+            installment_count: initialValues?.payment_plan === 'installments' ? 4 : initialValues?.installment_count ?? undefined,
         },
     });
 
     const clientId = watch('client_id');
     const underwriterId = watch('underwriter_id');
+    const insurerId = watch('insurer_id');
     const status = watch('status');
     const paymentPlan = watch('payment_plan');
+    const policyType = watch('policy_type');
+    const notes = watch('notes');
+
+    const underwriterInsurers = underwriters.find((u) => u.id === underwriterId)?.insurers;
+    const allowedInsurers = underwriterInsurers && underwriterInsurers.length > 0 ? underwriterInsurers : insurers ?? [];
+
+    useEffect(() => {
+        if (! allowedInsurers || allowedInsurers.length === 0) {
+            return;
+        }
+        if (! insurerId || ! allowedInsurers.some((i) => i.id === insurerId)) {
+            // Auto-pick the first available insurer for the chosen underwriter.
+            setValue('insurer_id', allowedInsurers[0]!.id, { shouldValidate: true });
+        }
+    }, [allowedInsurers, insurerId, setValue]);
+
+    useEffect(() => {
+        if (! clientId || ! underwriterId || ! insurerId || ! policyType) {
+            return;
+        }
+        // Debounce so we don't spam the backend while the user is adjusting dropdowns.
+        const t = setTimeout(async () => {
+            try {
+                const url = new URL('/quotations/suggestions', window.location.origin);
+                url.searchParams.set('client_id', String(clientId));
+                url.searchParams.set('underwriter_id', String(underwriterId));
+                url.searchParams.set('insurer_id', String(insurerId));
+                url.searchParams.set('policy_type', policyType);
+
+                const res = await fetch(url.toString(), { method: 'GET' });
+                if (! res.ok) return;
+                const data = (await res.json()) as {
+                    premium_amount?: number | string | null;
+                    currency?: string | null;
+                    valid_until?: string | null;
+                    notes?: string | null;
+                    payment_plan?: 'one_off' | 'installments' | null;
+                    installment_count?: number | null;
+                    policy_type?: string | null;
+                };
+
+                if (data.premium_amount !== undefined && data.premium_amount !== null) {
+                    setValue('premium_amount', Number(data.premium_amount), { shouldValidate: true });
+                }
+                if (data.currency) {
+                    setValue('currency', data.currency, { shouldValidate: true });
+                }
+                if (data.valid_until) {
+                    setValue('valid_until', data.valid_until, { shouldValidate: true });
+                }
+
+                // Don't overwrite user input unless the field is empty.
+                if (notes === '' && data.notes) {
+                    setValue('notes', data.notes, { shouldValidate: true });
+                }
+                if (data.payment_plan && data.payment_plan !== paymentPlan) {
+                    setValue('payment_plan', data.payment_plan, { shouldValidate: true });
+                    if (data.payment_plan === 'installments') {
+                        setValue('installment_count', 4, { shouldValidate: true });
+                    }
+                }
+            } catch {
+                // Best-effort auto-fill; silently ignore failures.
+            }
+        }, 400);
+
+        return () => clearTimeout(t);
+    }, [clientId, underwriterId, insurerId, policyType, notes, paymentPlan, setValue]);
 
     const submit = (values: QuotationFormValues) => {
         const payload: Record<string, unknown> = {
             client_id: values.client_id,
             underwriter_id: values.underwriter_id,
+            insurer_id: values.insurer_id,
             status: values.status,
             premium_amount: values.premium_amount,
             currency: values.currency,
             valid_until: values.valid_until,
             notes: values.notes ? values.notes : null,
-            policy_type: values.policy_type === '_unspecified' ? null : values.policy_type,
+            policy_type: values.policy_type,
             payment_plan: values.payment_plan,
-            installment_count:
-                values.payment_plan === 'installments' && values.installment_count && !Number.isNaN(values.installment_count)
-                    ? values.installment_count
-                    : null,
+            installment_count: values.payment_plan === 'installments' ? 4 : null,
         };
 
         if (method === 'put') {
@@ -201,7 +273,7 @@ export default function QuotationForm({
                     </div>
 
                     <div className="grid gap-2">
-                        <Label>Company (insurer)</Label>
+                        <Label>Underwriter</Label>
                         <Select
                             value={underwriterId ? String(underwriterId) : ''}
                             onValueChange={(value) => {
@@ -211,7 +283,7 @@ export default function QuotationForm({
                             }}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Select company" />
+                                <SelectValue placeholder="Select underwriter" />
                             </SelectTrigger>
                             <SelectContent>
                                 {underwriters.map((u) => (
@@ -222,6 +294,30 @@ export default function QuotationForm({
                             </SelectContent>
                         </Select>
                         <InputError message={errors.underwriter_id?.message} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label>Company (insurer)</Label>
+                        <Select
+                            value={insurerId ? String(insurerId) : ''}
+                            onValueChange={(value) => {
+                                setValue('insurer_id', Number(value), {
+                                    shouldValidate: true,
+                                });
+                            }}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select company" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {allowedInsurers.map((i) => (
+                                    <SelectItem key={i.id} value={String(i.id)}>
+                                        {i.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <InputError message={errors.insurer_id?.message} />
                     </div>
 
                     {method === 'put' ? (
@@ -250,11 +346,9 @@ export default function QuotationForm({
                                 <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="_unspecified">Not specified</SelectItem>
                                 <SelectItem value="motor">Motor</SelectItem>
                                 <SelectItem value="medical">Medical</SelectItem>
                                 <SelectItem value="wiba">WIBA</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
                             </SelectContent>
                         </Select>
                         <InputError message={errors.policy_type?.message as string | undefined} />
@@ -313,6 +407,9 @@ export default function QuotationForm({
                                     });
                                     if (value === 'one_off') {
                                         setValue('installment_count', undefined, { shouldValidate: true });
+                                    } else {
+                                        // Backend enforces exactly 4 installments (equal amounts).
+                                        setValue('installment_count', 4, { shouldValidate: true });
                                     }
                                 }}
                             >
@@ -328,15 +425,8 @@ export default function QuotationForm({
                         </div>
                         {paymentPlan === 'installments' && (
                             <div className="grid gap-2">
-                                <Label htmlFor="installment_count">Number of installments</Label>
-                                <Input
-                                    id="installment_count"
-                                    type="number"
-                                    min={2}
-                                    step={1}
-                                    placeholder="e.g. 12"
-                                    {...register('installment_count')}
-                                />
+                                <Label htmlFor="installment_count">Installment count</Label>
+                                <Input id="installment_count" type="number" readOnly value={4} />
                                 <InputError message={errors.installment_count?.message} />
                             </div>
                         )}

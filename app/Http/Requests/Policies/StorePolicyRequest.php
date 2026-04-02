@@ -23,8 +23,9 @@ class StorePolicyRequest extends FormRequest
         return [
             'client_id' => ['required', 'integer', 'exists:clients,id'],
             'underwriter_id' => ['required', 'integer', 'exists:underwriters,id'],
+            'insurer_id' => ['required', 'integer', 'exists:insurers,id'],
             'quotation_id' => ['nullable', 'integer', 'exists:quotations,id'],
-            'policy_number' => ['required', 'string', 'max:50', 'unique:policies,policy_number'],
+            'policy_number' => ['nullable', 'string', 'max:50', 'unique:policies,policy_number'],
             'policy_type' => ['nullable', 'string', 'max:100'],
             'status' => ['required', Rule::in(['pending', 'active', 'lapsed', 'cancelled', 'expired', 'renewed'])],
             'start_date' => ['required', 'date'],

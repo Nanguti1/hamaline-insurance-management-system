@@ -9,6 +9,7 @@ import type { BreadcrumbItem } from '@/types';
 
 type Client = { name?: string | null; company_name?: string | null };
 type Underwriter = { name?: string | null };
+type Insurer = { name?: string | null };
 
 type Quotation = {
     id: number;
@@ -23,6 +24,7 @@ type Quotation = {
     installment_count?: number | null;
     client?: Client;
     underwriter?: Underwriter;
+    insurer?: Insurer;
 };
 
 type Props = { quotation: Quotation };
@@ -74,7 +76,7 @@ export default function QuotationsShow({ quotation }: Props) {
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="text-muted-foreground">Company (insurer)</TableCell>
-                                    <TableCell>{quotation.underwriter?.name ?? '-'}</TableCell>
+                                    <TableCell>{quotation.insurer?.name ?? '-'}</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="text-muted-foreground">Policy type</TableCell>

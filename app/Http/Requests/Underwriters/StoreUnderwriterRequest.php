@@ -32,6 +32,8 @@ class StoreUnderwriterRequest extends FormRequest
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'address' => ['nullable', 'string', 'max:2000'],
             'notes' => ['nullable', 'string', 'max:5000'],
+            'insurer_ids' => ['required', 'array', 'min:1'],
+            'insurer_ids.*' => ['required', 'integer', 'exists:insurers,id'],
         ];
     }
 }

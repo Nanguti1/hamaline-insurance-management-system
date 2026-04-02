@@ -49,7 +49,13 @@ class ClaimService
      */
     public function create(array $data): Claim
     {
-        $data = $this->withCreateAudit($this->normalize($data));
+        $data = $this->normalize($data);
+
+        if (empty($data['claim_number'] ?? null)) {
+            $data['claim_number'] = $this->nextClaimNumber();
+        }
+
+        $data = $this->withCreateAudit($data);
 
         if (auth()->user()?->hasRole('claims_officer')) {
             $data['assigned_to'] = auth()->id();
@@ -78,7 +84,7 @@ class ClaimService
      */
     private function normalize(array $data): array
     {
-        foreach (['notes'] as $key) {
+        foreach (['claim_number', 'notes'] as $key) {
             if (array_key_exists($key, $data) && is_string($data[$key])) {
                 $data[$key] = trim($data[$key]);
                 if ($data[$key] === '') {
@@ -88,5 +94,24 @@ class ClaimService
         }
 
         return $data;
+    }
+
+    private function nextClaimNumber(): string
+    {
+        $year = now()->format('Y');
+        $prefix = 'CLM';
+        $like = "{$prefix}-{$year}-%";
+
+        $last = Claim::query()
+            ->where('claim_number', 'like', $like)
+            ->orderByDesc('id')
+            ->first();
+
+        $seq = 1;
+        if ($last && preg_match('/-(\d+)$/', (string) $last->claim_number, $m)) {
+            $seq = (int) $m[1] + 1;
+        }
+
+        return sprintf('%s-%s-%04d', $prefix, $year, $seq);
     }
 }

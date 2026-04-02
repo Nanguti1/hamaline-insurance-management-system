@@ -15,6 +15,7 @@ class Policy extends Model
     protected $fillable = [
         'client_id',
         'underwriter_id',
+        'insurer_id',
         'quotation_id',
         'created_by',
         'updated_by',
@@ -45,6 +46,11 @@ class Policy extends Model
     public function underwriter(): BelongsTo
     {
         return $this->belongsTo(Underwriter::class, 'underwriter_id');
+    }
+
+    public function insurer(): BelongsTo
+    {
+        return $this->belongsTo(Insurer::class, 'insurer_id');
     }
 
     public function quotation(): BelongsTo

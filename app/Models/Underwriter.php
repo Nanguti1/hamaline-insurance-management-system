@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Underwriter extends Model
 {
@@ -39,5 +40,11 @@ class Underwriter extends Model
     public function commissions(): HasMany
     {
         return $this->hasMany('App\\Models\\Commission', 'underwriter_id');
+    }
+
+    public function insurers(): BelongsToMany
+    {
+        return $this->belongsToMany(Insurer::class, 'insurer_underwriter', 'underwriter_id', 'insurer_id')
+            ->withTimestamps();
     }
 }

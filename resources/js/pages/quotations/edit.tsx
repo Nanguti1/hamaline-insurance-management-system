@@ -6,12 +6,14 @@ import QuotationForm from '@/components/quotations/QuotationForm';
 import type { BreadcrumbItem } from '@/types';
 
 type ClientOption = { id: number; name?: string | null; company_name?: string | null };
-type UnderwriterOption = { id: number; name?: string | null };
+type SelectOption = { id: number; label: string };
+type UnderwriterOption = { id: number; name?: string | null; insurers?: Array<SelectOption> };
 
 type Quotation = {
     id: number;
     client_id: number;
     underwriter_id: number;
+    insurer_id: number;
     quotation_number: string;
     status: 'draft' | 'issued' | 'approved' | 'rejected' | 'expired';
     premium_amount: number | string;
@@ -27,9 +29,10 @@ type Props = {
     quotation: Quotation;
     clients: ClientOption[];
     underwriters: UnderwriterOption[];
+    insurers: Array<SelectOption>;
 };
 
-export default function QuotationsEdit({ quotation, clients, underwriters }: Props) {
+export default function QuotationsEdit({ quotation, clients, underwriters, insurers }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Quotations', href: '/quotations' },
         {
@@ -53,6 +56,7 @@ export default function QuotationsEdit({ quotation, clients, underwriters }: Pro
                     initialValues={{
                         client_id: quotation.client_id,
                         underwriter_id: quotation.underwriter_id,
+                        insurer_id: quotation.insurer_id ?? 0,
                         quotation_number: quotation.quotation_number,
                         status: quotation.status,
                         premium_amount:
@@ -62,9 +66,10 @@ export default function QuotationsEdit({ quotation, clients, underwriters }: Pro
                         currency: quotation.currency,
                         valid_until: quotation.valid_until?.slice(0, 10) ?? quotation.valid_until,
                         notes: quotation.notes ?? '',
-                        policy_type: quotation.policy_type ?? '',
+                        policy_type: (quotation.policy_type as 'motor' | 'medical' | 'wiba') ?? 'motor',
                         payment_plan: (quotation.payment_plan as 'one_off' | 'installments') ?? 'one_off',
-                        installment_count: quotation.installment_count ?? undefined,
+                        installment_count:
+                            quotation.payment_plan === 'installments' ? (quotation.installment_count ?? 4) : undefined,
                     }}
                     clients={clients.map((c) => ({
                         id: c.id,
@@ -73,7 +78,9 @@ export default function QuotationsEdit({ quotation, clients, underwriters }: Pro
                     underwriters={underwriters.map((u) => ({
                         id: u.id,
                         label: u.name ?? 'Underwriter',
+                        insurers: u.insurers,
                     }))}
+                    insurers={insurers}
                 />
             </div>
         </AppLayout>

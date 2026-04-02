@@ -28,6 +28,7 @@ class UpdatePolicyRequest extends FormRequest
         return [
             'client_id' => ['required', 'integer', 'exists:clients,id'],
             'underwriter_id' => ['required', 'integer', 'exists:underwriters,id'],
+            'insurer_id' => ['required', 'integer', 'exists:insurers,id'],
             'quotation_id' => ['nullable', 'integer', 'exists:quotations,id'],
             'policy_number' => [
                 'required',

@@ -16,8 +16,9 @@ export const policySchema = z
     .object({
         client_id: z.coerce.number().int().min(1),
         underwriter_id: z.coerce.number().int().min(1),
+        insurer_id: z.coerce.number().int().min(1),
         quotation_id: z.coerce.number().int().min(0),
-        policy_number: z.string().trim().min(1).max(50),
+        policy_number: z.string().trim().max(50).optional().or(z.literal('')),
         policy_type: z.string().trim().max(100).optional().or(z.literal('')),
         status: z.enum(['pending', 'active', 'lapsed', 'cancelled', 'expired', 'renewed']),
         start_date: z.string().trim().min(1),
@@ -38,6 +39,7 @@ export type QuotationDetailOption = {
     quotation_number: string;
     client_id: number;
     underwriter_id: number;
+    insurer_id?: number | null;
     premium_amount: number | string;
     currency: string;
     valid_until: string;
@@ -53,13 +55,15 @@ type Props = {
     onCancelHref: string;
     initialValues?: Partial<PolicyFormValues> & {
         quotation_id?: number | null;
+        insurer_id?: number | null;
         policy_type?: string | null;
         notes?: string | null;
         risk_note_content?: string | null;
     };
     clients: SelectOption[];
-    underwriters: SelectOption[];
+    underwriters: Array<SelectOption & { insurers?: Array<SelectOption> }>;
     quotations: QuotationDetailOption[];
+    insurers?: SelectOption[];
 };
 
 export default function PolicyForm({
@@ -72,6 +76,7 @@ export default function PolicyForm({
     clients,
     underwriters,
     quotations,
+    insurers,
 }: Props) {
     const {
         register,
@@ -85,6 +90,7 @@ export default function PolicyForm({
         defaultValues: {
             client_id: initialValues?.client_id ?? 0,
             underwriter_id: initialValues?.underwriter_id ?? 0,
+            insurer_id: initialValues?.insurer_id ?? 0,
             quotation_id: initialValues?.quotation_id ?? 0,
             policy_number: initialValues?.policy_number ?? '',
             policy_type: initialValues?.policy_type ?? '',
@@ -100,8 +106,22 @@ export default function PolicyForm({
 
     const clientId = watch('client_id');
     const underwriterId = watch('underwriter_id');
+    const insurerId = watch('insurer_id');
     const quotationId = watch('quotation_id');
     const status = watch('status');
+
+    const underwriterInsurers = underwriters.find((u) => u.id === underwriterId)?.insurers;
+    const allowedInsurers = underwriterInsurers && underwriterInsurers.length > 0 ? underwriterInsurers : insurers ?? [];
+
+    useEffect(() => {
+        if (!allowedInsurers || allowedInsurers.length === 0) {
+            return;
+        }
+        if (!insurerId || !allowedInsurers.some((i) => i.id === insurerId)) {
+            // Pick the first allowed insurer for the selected underwriter.
+            setValue('insurer_id', allowedInsurers[0]!.id, { shouldValidate: true });
+        }
+    }, [allowedInsurers, insurerId, setValue]);
 
     const filteredQuotations = useMemo(
         () =>
@@ -131,6 +151,9 @@ export default function PolicyForm({
         }
         setValue('premium_amount', Number(q.premium_amount), { shouldValidate: true });
         setValue('currency', q.currency, { shouldValidate: true });
+        if (q.insurer_id) {
+            setValue('insurer_id', q.insurer_id, { shouldValidate: true });
+        }
         if (q.policy_type) {
             setValue('policy_type', q.policy_type, { shouldValidate: true });
         }
@@ -147,6 +170,7 @@ export default function PolicyForm({
         const payload = {
             ...values,
             quotation_id: values.quotation_id ? values.quotation_id : null,
+            policy_number: values.policy_number ? values.policy_number : null,
             policy_type: values.policy_type ? values.policy_type : null,
             notes: values.notes ? values.notes : null,
             risk_note_content: values.risk_note_content ? values.risk_note_content : null,
@@ -230,6 +254,30 @@ export default function PolicyForm({
                     </div>
 
                     <div className="grid gap-2">
+                        <Label>Company (insurer)</Label>
+                        <Select
+                            value={insurerId ? String(insurerId) : ''}
+                            onValueChange={(value) => {
+                                setValue('insurer_id', Number(value), {
+                                    shouldValidate: true,
+                                });
+                            }}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select insurer" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {allowedInsurers.map((i) => (
+                                    <SelectItem key={i.id} value={String(i.id)}>
+                                        {i.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <InputError message={errors.insurer_id?.message} />
+                    </div>
+
+                    <div className="grid gap-2">
                         <Label>Quotation (optional)</Label>
                         <Select
                             value={quotationId ? String(quotationId) : '0'}
@@ -260,10 +308,10 @@ export default function PolicyForm({
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="policy_number">Policy number</Label>
+                        <Label htmlFor="policy_number">Policy number (optional)</Label>
                         <Input
                             id="policy_number"
-                            placeholder="e.g. POL-0001"
+                            placeholder="Auto-generated if blank (e.g. POL-2026-0001)"
                             {...register('policy_number')}
                         />
                         <InputError message={errors.policy_number?.message} />

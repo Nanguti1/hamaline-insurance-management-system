@@ -20,7 +20,7 @@ class QuotationService
      */
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = Quotation::query()->with(['client', 'underwriter']);
+        $query = Quotation::query()->with(['client', 'underwriter', 'insurer']);
         $this->access->scopeQuotationsQuery($query, auth()->user());
 
         $q = $filters['q'] ?? null;
@@ -90,6 +90,8 @@ class QuotationService
         $plan = $data['payment_plan'] ?? 'one_off';
         if ($plan !== 'installments') {
             $data['installment_count'] = null;
+        } elseif (! isset($data['installment_count']) || $data['installment_count'] === null) {
+            $data['installment_count'] = 4;
         }
 
         return $data;

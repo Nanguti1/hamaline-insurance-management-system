@@ -5,12 +5,16 @@ import Heading from '@/components/heading';
 import UnderwriterForm from '@/components/underwriters/UnderwriterForm';
 import type { BreadcrumbItem } from '@/types';
 
+type Insurer = { id: number; name?: string | null };
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Underwriters', href: '/underwriters' },
     { title: 'New Underwriter', href: '/underwriters/create' },
 ];
 
-export default function UnderwritersCreate() {
+type Props = { insurers: Insurer[] };
+
+export default function UnderwritersCreate({ insurers }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="New Underwriter" />
@@ -26,6 +30,7 @@ export default function UnderwritersCreate() {
                     method="post"
                     submitUrl="/underwriters"
                     onCancelHref="/underwriters"
+                    insurers={insurers.map((i) => ({ id: i.id, label: i.name ?? 'Insurer' }))}
                 />
             </div>
         </AppLayout>

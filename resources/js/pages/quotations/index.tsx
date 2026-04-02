@@ -32,7 +32,7 @@ type QuotationRow = {
     currency: string;
     valid_until: string;
     client?: { name?: string | null; company_name?: string | null };
-    underwriter?: { name?: string | null };
+    insurer?: { name?: string | null };
 };
 
 type Props = {
@@ -180,7 +180,7 @@ export default function QuotationsIndex({ quotations, filters }: Props) {
                                                     {qt.quotation_number}
                                                 </TableCell>
                                                 <TableCell>{clientName}</TableCell>
-                                                <TableCell>{qt.underwriter?.name ?? '-'}</TableCell>
+                                                <TableCell>{qt.insurer?.name ?? '-'}</TableCell>
                                                 <TableCell className="capitalize">
                                                     {qt.status}
                                                 </TableCell>

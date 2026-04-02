@@ -6,11 +6,13 @@ import QuotationForm from '@/components/quotations/QuotationForm';
 import type { BreadcrumbItem } from '@/types';
 
 type ClientOption = { id: number; name?: string | null; company_name?: string | null };
-type UnderwriterOption = { id: number; name?: string | null };
+type SelectOption = { id: number; label: string };
+type UnderwriterOption = { id: number; name?: string | null; insurers?: Array<SelectOption> };
 
 type Props = {
     clients: ClientOption[];
     underwriters: UnderwriterOption[];
+    insurers: Array<SelectOption>;
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -40,7 +42,9 @@ export default function QuotationsCreate({ clients, underwriters }: Props) {
                     underwriters={underwriters.map((u) => ({
                         id: u.id,
                         label: u.name ?? 'Underwriter',
+                        insurers: u.insurers,
                     }))}
+                    insurers={insurers}
                 />
             </div>
         </AppLayout>
