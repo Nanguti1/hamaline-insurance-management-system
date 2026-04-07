@@ -18,7 +18,7 @@ export const clientSchema = z
         company_name: z.string().trim().max(255),
         id_number: z.string().trim().max(50),
         registration_number: z.string().trim().max(50),
-        kra_pin: z.string().trim().max(50).optional().or(z.literal('')),
+        kra_pin: z.string().trim().max(50),
         phone: z.string().trim().max(50),
         email: z.string().trim().email(),
         address: z.string().trim().max(1000),
@@ -61,6 +61,14 @@ export const clientSchema = z
                     message: 'Registration number is required for corporate clients.',
                 });
             }
+        }
+
+        if (!values.kra_pin) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['kra_pin'],
+                message: 'KRA PIN is required.',
+            });
         }
 
         if (!values.phone) {
@@ -134,7 +142,7 @@ export default function ClientForm({
         const payload = {
             ...values,
             // Keep backend expectations simple: transform empty strings to null.
-            kra_pin: values.kra_pin ? values.kra_pin : null,
+            kra_pin: values.kra_pin || null,
             notes: values.notes ? values.notes : null,
         };
 
@@ -250,7 +258,7 @@ export default function ClientForm({
                     )}
 
                     <div className="grid gap-2">
-                        <Label htmlFor="kra_pin">KRA PIN (optional)</Label>
+                        <Label htmlFor="kra_pin">KRA PIN</Label>
                         <Input
                             id="kra_pin"
                             placeholder="e.g. ABC1234567"

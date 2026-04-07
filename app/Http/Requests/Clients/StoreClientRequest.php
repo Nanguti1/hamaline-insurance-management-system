@@ -40,7 +40,7 @@ class StoreClientRequest extends FormRequest
                 'unique:clients,registration_number',
             ],
 
-            'kra_pin' => ['nullable', 'string', 'max:50'],
+            'kra_pin' => ['required', 'string', 'max:50'],
 
             'phone' => ['required', 'string', 'max:50'],
             'email' => ['required', $emailRule, 'max:255', 'unique:clients,email'],
@@ -50,4 +50,3 @@ class StoreClientRequest extends FormRequest
         ];
     }
 }
-

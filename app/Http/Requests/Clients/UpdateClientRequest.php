@@ -45,7 +45,7 @@ class UpdateClientRequest extends FormRequest
                 Rule::unique('clients', 'registration_number')->ignore($clientId),
             ],
 
-            'kra_pin' => ['nullable', 'string', 'max:50'],
+            'kra_pin' => ['required', 'string', 'max:50'],
 
             'phone' => ['required', 'string', 'max:50'],
             'email' => [
@@ -60,4 +60,3 @@ class UpdateClientRequest extends FormRequest
         ];
     }
 }
-
