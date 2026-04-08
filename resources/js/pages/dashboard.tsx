@@ -43,14 +43,14 @@ export default function Dashboard({ metrics, recentReports, showReportsSection =
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl bg-background p-4">
                 <Heading
                     title="Dashboard"
                     description="Operational snapshot across policies, premiums, clients, and claims"
                 />
 
                 <div className="grid gap-4 md:grid-cols-4">
-                    <Card>
+                    <Card className="bg-surface/70">
                         <CardContent className="p-4">
                             <div className="text-sm text-muted-foreground">Active policies</div>
                             <div className="mt-2 text-2xl font-semibold">
@@ -58,13 +58,13 @@ export default function Dashboard({ metrics, recentReports, showReportsSection =
                             </div>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-surface/70">
                         <CardContent className="p-4">
                             <div className="text-sm text-muted-foreground">Clients</div>
                             <div className="mt-2 text-2xl font-semibold">{overview.clients_count}</div>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-surface/70">
                         <CardContent className="p-4">
                             <div className="text-sm text-muted-foreground">Premium received</div>
                             <div className="mt-2 text-2xl font-semibold">
@@ -72,7 +72,7 @@ export default function Dashboard({ metrics, recentReports, showReportsSection =
                             </div>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-surface/70">
                         <CardContent className="p-4">
                             <div className="text-sm text-muted-foreground">Claims total</div>
                             <div className="mt-2 text-2xl font-semibold">
@@ -83,7 +83,7 @@ export default function Dashboard({ metrics, recentReports, showReportsSection =
                 </div>
 
                 {showReportsSection ? (
-                    <Card>
+                    <Card className="border-primary/10 bg-white">
                         <CardContent className="p-4">
                             <div className="flex items-center justify-between gap-3">
                                 <div>
@@ -109,7 +109,7 @@ export default function Dashboard({ metrics, recentReports, showReportsSection =
                                     (recentReports ?? []).map((r) => (
                                         <div
                                             key={r.id}
-                                            className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                                            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface/40 px-3 py-2"
                                         >
                                             <div>
                                                 <div className="text-sm font-medium">{r.title}</div>

@@ -27,7 +27,7 @@ const TableHeader = React.forwardRef<
     <thead
         ref={ref}
         data-slot="table-header"
-        className={cn('[&_tr]:border-b border-table-border', className)}
+        className={cn('bg-primary text-primary-foreground [&_tr]:border-b [&_tr]:border-primary/70', className)}
         {...props}
     />
 ))
@@ -40,7 +40,7 @@ const TableBody = React.forwardRef<
     <tbody
         ref={ref}
         data-slot="table-body"
-        className={cn('[&_tr:last-child]:border-0', className)}
+        className={cn('[&_tr:last-child]:border-0 [&_tr:nth-child(odd)]:bg-white [&_tr:nth-child(even)]:bg-surface/60', className)}
         {...props}
     />
 ))
@@ -67,7 +67,7 @@ const TableRow = React.forwardRef<
         ref={ref}
         data-slot="table-row"
         className={cn(
-            'border-b border-table-border/50 transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted',
+            'border-b border-border/50 transition-colors hover:bg-secondary/40 data-[state=selected]:bg-secondary/50',
             className,
         )}
         {...props}
@@ -83,7 +83,7 @@ const TableHead = React.forwardRef<
         ref={ref}
         data-slot="table-head"
         className={cn(
-            'h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0',
+            'h-12 px-4 text-left align-middle font-semibold text-primary-foreground [&:has([role=checkbox])]:pr-0',
             className,
         )}
         {...props}

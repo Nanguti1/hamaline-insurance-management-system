@@ -81,7 +81,7 @@ export default function ClientsIndex({ clients, filters }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={pageTitle} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl bg-background p-4">
                 <Heading
                     title="Clients"
                     description="Manage individual and corporate clients"
@@ -92,7 +92,7 @@ export default function ClientsIndex({ clients, filters }: Props) {
                     </Button>
                 </div>
 
-                <Card>
+                <Card className="bg-surface/70">
                     <CardHeader className="space-y-1">
                         <h2 className="text-sm font-medium">Search</h2>
                     </CardHeader>
@@ -162,9 +162,9 @@ export default function ClientsIndex({ clients, filters }: Props) {
                     </Card>
                 ) : (
                     <>
-                        <Card>
+                        <Card className="border-primary/10 bg-white">
                             <CardContent className="p-0">
-                                <div className="flex items-center justify-between gap-3 border-b p-4">
+                                <div className="flex items-center justify-between gap-3 border-b border-border p-4">
                                     <div className="text-sm text-muted-foreground">
                                         {clients?.data.length ?? 0} result(s)
                                     </div>

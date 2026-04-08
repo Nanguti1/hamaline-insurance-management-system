@@ -170,7 +170,7 @@ export default function ClientForm({
     };
 
     return (
-        <Card>
+        <Card className="border-primary/10 bg-white">
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
             </CardHeader>
@@ -308,7 +308,7 @@ export default function ClientForm({
                         <InputError message={errors.notes?.message} />
                     </div>
 
-                    <CardFooter className="px-0">
+                    <CardFooter className="border-t border-border/70 px-0 pt-6">
                         <div className="flex w-full items-center justify-end gap-3">
                             <Button
                                 type="button"
