@@ -47,15 +47,30 @@ type Props = {
     filters?: {
         q?: string | null;
         type?: string | null;
+        policy_type?: string | null;
+        medical_category?: string | null;
+        vehicle_use?: string | null;
+        private_use_class?: string | null;
+        commercial_class?: string | null;
     };
 };
 
 export default function ClientsIndex({ clients, filters }: Props) {
     const initialQ = filters?.q ?? '';
     const initialType = (filters?.type ?? '') as 'individual' | 'corporate' | '';
+    const initialPolicyType = filters?.policy_type ?? '';
+    const initialMedicalCategory = filters?.medical_category ?? '';
+    const initialVehicleUse = filters?.vehicle_use ?? '';
+    const initialPrivateUseClass = filters?.private_use_class ?? '';
+    const initialCommercialClass = filters?.commercial_class ?? '';
 
     const [q, setQ] = useState<string>(initialQ);
     const [type, setType] = useState<'individual' | 'corporate' | ''>(initialType);
+    const [policyType, setPolicyType] = useState<string>(initialPolicyType);
+    const [medicalCategory, setMedicalCategory] = useState<string>(initialMedicalCategory);
+    const [vehicleUse, setVehicleUse] = useState<string>(initialVehicleUse);
+    const [privateUseClass, setPrivateUseClass] = useState<string>(initialPrivateUseClass);
+    const [commercialClass, setCommercialClass] = useState<string>(initialCommercialClass);
 
     const emptyState = !clients || clients.data.length === 0;
 
@@ -72,6 +87,11 @@ export default function ClientsIndex({ clients, filters }: Props) {
             {
                 q: q || undefined,
                 type: type || undefined,
+                policy_type: policyType || undefined,
+                medical_category: medicalCategory || undefined,
+                vehicle_use: vehicleUse || undefined,
+                private_use_class: privateUseClass || undefined,
+                commercial_class: commercialClass || undefined,
             },
             { preserveState: true, replace: true },
         );
@@ -136,6 +156,120 @@ export default function ClientsIndex({ clients, filters }: Props) {
                                 </Select>
                             </div>
 
+                            {/* Dependent Filters */}
+                            {type === 'corporate' && (
+                                <div className="grid gap-2">
+                                    <Label>Policy Type</Label>
+                                    <Select
+                                        value={policyType || 'all'}
+                                        onValueChange={(value) =>
+                                            setPolicyType(value === 'all' ? '' : value)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All policy types" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="medical">Medical</SelectItem>
+                                            <SelectItem value="motor">Motor</SelectItem>
+                                            <SelectItem value="wiba">WIBA</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
+                            {policyType === 'medical' && type === 'corporate' && (
+                                <div className="grid gap-2">
+                                    <Label>Medical Category</Label>
+                                    <Select
+                                        value={medicalCategory || 'all'}
+                                        onValueChange={(value) =>
+                                            setMedicalCategory(value === 'all' ? '' : value)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All categories" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="A">Category A</SelectItem>
+                                            <SelectItem value="B">Category B</SelectItem>
+                                            <SelectItem value="C">Category C</SelectItem>
+                                            <SelectItem value="D">Category D</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
+                            {policyType === 'motor' && type === 'corporate' && (
+                                <div className="grid gap-2">
+                                    <Label>Vehicle Use</Label>
+                                    <Select
+                                        value={vehicleUse || 'all'}
+                                        onValueChange={(value) =>
+                                            setVehicleUse(value === 'all' ? '' : value)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All vehicle uses" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="private">Private</SelectItem>
+                                            <SelectItem value="commercial">Commercial</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
+                            {vehicleUse === 'private' && policyType === 'motor' && type === 'corporate' && (
+                                <div className="grid gap-2">
+                                    <Label>Private Use Class</Label>
+                                    <Select
+                                        value={privateUseClass || 'all'}
+                                        onValueChange={(value) =>
+                                            setPrivateUseClass(value === 'all' ? '' : value)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All classes" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="hire">Hire</SelectItem>
+                                            <SelectItem value="chauffeur">Chauffeur</SelectItem>
+                                            <SelectItem value="taxi_hire">Taxi Hire</SelectItem>
+                                            <SelectItem value="taxi_self_drive">Taxi Self Drive</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
+                            {vehicleUse === 'commercial' && policyType === 'motor' && type === 'corporate' && (
+                                <div className="grid gap-2">
+                                    <Label>Commercial Class</Label>
+                                    <Select
+                                        value={commercialClass || 'all'}
+                                        onValueChange={(value) =>
+                                            setCommercialClass(value === 'all' ? '' : value)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All classes" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="matatu">Matatu</SelectItem>
+                                            <SelectItem value="bus">Bus</SelectItem>
+                                            <SelectItem value="truck">Truck</SelectItem>
+                                            <SelectItem value="taxi">Taxi</SelectItem>
+                                            <SelectItem value="other">Other</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
                             <div className="flex items-end gap-2">
                                 <Button type="submit">Search</Button>
                                 <Button
@@ -144,10 +278,15 @@ export default function ClientsIndex({ clients, filters }: Props) {
                                     onClick={() => {
                                         setQ('');
                                         setType('');
+                                        setPolicyType('');
+                                        setMedicalCategory('');
+                                        setVehicleUse('');
+                                        setPrivateUseClass('');
+                                        setCommercialClass('');
                                         router.get('/clients', {}, { replace: true });
                                     }}
                                 >
-                                    Reset
+                                    Reset filters
                                 </Button>
                             </div>
                         </form>

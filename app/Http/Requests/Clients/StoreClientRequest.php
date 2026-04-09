@@ -47,6 +47,10 @@ class StoreClientRequest extends FormRequest
             'address' => ['required', 'string', 'max:1000'],
 
             'notes' => ['nullable', 'string', 'max:2000'],
+            'national_id_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'kra_pin_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'other_documents' => ['nullable', 'array'],
+            'other_documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ];
     }
 }

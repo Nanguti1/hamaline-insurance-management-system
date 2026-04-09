@@ -8,7 +8,15 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 class ClientService
 {
     /**
-     * @param  array{q?: string|null, type?: string|null}  $filters
+     * @param  array{
+     *   q?: string|null,
+     *   type?: string|null,
+     *   policy_type?: string|null,
+     *   medical_category?: string|null,
+     *   vehicle_use?: string|null,
+     *   private_use_class?: string|null,
+     *   commercial_class?: string|null
+     * }  $filters
      */
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
@@ -16,6 +24,11 @@ class ClientService
 
         $q = $filters['q'] ?? null;
         $type = $filters['type'] ?? null;
+        $policyType = $filters['policy_type'] ?? null;
+        $medicalCategory = $filters['medical_category'] ?? null;
+        $vehicleUse = $filters['vehicle_use'] ?? null;
+        $privateUseClass = $filters['private_use_class'] ?? null;
+        $commercialClass = $filters['commercial_class'] ?? null;
 
         if ($type && in_array($type, ['individual', 'corporate'], true)) {
             $query->where('type', $type);
@@ -31,6 +44,34 @@ class ClientService
                     ->orWhere('email', 'like', "%{$q}%")
                     ->orWhere('phone', 'like', "%{$q}%")
                     ->orWhere('address', 'like', "%{$q}%");
+            });
+        }
+
+        if ($policyType && in_array($policyType, ['motor', 'medical', 'wiba'], true)) {
+            $query->whereHas('policies', function ($policyQuery) use ($policyType, $medicalCategory, $vehicleUse, $privateUseClass, $commercialClass): void {
+                $policyQuery->where('policy_type', $policyType);
+
+                if ($policyType === 'medical' && $medicalCategory) {
+                    $policyQuery->whereHas('medicalDetail', function ($medicalQuery) use ($medicalCategory): void {
+                        $medicalQuery->where('medical_category', $medicalCategory);
+                    });
+                }
+
+                if ($policyType === 'motor') {
+                    $policyQuery->whereHas('motorDetail', function ($motorQuery) use ($vehicleUse, $privateUseClass, $commercialClass): void {
+                        if ($vehicleUse && in_array($vehicleUse, ['private', 'commercial'], true)) {
+                            $motorQuery->where('vehicle_use', $vehicleUse);
+                        }
+
+                        if ($privateUseClass) {
+                            $motorQuery->where('private_use_class', $privateUseClass);
+                        }
+
+                        if ($commercialClass) {
+                            $motorQuery->where('commercial_class', $commercialClass);
+                        }
+                    });
+                }
             });
         }
 
@@ -83,4 +124,3 @@ class ClientService
         return $data;
     }
 }
-

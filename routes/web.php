@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Claims\ClaimController;
+use App\Http\Controllers\ClientDocumentController;
 use App\Http\Controllers\Clients\ClientController;
+use App\Http\Controllers\ClientSearchController;
 use App\Http\Controllers\Commissions\CommissionController;
 use App\Http\Controllers\Documents\ClaimDocumentController;
 use App\Http\Controllers\Documents\PolicyDocumentController;
@@ -11,12 +13,12 @@ use App\Http\Controllers\Policies\PolicyController;
 use App\Http\Controllers\Quotations\QuotationController;
 use App\Http\Controllers\Renewals\RenewalController;
 use App\Http\Controllers\Reports\ReportsController;
-use App\Http\Controllers\Underwriters\UnderwriterController;
-use App\Http\Controllers\Settings\RolesPermissionsController;
-use App\Http\Controllers\Users\UserController;
 use App\Http\Controllers\RiskNotes\MedicalRiskNoteController;
 use App\Http\Controllers\RiskNotes\MotorRiskNoteController;
 use App\Http\Controllers\RiskNotes\WibaRiskNoteController;
+use App\Http\Controllers\Settings\RolesPermissionsController;
+use App\Http\Controllers\Underwriters\UnderwriterController;
+use App\Http\Controllers\Users\UserController;
 use App\Models\ReportRun;
 use App\Services\Reports\ReportsService;
 use Illuminate\Http\Request;
@@ -73,10 +75,20 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::get('clients', [ClientController::class, 'index'])->middleware('permission:clients.view')->name('clients.index');
     Route::get('clients/create', [ClientController::class, 'create'])->middleware('permission:clients.manage')->name('clients.create');
     Route::post('clients', [ClientController::class, 'store'])->middleware('permission:clients.manage')->name('clients.store');
+
+    // Client search routes - must come before parameterized routes
+    Route::get('clients/search', [ClientSearchController::class, 'search'])->name('clients.search');
+    Route::get('clients/suggestions', [ClientSearchController::class, 'suggestions'])->name('clients.suggestions');
+
+    // Parameterized client routes
     Route::get('clients/{client}', [ClientController::class, 'show'])->middleware('permission:clients.view')->name('clients.show');
     Route::get('clients/{client}/edit', [ClientController::class, 'edit'])->middleware('permission:clients.manage')->name('clients.edit');
     Route::put('clients/{client}', [ClientController::class, 'update'])->middleware('permission:clients.manage')->name('clients.update');
     Route::delete('clients/{client}', [ClientController::class, 'destroy'])->middleware('permission:clients.manage')->name('clients.destroy');
+    Route::post('clients/{client}/documents/upload', [ClientDocumentController::class, 'upload'])->name('clients.documents.upload');
+    Route::get('clients/{client}/documents/{document}/download', [ClientDocumentController::class, 'download'])->name('clients.documents.download');
+    Route::delete('clients/{client}/documents/{document}', [ClientDocumentController::class, 'delete'])->name('clients.documents.delete');
+    Route::get('clients/{client}/documents/check', [ClientDocumentController::class, 'checkRequirements'])->name('clients.documents.check');
 
     Route::get('underwriters', [UnderwriterController::class, 'index'])->middleware('permission:underwriters.view')->name('underwriters.index');
     Route::get('underwriters/create', [UnderwriterController::class, 'create'])->middleware('permission:underwriters.manage')->name('underwriters.create');
@@ -100,6 +112,8 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::get('policies', [PolicyController::class, 'index'])->middleware('permission:policies.view')->name('policies.index');
     Route::get('policies/create', [PolicyController::class, 'create'])->middleware('permission:policies.manage')->name('policies.create');
     Route::post('policies', [PolicyController::class, 'store'])->middleware('permission:policies.manage')->name('policies.store');
+    Route::post('policies/progressive', [PolicyController::class, 'progressiveStore'])->middleware('permission:policies.manage')->name('policies.progressive.store');
+    Route::post('policies/{policy}/risk-note', [PolicyController::class, 'createRiskNoteFromPolicy'])->middleware('permission:policies.manage')->name('policies.risk-note.create');
     Route::get('policies/{policy}', [PolicyController::class, 'show'])->middleware('permission:policies.view')->name('policies.show');
     Route::get('policies/{policy}/edit', [PolicyController::class, 'edit'])->middleware('permission:policies.manage')->name('policies.edit');
     Route::put('policies/{policy}', [PolicyController::class, 'update'])->middleware('permission:policies.manage')->name('policies.update');

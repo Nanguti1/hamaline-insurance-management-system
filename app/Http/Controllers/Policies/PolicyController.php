@@ -3,16 +3,23 @@
 namespace App\Http\Controllers\Policies;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Policies\ProgressivePolicyStoreRequest;
 use App\Http\Requests\Policies\StorePolicyRequest;
 use App\Http\Requests\Policies\UpdatePolicyRequest;
 use App\Models\Client;
 use App\Models\Insurer;
+use App\Models\MedicalPolicyDetail;
+use App\Models\MotorPolicyDetail;
 use App\Models\Policy;
+use App\Models\PolicyMember;
 use App\Models\Quotation;
 use App\Models\Underwriter;
+use App\Models\WibaPolicyDetail;
 use App\Services\Access\ResourceAccessService;
 use App\Services\Policies\PolicyService;
+use App\Services\RiskNotes\RiskNoteService;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -69,6 +76,91 @@ class PolicyController extends Controller
     public function store(StorePolicyRequest $request, PolicyService $service): RedirectResponse
     {
         $policy = $service->create($request->validated());
+
+        return to_route('policies.show', $policy);
+    }
+
+    public function progressiveStore(ProgressivePolicyStoreRequest $request, PolicyService $service): RedirectResponse|JsonResponse
+    {
+        $validated = $request->validated();
+
+        // Create base policy
+        $policyData = [
+            'client_id' => $validated['client_id'],
+            'underwriter_id' => $validated['underwriter_id'],
+            'insurer_id' => null,
+            'policy_type' => $validated['policy_type'],
+            'policy_number' => $validated['policy_number'] ?? null,
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'premium_amount' => $validated['premium_amount'],
+            'currency' => $validated['currency'],
+            'notes' => $validated['notes'] ?? null,
+            'status' => 'pending',
+            'created_by' => auth()->id(),
+        ];
+
+        $policy = Policy::create($policyData);
+
+        switch ($validated['policy_type']) {
+            case 'medical':
+                MedicalPolicyDetail::create([
+                    'policy_id' => $policy->id,
+                    'medical_category' => $validated['medical_category'] ?? null,
+                    'benefits' => $validated['medical_benefits'] ?? [],
+                    'notes' => $validated['notes'] ?? null,
+                ]);
+                break;
+
+            case 'motor':
+                MotorPolicyDetail::create([
+                    'policy_id' => $policy->id,
+                    'vehicle_use' => $validated['vehicle_use'],
+                    'cover_type' => $validated['cover_type'],
+                    'private_use_class' => $validated['private_use_class'] ?? null,
+                    'commercial_class' => $validated['commercial_class'] ?? null,
+                    'capacity' => $validated['capacity'] ?? null,
+                    'capacity_unit' => $validated['capacity_unit'] ?? null,
+                    'vehicle_model' => $validated['vehicle_model'] ?? null,
+                    'vehicle_color' => $validated['vehicle_color'] ?? null,
+                    'chassis_number' => $validated['chassis_number'] ?? null,
+                    'engine_number' => $validated['engine_number'] ?? null,
+                    'carriage_capacity' => $validated['carriage_capacity'] ?? null,
+                    'engine_size' => $validated['engine_size'] ?? null,
+                    'notes' => $validated['notes'] ?? null,
+                ]);
+                break;
+
+            case 'wiba':
+                WibaPolicyDetail::create([
+                    'policy_id' => $policy->id,
+                    'notes' => $validated['notes'] ?? null,
+                ]);
+                break;
+        }
+
+        if (in_array($validated['policy_type'], ['medical', 'wiba'], true) && ! empty($validated['members'])) {
+            foreach ($validated['members'] as $index => $member) {
+                PolicyMember::create([
+                    'policy_id' => $policy->id,
+                    'name' => $member['name'],
+                    'payroll_number' => $member['payroll_number'] ?? ($member['identifier'] ?? null),
+                    'id_number' => $member['id_number'] ?? ($member['identifier'] ?? null),
+                    'phone' => $member['phone'] ?? null,
+                    'annual_salary' => $member['annual_salary'] ?? null,
+                    'relationship' => $member['relationship'],
+                    'notes' => null,
+                ]);
+            }
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'policy_id' => $policy->id,
+                'policy_type' => $policy->policy_type,
+            ]);
+        }
 
         return to_route('policies.show', $policy);
     }
@@ -144,6 +236,25 @@ class PolicyController extends Controller
         $service->delete($policy);
 
         return to_route('policies.index');
+    }
+
+    public function createRiskNoteFromPolicy(Policy $policy, RiskNoteService $riskNoteService): JsonResponse
+    {
+        $this->access->assertCanViewPolicy(auth()->user(), $policy);
+
+        $riskNote = $riskNoteService->createRiskNoteFromPolicy($policy, auth()->user());
+
+        $showUrl = match ($riskNote->line_type) {
+            'motor' => route('motor-risks.show', $riskNote),
+            'medical' => route('medical-risks.show', $riskNote),
+            default => route('wiba-risks.show', $riskNote),
+        };
+
+        return response()->json([
+            'risk_note_id' => $riskNote->id,
+            'line_type' => $riskNote->line_type,
+            'url' => $showUrl,
+        ]);
     }
 
     /**

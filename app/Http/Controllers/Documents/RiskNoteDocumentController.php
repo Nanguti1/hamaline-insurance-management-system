@@ -40,7 +40,7 @@ class RiskNoteDocumentController extends Controller
         $file = $validated['document'];
         $path = $file->store('motor-risk-documents', 'public');
 
-        $name = $validated['name'] ?: $this->labelForType($validated['document_type']);
+        $name = ($validated['name'] ?? null) ?: $this->labelForType($validated['document_type']);
 
         $motorRiskNote->documents()->create([
             'uploaded_by' => $request->user()?->id,
@@ -81,4 +81,3 @@ class RiskNoteDocumentController extends Controller
         };
     }
 }
-

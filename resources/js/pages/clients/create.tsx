@@ -16,10 +16,9 @@ export default function ClientsCreate() {
             <Head title="New Client" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <Heading
-                    title="New Client"
+                    title="New client"
                     description="Create a new individual or corporate client"
                 />
-
                 <ClientForm
                     title="Create client"
                     submitLabel="Create"
@@ -31,4 +30,3 @@ export default function ClientsCreate() {
         </AppLayout>
     );
 }
-

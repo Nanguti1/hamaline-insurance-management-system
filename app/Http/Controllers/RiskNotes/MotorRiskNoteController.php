@@ -3,22 +3,22 @@
 namespace App\Http\Controllers\RiskNotes;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\RiskNotes\DecideMedicalRiskNoteRequest;
 use App\Http\Requests\RiskNotes\CancelMedicalRiskNoteRequest;
+use App\Http\Requests\RiskNotes\DecideMedicalRiskNoteRequest;
 use App\Http\Requests\RiskNotes\StoreMotorRiskNoteRequest;
 use App\Models\Client;
-use App\Models\MotorRiskNoteDetails;
 use App\Models\RiskNote;
 use App\Models\Underwriter;
 use App\Services\Access\ResourceAccessService;
 use App\Services\RiskNotes\RiskNoteService;
-use Illuminate\Http\Request;
-use Illuminate\Http\RedirectResponse;
-use Inertia\Inertia;
-use Inertia\Response;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class MotorRiskNoteController extends Controller
 {
@@ -84,6 +84,7 @@ class MotorRiskNoteController extends Controller
 
         $motorRiskNote->load([
             'client',
+            'client.documents',
             'underwriter',
             'motorDetails',
             'underwritingDecisions',
@@ -91,15 +92,59 @@ class MotorRiskNoteController extends Controller
             'documents',
         ]);
 
-        return Inertia::render('motor-risks/show', [
-            'riskNote' => $motorRiskNote,
-            'documents' => $motorRiskNote->documents->map(fn ($doc) => [
-                'id' => $doc->id,
-                'name' => $doc->name,
-                'url' => Storage::url($doc->file_path),
+        $riskNoteDocuments = $motorRiskNote->documents->map(fn ($doc) => [
+            'id' => $doc->id,
+            'name' => $doc->name,
+            'url' => Storage::url($doc->file_path),
+            'mime_type' => $doc->mime_type,
+            'size' => $doc->size,
+            'source' => 'risk_note',
+        ]);
+
+        $clientRequiredDocuments = $motorRiskNote->client?->documents
+            ?->whereIn('document_type', ['national_id', 'kra_pin'])
+            ->map(fn ($doc) => [
+                'id' => -1 * (int) $doc->id,
+                'name' => $doc->document_type === 'national_id' ? 'ID copy' : 'KRA PIN',
+                'url' => route('clients.documents.download', [
+                    'client' => $motorRiskNote->client_id,
+                    'document' => $doc->id,
+                ]),
                 'mime_type' => $doc->mime_type,
                 'size' => $doc->size,
-            ])->values(),
+                'source' => 'client',
+            ]) ?? collect();
+
+        if ($motorRiskNote->client?->id_number && $clientRequiredDocuments->doesntContain('name', 'ID copy')) {
+            $clientRequiredDocuments->push([
+                'id' => -1000000 - (int) $motorRiskNote->client_id,
+                'name' => 'ID copy',
+                'url' => null,
+                'mime_type' => null,
+                'size' => 0,
+                'source' => 'client',
+            ]);
+        }
+
+        if ($motorRiskNote->client?->kra_pin && $clientRequiredDocuments->doesntContain('name', 'KRA PIN')) {
+            $clientRequiredDocuments->push([
+                'id' => -2000000 - (int) $motorRiskNote->client_id,
+                'name' => 'KRA PIN',
+                'url' => null,
+                'mime_type' => null,
+                'size' => 0,
+                'source' => 'client',
+            ]);
+        }
+
+        $documents = $riskNoteDocuments
+            ->concat($clientRequiredDocuments)
+            ->unique('name')
+            ->values();
+
+        return Inertia::render('motor-risks/show', [
+            'riskNote' => $motorRiskNote,
+            'documents' => $documents,
         ]);
     }
 
@@ -134,6 +179,21 @@ class MotorRiskNoteController extends Controller
             ->pluck('name')
             ->map(fn ($name) => trim((string) $name))
             ->all();
+
+        $client = $motorRiskNote->client()->with(['documents'])->first();
+        $clientLabels = $client?->documents
+            ->whereIn('document_type', ['national_id', 'kra_pin'])
+            ->map(fn ($doc) => $doc->document_type === 'national_id' ? 'ID copy' : 'KRA PIN')
+            ->values()
+            ->all() ?? [];
+        if ($client?->id_number && ! in_array('ID copy', $clientLabels, true)) {
+            $clientLabels[] = 'ID copy';
+        }
+        if ($client?->kra_pin && ! in_array('KRA PIN', $clientLabels, true)) {
+            $clientLabels[] = 'KRA PIN';
+        }
+
+        $uploadedLabels = array_values(array_unique(array_merge($uploadedLabels, $clientLabels)));
 
         $missing = array_values(array_diff(self::REQUIRED_DOCUMENT_LABELS, $uploadedLabels));
         if ($missing !== []) {
@@ -198,7 +258,7 @@ class MotorRiskNoteController extends Controller
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, array{id:int,name:string|null}>
+     * @return Collection<int, array{id:int,name:string|null}>
      */
     private function underwriterSelectOptions()
     {
@@ -213,4 +273,3 @@ class MotorRiskNoteController extends Controller
         return Underwriter::query()->orderBy('name')->get(['id', 'name']);
     }
 }
-

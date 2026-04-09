@@ -3,25 +3,115 @@
 namespace App\Services\RiskNotes;
 
 use App\Concerns\TracksUserStamps;
-use App\Models\MotorRiskNoteDetails;
 use App\Models\MedicalMember;
-use App\Models\MedicalMemberBenefit;
 use App\Models\MedicalRiskNoteDetails;
+use App\Models\MotorRiskNoteDetails;
 use App\Models\Policy;
+use App\Models\PolicyMember;
 use App\Models\RiskNote;
-use App\Models\RiskNoteUnderwritingDecision;
 use App\Models\User;
 use App\Models\WibaEmployee;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class RiskNoteService
 {
+    public function createRiskNoteFromPolicy(Policy $policy, User $user): RiskNote
+    {
+        $policy->loadMissing(['client', 'motorDetail', 'medicalDetail', 'wibaDetail', 'members']);
+
+        $existing = RiskNote::query()
+            ->where('policy_id', $policy->id)
+            ->where('line_type', $policy->policy_type)
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        if ($policy->policy_type === 'motor') {
+            $coverType = $policy->motorDetail?->cover_type === 'third_party'
+                ? 'third_party_only'
+                : ($policy->motorDetail?->cover_type ?? 'comprehensive');
+
+            $motorDetail = $policy->motorDetail;
+
+            $riskNote = $this->createMotorRiskNote([
+                'client_id' => $policy->client_id,
+                'underwriter_id' => $policy->underwriter_id,
+                'start_date' => $policy->start_date?->toDateString(),
+                'end_date' => $policy->end_date?->toDateString(),
+                'premium_amount' => (float) ($policy->premium_amount ?? 0),
+                'currency' => $policy->currency ?? 'KES',
+                'notes' => $policy->notes,
+                'insured_name' => $policy->client?->display_name ?? 'To be captured',
+                'insured_id_number' => $policy->client?->identifier ?? 'TO-BE-CAPTURED',
+                'insured_phone' => $policy->client?->phone ?? 'TO-BE-CAPTURED',
+                'insured_email' => $policy->client?->email ?? 'to-be-captured@example.com',
+                'insured_postal_address' => $policy->client?->address ?? 'To be captured',
+                'registration_number' => $policy->policy_number ?? ('PENDING-'.$policy->id),
+                'make_model' => $motorDetail?->vehicle_model ?? 'To be captured',
+                'year_of_manufacture' => (int) now()->year,
+                'chassis_number' => $motorDetail?->chassis_number ?? 'TO-BE-CAPTURED',
+                'engine_number' => $motorDetail?->engine_number ?? 'TO-BE-CAPTURED',
+                'body_type' => $motorDetail?->vehicle_color ?? 'To be captured',
+                'vehicle_use' => $motorDetail?->vehicle_use ?? 'private',
+                'cover_type' => $coverType,
+                'sum_insured' => (float) (($motorDetail?->carriage_capacity ?? 0) * 1000),
+            ], $user);
+            $riskNote->update(['policy_id' => $policy->id]);
+
+            return $riskNote->refresh();
+        }
+
+        if ($policy->policy_type === 'medical') {
+            $members = $this->mapPolicyMembersToMedicalMembers(
+                $policy,
+                (array) ($policy->medicalDetail?->benefits ?? [])
+            );
+
+            $riskNote = $this->createMedicalRiskNote([
+                'client_id' => $policy->client_id,
+                'underwriter_id' => $policy->underwriter_id,
+                'plan_type' => $policy->client?->type === 'corporate' ? 'corporate' : 'individual',
+                'corporate_category_code' => $policy->medicalDetail?->medical_category,
+                'junior_children_count' => null,
+                'start_date' => $policy->start_date?->toDateString(),
+                'end_date' => $policy->end_date?->toDateString(),
+                'premium_amount' => (float) ($policy->premium_amount ?? 0),
+                'currency' => $policy->currency ?? 'KES',
+                'notes' => $policy->notes,
+                'members' => $members,
+            ], $user);
+            $riskNote->update(['policy_id' => $policy->id]);
+
+            return $riskNote->refresh();
+        }
+
+        $employees = $this->mapPolicyMembersToWibaEmployees($policy);
+
+        $riskNote = $this->createWibaRiskNote([
+            'client_id' => $policy->client_id,
+            'underwriter_id' => $policy->underwriter_id,
+            'start_date' => $policy->start_date?->toDateString(),
+            'end_date' => $policy->end_date?->toDateString(),
+            'premium_amount' => (float) ($policy->premium_amount ?? 0),
+            'currency' => $policy->currency ?? 'KES',
+            'notes' => $policy->notes,
+            'employees' => $employees,
+        ], $user);
+        $riskNote->update(['policy_id' => $policy->id]);
+
+        return $riskNote->refresh();
+    }
+
     use TracksUserStamps;
 
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     /**
@@ -31,7 +121,7 @@ class RiskNoteService
      */
     public function createMedicalRiskNote(array $data, User $user): RiskNote
     {
-        return DB::transaction(function () use ($data, $user): RiskNote {
+        return DB::transaction(function () use ($data): RiskNote {
             $lineType = 'medical';
             $riskNote = RiskNote::create([
                 'line_type' => $lineType,
@@ -79,6 +169,7 @@ class RiskNoteService
 
             // Ensure the details relation is actually created
             $riskNote->setRelation('medicalDetails', $MedicalDetails);
+
             return $riskNote->refresh();
         });
     }
@@ -90,7 +181,7 @@ class RiskNoteService
      */
     public function createMotorRiskNote(array $data, User $user): RiskNote
     {
-        return DB::transaction(function () use ($data, $user): RiskNote {
+        return DB::transaction(function () use ($data): RiskNote {
             $lineType = 'motor';
             $riskNote = RiskNote::create([
                 'line_type' => $lineType,
@@ -137,7 +228,7 @@ class RiskNoteService
      */
     public function createWibaRiskNote(array $data, User $user): RiskNote
     {
-        return DB::transaction(function () use ($data, $user): RiskNote {
+        return DB::transaction(function () use ($data): RiskNote {
             $lineType = 'wiba';
 
             $riskNote = RiskNote::create([
@@ -573,5 +664,82 @@ class RiskNoteService
 
         return sprintf('%s-%s-%04d', $prefix, $year, $seq);
     }
-}
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapPolicyMembersToMedicalMembers(Policy $policy, array $selectedBenefits = []): array
+    {
+        $benefits = collect($selectedBenefits)
+            ->filter(fn (mixed $benefit): bool => is_string($benefit))
+            ->map(fn (string $benefit): array => [
+                'benefit_type' => $benefit,
+                'amount' => 0,
+            ])
+            ->values()
+            ->all();
+
+        $policyMembers = $policy->members;
+        if ($policyMembers->isEmpty()) {
+            return [[
+                'member_sequence' => 0,
+                'is_principal' => true,
+                'relationship' => 'principal',
+                'name' => $policy->client?->display_name ?? 'Principal Member',
+                'date_of_birth' => now()->toDateString(),
+                'phone' => $policy->client?->phone ?? 'TO-BE-CAPTURED',
+                'id_number' => $policy->client?->identifier ?? 'TO-BE-CAPTURED',
+                'birth_certificate_number' => null,
+                'benefits' => $benefits,
+            ]];
+        }
+
+        return $policyMembers->values()->map(function (PolicyMember $member, int $index) use ($benefits): array {
+            $relationship = strtolower((string) ($member->relationship ?? 'child'));
+            if (! in_array($relationship, ['principal', 'spouse', 'child'], true)) {
+                $relationship = $index === 0 ? 'principal' : 'child';
+            }
+
+            return [
+                'member_sequence' => $index,
+                'is_principal' => $index === 0,
+                'relationship' => $index === 0 ? 'principal' : $relationship,
+                'name' => $member->name,
+                'date_of_birth' => $member->date_of_birth?->toDateString() ?? now()->toDateString(),
+                'phone' => $member->phone,
+                'id_number' => $member->id_number ?? 'TO-BE-CAPTURED',
+                'birth_certificate_number' => null,
+                'benefits' => $index === 0 ? $benefits : [],
+            ];
+        })->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapPolicyMembersToWibaEmployees(Policy $policy): array
+    {
+        $policyMembers = $policy->members;
+        if ($policyMembers->isEmpty()) {
+            return [[
+                'employee_sequence' => 0,
+                'name' => $policy->client?->display_name ?? 'Employee',
+                'payroll_number' => 'TO-BE-CAPTURED',
+                'id_number' => $policy->client?->identifier ?? 'TO-BE-CAPTURED',
+                'date_of_birth' => now()->toDateString(),
+                'annual_salary' => 0,
+            ]];
+        }
+
+        return $policyMembers->values()->map(function (PolicyMember $member, int $index): array {
+            return [
+                'employee_sequence' => $index,
+                'name' => $member->name,
+                'payroll_number' => $member->payroll_number ?: 'TO-BE-CAPTURED',
+                'id_number' => $member->id_number ?: 'TO-BE-CAPTURED',
+                'date_of_birth' => $member->date_of_birth?->toDateString() ?? now()->toDateString(),
+                'annual_salary' => (float) ($member->annual_salary ?? 0),
+            ];
+        })->all();
+    }
+}

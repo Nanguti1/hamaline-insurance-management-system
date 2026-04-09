@@ -35,7 +35,7 @@ type Props = {
         } | null;
         policy?: { id: number; policy_number: string; status: string } | null;
     };
-    documents?: Array<{ id: number; name: string; url: string; mime_type?: string | null; size: number }>;
+    documents?: Array<{ id: number; name: string; url: string | null; mime_type?: string | null; size: number; source?: 'risk_note' | 'client' }>;
 };
 
 const requiredDocs = ['Log book', 'ID copy', 'KRA PIN'] as const;
@@ -54,6 +54,7 @@ export default function MotorRiskNoteShow({ riskNote, documents = [] }: Props) {
     const [cancelReason, setCancelReason] = useState('');
     const [documentType, setDocumentType] = useState<'log_book' | 'id_copy' | 'kra_pin'>('log_book');
     const [documentFile, setDocumentFile] = useState<File | null>(null);
+    const [uploadMessage, setUploadMessage] = useState('');
 
     const period = formatDateRange(riskNote.start_date, riskNote.end_date);
 
@@ -179,18 +180,39 @@ export default function MotorRiskNoteShow({ riskNote, documents = [] }: Props) {
                                 <div className="flex items-center gap-2">
                                     <Button
                                         size="sm"
+                                        disabled={!documentFile}
                                         onClick={() => {
-                                            if (!documentFile) return;
+                                            if (!documentFile) {
+                                                setUploadMessage('Please choose a file before uploading.');
+                                                return;
+                                            }
+                                            setUploadMessage('');
                                             router.post(
                                                 `/motor-risks/${riskNote.id}/documents`,
                                                 { document: documentFile, document_type: documentType },
-                                                { forceFormData: true, onSuccess: () => setDocumentFile(null) },
+                                                {
+                                                    forceFormData: true,
+                                                    onSuccess: () => {
+                                                        setDocumentFile(null);
+                                                        setUploadMessage('Document uploaded successfully.');
+                                                    },
+                                                    onError: () => {
+                                                        setUploadMessage('Upload failed. Please check the file and try again.');
+                                                    },
+                                                },
                                             );
                                         }}
                                     >
                                         Upload document
                                     </Button>
-                                    {errors.documents && <span className="text-sm text-destructive">{errors.documents}</span>}
+                                    {(errors.documents || errors.document || errors.document_type) && (
+                                        <span className="text-sm text-destructive">
+                                            {errors.documents ?? errors.document ?? errors.document_type}
+                                        </span>
+                                    )}
+                                    {!errors.documents && !errors.document && !errors.document_type && uploadMessage && (
+                                        <span className="text-sm text-muted-foreground">{uploadMessage}</span>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     {documents.length === 0 ? (
@@ -198,15 +220,23 @@ export default function MotorRiskNoteShow({ riskNote, documents = [] }: Props) {
                                     ) : (
                                         documents.map((doc) => (
                                             <div key={doc.id} className="flex items-center justify-between rounded border px-3 py-2">
-                                                <a className="text-sm underline" href={doc.url} target="_blank" rel="noreferrer">
-                                                    {doc.name}
-                                                </a>
+                                                {doc.url ? (
+                                                    <a className="text-sm underline" href={doc.url} target="_blank" rel="noreferrer">
+                                                        {doc.name}
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-sm">{doc.name} (from client record)</span>
+                                                )}
                                                 <Button
                                                     size="sm"
                                                     variant="destructive"
-                                                    onClick={() => router.delete(`/motor-risks/${riskNote.id}/documents/${doc.id}`)}
+                                                    disabled={doc.source === 'client' || doc.id < 0}
+                                                    onClick={() => {
+                                                        if (doc.id < 0) return;
+                                                        router.delete(`/motor-risks/${riskNote.id}/documents/${doc.id}`);
+                                                    }}
                                                 >
-                                                    Remove
+                                                    {doc.source === 'client' ? 'From Client' : 'Remove'}
                                                 </Button>
                                             </div>
                                         ))

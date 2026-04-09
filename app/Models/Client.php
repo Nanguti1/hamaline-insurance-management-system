@@ -58,4 +58,17 @@ class Client extends Model
             ? $this->id_number
             : $this->registration_number;
     }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ClientDocument::class);
+    }
+
+    public function hasRequiredDocuments(): bool
+    {
+        $requiredTypes = ['national_id', 'kra_pin'];
+        $uploadedTypes = $this->documents()->pluck('document_type')->toArray();
+
+        return empty(array_diff($requiredTypes, $uploadedTypes));
+    }
 }

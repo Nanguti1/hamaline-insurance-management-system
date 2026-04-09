@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -112,6 +113,10 @@ export default function ClientForm({
     initialValues,
     onCancelHref,
 }: Props) {
+    const [nationalIdFile, setNationalIdFile] = useState<File | null>(null);
+    const [kraPinFile, setKraPinFile] = useState<File | null>(null);
+    const [otherFiles, setOtherFiles] = useState<File[]>([]);
+
     const {
         register,
         setValue,
@@ -137,13 +142,16 @@ export default function ClientForm({
     });
 
     const type = watch('type');
+    const formErrors = errors as Record<string, { message?: string }>;
 
     const submit = (values: ClientFormValues) => {
-        const payload = {
+        const payload: Record<string, unknown> = {
             ...values,
-            // Keep backend expectations simple: transform empty strings to null.
             kra_pin: values.kra_pin || null,
             notes: values.notes ? values.notes : null,
+            national_id_document: nationalIdFile,
+            kra_pin_document: kraPinFile,
+            other_documents: otherFiles,
         };
 
         const onError = (serverErrors: Record<string, unknown>) => {
@@ -158,6 +166,7 @@ export default function ClientForm({
         if (method === 'post') {
             router.post(submitUrl, payload, {
                 preserveScroll: true,
+                forceFormData: true,
                 onError,
             });
             return;
@@ -165,9 +174,14 @@ export default function ClientForm({
 
         router.put(submitUrl, payload, {
             preserveScroll: true,
+            forceFormData: true,
             onError,
         });
     };
+
+    const canSubmit = useMemo(() => {
+        return !!nationalIdFile && !!kraPinFile;
+    }, [nationalIdFile, kraPinFile]);
 
     return (
         <Card className="border-primary/10 bg-white">
@@ -308,6 +322,33 @@ export default function ClientForm({
                         <InputError message={errors.notes?.message} />
                     </div>
 
+                    <div className="space-y-3 rounded-lg border p-4">
+                        <h3 className="text-sm font-semibold">Required files</h3>
+                        <div className="grid gap-2">
+                            <Label htmlFor="national_id_document">National ID document</Label>
+                            <Input id="national_id_document" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setNationalIdFile(e.target.files?.[0] ?? null)} />
+                            <span className="text-xs text-muted-foreground">{nationalIdFile ? 'Uploaded' : 'Not uploaded'}</span>
+                            <InputError message={formErrors.national_id_document?.message} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="kra_pin_document">KRA PIN document</Label>
+                            <Input id="kra_pin_document" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setKraPinFile(e.target.files?.[0] ?? null)} />
+                            <span className="text-xs text-muted-foreground">{kraPinFile ? 'Uploaded' : 'Not uploaded'}</span>
+                            <InputError message={formErrors.kra_pin_document?.message} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 rounded-lg border p-4">
+                        <h3 className="text-sm font-semibold">Other files (optional)</h3>
+                        <Input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            multiple
+                            onChange={(e) => setOtherFiles(Array.from(e.target.files ?? []))}
+                        />
+                        <span className="text-xs text-muted-foreground">{otherFiles.length > 0 ? `${otherFiles.length} file(s) selected` : 'No optional files selected'}</span>
+                    </div>
+
                     <CardFooter className="border-t border-border/70 px-0 pt-6">
                         <div className="flex w-full items-center justify-end gap-3">
                             <Button
@@ -318,7 +359,7 @@ export default function ClientForm({
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>
+                            <Button type="submit" disabled={isSubmitting || !canSubmit}>
                                 {isSubmitting ? 'Saving...' : submitLabel}
                             </Button>
                         </div>

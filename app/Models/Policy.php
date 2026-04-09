@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Policy extends Model
@@ -101,5 +102,25 @@ class Policy extends Model
     public function riskNotes(): HasMany
     {
         return $this->hasMany(RiskNote::class, 'policy_id');
+    }
+
+    public function medicalDetail(): HasOne
+    {
+        return $this->hasOne(MedicalPolicyDetail::class);
+    }
+
+    public function motorDetail(): HasOne
+    {
+        return $this->hasOne(MotorPolicyDetail::class);
+    }
+
+    public function wibaDetail(): HasOne
+    {
+        return $this->hasOne(WibaPolicyDetail::class);
+    }
+
+    public function members(): HasMany
+    {
+        return $this->hasMany(PolicyMember::class);
     }
 }
