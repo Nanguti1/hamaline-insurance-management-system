@@ -17,6 +17,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { formatDateRange } from '@/lib/date';
+import { deleteResource } from '@/lib/delete-resource';
 import type { BreadcrumbItem } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -25,7 +26,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Policies', href: '/policies' }]
 
 type PolicyRow = {
     id: number;
-    policy_number: string;
+    policy_number: string | null;
     status: string;
     premium_amount: number | string;
     currency: string;
@@ -164,11 +165,13 @@ export default function PoliciesIndex({ policies, filters }: Props) {
                                     {policies?.data.map((p) => {
                                         const clientName =
                                             p.client?.name ?? p.client?.company_name ?? '-';
+                                        const policyLabel =
+                                            p.policy_number?.trim() ? p.policy_number : '#';
 
                                         return (
                                             <TableRow key={p.id}>
                                                 <TableCell className="font-medium">
-                                                    {p.policy_number}
+                                                    {policyLabel}
                                                 </TableCell>
                                                 <TableCell>{clientName}</TableCell>
                                                 <TableCell>{p.underwriter?.name ?? '-'}</TableCell>
@@ -194,7 +197,7 @@ export default function PoliciesIndex({ policies, filters }: Props) {
                                                             <DialogContent>
                                                                 <DialogHeader>
                                                                     <DialogDescription>
-                                                                        Delete policy &ldquo;{p.policy_number}&rdquo;?
+                                                                        Delete policy &ldquo;{policyLabel}&rdquo;?
                                                                     </DialogDescription>
                                                                 </DialogHeader>
                                                                 <DialogFooter>
@@ -203,7 +206,12 @@ export default function PoliciesIndex({ policies, filters }: Props) {
                                                                     </DialogClose>
                                                                     <Button
                                                                         variant="destructive"
-                                                                        onClick={() => router.delete(`/policies/${p.id}`)}
+                                                                        onClick={() =>
+                                                                            deleteResource(
+                                                                                `/policies/${p.id}`,
+                                                                                'Policy deleted successfully.',
+                                                                            )
+                                                                        }
                                                                     >
                                                                         Confirm delete
                                                                     </Button>

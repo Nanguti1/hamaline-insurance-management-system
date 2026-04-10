@@ -16,6 +16,7 @@ import {
     DialogHeader,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { deleteResource } from '@/lib/delete-resource';
 import type { BreadcrumbItem } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -215,8 +216,9 @@ export default function QuotationsIndex({ quotations, filters }: Props) {
                                                                     <Button
                                                                         variant="destructive"
                                                                         onClick={() =>
-                                                                            router.delete(
+                                                                            deleteResource(
                                                                                 `/quotations/${qt.id}`,
+                                                                                'Quotation deleted successfully.',
                                                                             )
                                                                         }
                                                                     >

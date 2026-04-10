@@ -51,7 +51,7 @@ class ReportsController extends Controller
     public function store(StoreReportRunRequest $request, ReportsService $service): RedirectResponse
     {
         $report = $service->runReport($request->validated(), $request->user());
-        return to_route('reports.show', $report);
+        return to_route('reports.show', $report)->with('success', 'Report generated successfully.');
     }
 
     public function show(ReportRun $reportRun): Response
@@ -71,7 +71,7 @@ class ReportsController extends Controller
     public function update(UpdateReportRunRequest $request, ReportRun $reportRun, ReportsService $service): RedirectResponse
     {
         $service->recompute($reportRun, $request->validated(), $request->user());
-        return to_route('reports.show', $reportRun);
+        return to_route('reports.show', $reportRun)->with('success', 'Report updated successfully.');
     }
 
     public function destroy(ReportRun $reportRun, ReportsService $service): RedirectResponse

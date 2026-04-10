@@ -41,10 +41,16 @@ const basePolicySchema = z.object({
     medical_category: z.enum(['A', 'B', 'C', 'D']).optional(),
     vehicle_use: z.enum(['private', 'commercial']).optional(),
     cover_type: z.enum(['third_party', 'comprehensive']).optional(),
+    cover_plan: z.string().trim().max(100).optional(),
+    cover_addons: z.array(z.enum(['comprehensive', 'excess', 'pvt'])).optional(),
     private_use_class: z.enum(['hire', 'chauffeur', 'taxi_hire', 'taxi_self_drive']).optional(),
     commercial_class: z.enum(['matatu', 'bus', 'truck', 'taxi', 'other']).optional(),
     capacity: z.preprocess(emptyToUndefined, z.number().positive().optional()),
+    registration_number: z.string().trim().max(50).optional(),
+    vehicle_make: z.string().trim().max(100).optional(),
     vehicle_model: z.string().trim().max(255).optional(),
+    year_of_manufacture: z.preprocess(emptyToUndefined, z.number().int().min(1900).max(2100).optional()),
+    vehicle_value: z.preprocess(emptyToUndefined, z.number().nonnegative().optional()),
     vehicle_color: z.string().trim().max(50).optional(),
     chassis_number: z.string().trim().max(100).optional(),
     engine_number: z.string().trim().max(100).optional(),
@@ -115,10 +121,16 @@ export default function ProgressivePolicyForm({
             medical_category: initialValues?.medical_category,
             vehicle_use: initialValues?.vehicle_use,
             cover_type: initialValues?.cover_type,
+            cover_plan: initialValues?.cover_plan,
+            cover_addons: initialValues?.cover_addons ?? [],
             private_use_class: initialValues?.private_use_class,
             commercial_class: initialValues?.commercial_class,
             capacity: initialValues?.capacity,
+            registration_number: initialValues?.registration_number,
+            vehicle_make: initialValues?.vehicle_make,
             vehicle_model: initialValues?.vehicle_model,
+            year_of_manufacture: initialValues?.year_of_manufacture,
+            vehicle_value: initialValues?.vehicle_value,
             vehicle_color: initialValues?.vehicle_color,
             chassis_number: initialValues?.chassis_number,
             engine_number: initialValues?.engine_number,
@@ -133,6 +145,7 @@ export default function ProgressivePolicyForm({
     const watchedPolicyType = watch('policy_type');
     const watchedVehicleUse = watch('vehicle_use');
     const watchedCoverType = watch('cover_type');
+    const watchedCoverAddons = watch('cover_addons') ?? [];
     const watchedClientType = watch('client_type');
 
     const extractFirstErrorMessage = (errorBag: FieldErrors<PolicyValues>): string | null => {
@@ -187,6 +200,34 @@ export default function ProgressivePolicyForm({
             }
             if (!values.cover_type) {
                 setError('cover_type', { message: 'Cover type is required for motor policies.' });
+                return;
+            }
+            if (values.vehicle_use === 'private' && values.cover_type === 'third_party' && !values.cover_plan) {
+                setError('cover_plan', { message: 'Please select a third party option.' });
+                return;
+            }
+            if (values.vehicle_use === 'private' && values.cover_type === 'comprehensive' && (!values.cover_addons || values.cover_addons.length === 0)) {
+                setError('cover_addons', { message: 'Please select at least one comprehensive option.' });
+                return;
+            }
+            if (values.vehicle_use === 'commercial' && !values.cover_plan) {
+                setError('cover_plan', { message: 'Please select a commercial cover option.' });
+                return;
+            }
+            if (!values.registration_number?.trim()) {
+                setError('registration_number', { message: 'Registration number is required for motor policies.' });
+                return;
+            }
+            if (values.vehicle_value === undefined || values.vehicle_value === null || Number.isNaN(values.vehicle_value)) {
+                setError('vehicle_value', { message: 'Vehicle value is required for motor policies.' });
+                return;
+            }
+            if (!values.vehicle_color?.trim()) {
+                setError('vehicle_color', { message: 'Vehicle color is required for motor policies.' });
+                return;
+            }
+            if (!values.chassis_number?.trim()) {
+                setError('chassis_number', { message: 'Chassis number is required for motor policies.' });
                 return;
             }
         }
@@ -456,7 +497,11 @@ export default function ProgressivePolicyForm({
                                                 <Label>Vehicle Use</Label>
                                                 <Select
                                                     value={watchedVehicleUse ?? ''}
-                                                    onValueChange={(value) => setValue('vehicle_use', value as 'private' | 'commercial', { shouldValidate: true })}
+                                                    onValueChange={(value) => {
+                                                        setValue('vehicle_use', value as 'private' | 'commercial', { shouldValidate: true });
+                                                        setValue('cover_plan', '', { shouldValidate: true });
+                                                        setValue('cover_addons', [], { shouldValidate: true });
+                                                    }}
                                                 >
                                                     <SelectTrigger><SelectValue placeholder="Select vehicle use" /></SelectTrigger>
                                                     <SelectContent>
@@ -470,7 +515,11 @@ export default function ProgressivePolicyForm({
                                                 <Label>Cover Type</Label>
                                                 <Select
                                                     value={watchedCoverType ?? ''}
-                                                    onValueChange={(value) => setValue('cover_type', value as 'third_party' | 'comprehensive', { shouldValidate: true })}
+                                                    onValueChange={(value) => {
+                                                        setValue('cover_type', value as 'third_party' | 'comprehensive', { shouldValidate: true });
+                                                        setValue('cover_plan', '', { shouldValidate: true });
+                                                        setValue('cover_addons', [], { shouldValidate: true });
+                                                    }}
                                                 >
                                                     <SelectTrigger><SelectValue placeholder="Select cover type" /></SelectTrigger>
                                                     <SelectContent>
@@ -481,35 +530,92 @@ export default function ProgressivePolicyForm({
                                                 <InputError message={errors.cover_type?.message} />
                                             </div>
                                         </div>
-                                        {watchedVehicleUse === 'commercial' && (
+                                        {watchedVehicleUse === 'private' && watchedCoverType === 'third_party' && (
                                             <div>
-                                                <Label>Commercial Class</Label>
-                                                <Select onValueChange={(value) => setValue('commercial_class', value as 'matatu' | 'bus' | 'truck' | 'taxi' | 'other', { shouldValidate: true })}>
-                                                    <SelectTrigger><SelectValue placeholder="Select commercial class" /></SelectTrigger>
+                                                <Label>Third Party Option</Label>
+                                                <Select
+                                                    value={watch('cover_plan') ?? ''}
+                                                    onValueChange={(value) => setValue('cover_plan', value, { shouldValidate: true })}
+                                                >
+                                                    <SelectTrigger><SelectValue placeholder="Select third party option" /></SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="matatu">Matatu</SelectItem>
-                                                        <SelectItem value="bus">Bus</SelectItem>
-                                                        <SelectItem value="truck">Truck</SelectItem>
-                                                        <SelectItem value="taxi">Taxi</SelectItem>
-                                                        <SelectItem value="other">Other</SelectItem>
+                                                        <SelectItem value="third_party_only">Third Party Only</SelectItem>
+                                                        <SelectItem value="third_party_and_fire">Third Party and Fire</SelectItem>
                                                     </SelectContent>
                                                 </Select>
-                                                <InputError message={errors.commercial_class?.message} />
+                                                <InputError message={errors.cover_plan?.message} />
                                             </div>
                                         )}
-                                        {watchedVehicleUse === 'private' && (
+                                        {watchedVehicleUse === 'private' && watchedCoverType === 'comprehensive' && (
                                             <div>
-                                                <Label>Private Use Class</Label>
-                                                <Select onValueChange={(value) => setValue('private_use_class', value as 'hire' | 'chauffeur' | 'taxi_hire' | 'taxi_self_drive', { shouldValidate: true })}>
-                                                    <SelectTrigger><SelectValue placeholder="Select private use class" /></SelectTrigger>
+                                                <Label>Comprehensive Options</Label>
+                                                <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                                                    {[
+                                                        { key: 'comprehensive', label: 'Comprehensive' },
+                                                        { key: 'excess', label: 'Excess' },
+                                                        { key: 'pvt', label: 'PVT' },
+                                                    ].map((addon) => (
+                                                        <label key={addon.key} className="flex items-center gap-2 rounded border p-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={watchedCoverAddons.includes(addon.key as 'comprehensive' | 'excess' | 'pvt')}
+                                                                onChange={(e) => {
+                                                                    const key = addon.key as 'comprehensive' | 'excess' | 'pvt';
+                                                                    const next = e.target.checked
+                                                                        ? [...watchedCoverAddons, key]
+                                                                        : watchedCoverAddons.filter((x) => x !== key);
+                                                                    setValue('cover_addons', next, { shouldValidate: true });
+                                                                }}
+                                                            />
+                                                            <span>{addon.label}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                                <InputError message={errors.cover_addons?.message as string | undefined} />
+                                            </div>
+                                        )}
+                                        {watchedVehicleUse === 'commercial' && watchedCoverType === 'third_party' && (
+                                            <div>
+                                                <Label>Third Party Option</Label>
+                                                <Select
+                                                    value={watch('cover_plan') ?? ''}
+                                                    onValueChange={(value) => setValue('cover_plan', value, { shouldValidate: true })}
+                                                >
+                                                    <SelectTrigger><SelectValue placeholder="Select commercial third party option" /></SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="hire">Hire</SelectItem>
-                                                        <SelectItem value="chauffeur">Chauffeur</SelectItem>
-                                                        <SelectItem value="taxi_hire">Taxi Hire</SelectItem>
-                                                        <SelectItem value="taxi_self_drive">Taxi Self Drive</SelectItem>
+                                                        <SelectItem value="third_party_psv">Third Party PSV</SelectItem>
+                                                        <SelectItem value="third_party_matatu">Third Party Matatu</SelectItem>
+                                                        <SelectItem value="third_party_general_cartag">Third Party General Cartag</SelectItem>
+                                                        <SelectItem value="third_party_own_goods">Third Party Own Goods</SelectItem>
+                                                        <SelectItem value="third_party_bus">Third Party Bus</SelectItem>
+                                                        <SelectItem value="third_party_heavy_trucks">Third Party Heavy Trucks</SelectItem>
+                                                        <SelectItem value="third_party_school_bus">Third Party School Bus</SelectItem>
+                                                        <SelectItem value="third_party_ambulance">Third Party Ambulance</SelectItem>
                                                     </SelectContent>
                                                 </Select>
-                                                <InputError message={errors.private_use_class?.message} />
+                                                <InputError message={errors.cover_plan?.message} />
+                                            </div>
+                                        )}
+                                        {watchedVehicleUse === 'commercial' && watchedCoverType === 'comprehensive' && (
+                                            <div>
+                                                <Label>Comprehensive Option</Label>
+                                                <Select
+                                                    value={watch('cover_plan') ?? ''}
+                                                    onValueChange={(value) => setValue('cover_plan', value, { shouldValidate: true })}
+                                                >
+                                                    <SelectTrigger><SelectValue placeholder="Select commercial comprehensive option" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="comprehensive_psv">Comprehensive PSV</SelectItem>
+                                                        <SelectItem value="comprehensive_matatu">Comprehensive Matatu</SelectItem>
+                                                        <SelectItem value="comprehensive_general_cartag">Comprehensive General Cartag</SelectItem>
+                                                        <SelectItem value="comprehensive_own_goods">Comprehensive Own Goods</SelectItem>
+                                                        <SelectItem value="comprehensive_bus">Comprehensive Bus</SelectItem>
+                                                        <SelectItem value="comprehensive_heavy_trucks">Comprehensive Heavy Trucks</SelectItem>
+                                                        <SelectItem value="comprehensive_school_bus">Comprehensive School Bus</SelectItem>
+                                                        <SelectItem value="comprehensive_ambulance">Comprehensive Ambulance</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <InputError message={errors.cover_plan?.message} />
                                             </div>
                                         )}
                                         {watchedCoverType === 'comprehensive' && (
@@ -521,9 +627,29 @@ export default function ProgressivePolicyForm({
                                         )}
                                         <div className="grid gap-4 md:grid-cols-2">
                                             <div>
+                                                <Label htmlFor="registration_number">Registration Number</Label>
+                                                <Input id="registration_number" placeholder="e.g. KDA 123A" {...register('registration_number')} />
+                                                <InputError message={errors.registration_number?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="vehicle_value">Vehicle Value</Label>
+                                                <Input id="vehicle_value" type="number" step="0.01" {...register('vehicle_value', { valueAsNumber: true })} />
+                                                <InputError message={errors.vehicle_value?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="vehicle_make">Vehicle Make</Label>
+                                                <Input id="vehicle_make" placeholder="e.g. Toyota" {...register('vehicle_make')} />
+                                                <InputError message={errors.vehicle_make?.message} />
+                                            </div>
+                                            <div>
                                                 <Label htmlFor="vehicle_model">Vehicle Model</Label>
                                                 <Input id="vehicle_model" placeholder="e.g. Toyota Axio" {...register('vehicle_model')} />
                                                 <InputError message={errors.vehicle_model?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="year_of_manufacture">Year of Manufacture</Label>
+                                                <Input id="year_of_manufacture" type="number" {...register('year_of_manufacture', { valueAsNumber: true })} />
+                                                <InputError message={errors.year_of_manufacture?.message} />
                                             </div>
                                             <div>
                                                 <Label htmlFor="vehicle_color">Vehicle Color</Label>

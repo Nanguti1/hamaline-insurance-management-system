@@ -49,7 +49,7 @@ class PolicyDocumentController extends Controller
             ]);
         }
 
-        return back();
+        return back()->with('success', 'Document uploaded successfully.');
     }
 
     public function destroy(Request $request, Policy $policy, Document $document): RedirectResponse

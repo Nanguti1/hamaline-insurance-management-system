@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { formatDate } from '@/lib/date';
+import { deleteResource } from '@/lib/delete-resource';
 import type { BreadcrumbItem } from '@/types';
 
 type Policy = { policy_number?: string | null };
@@ -138,7 +139,12 @@ export default function ClaimsShow({ claim, documents = [] }: Props) {
                                                 <Button
                                                     size="sm"
                                                     variant="destructive"
-                                                    onClick={() => router.delete(`/claims/${claim.id}/documents/${doc.id}`)}
+                                                    onClick={() =>
+                                                        deleteResource(
+                                                            `/claims/${claim.id}/documents/${doc.id}`,
+                                                            'Document removed successfully.',
+                                                        )
+                                                    }
                                                 >
                                                     Remove
                                                 </Button>

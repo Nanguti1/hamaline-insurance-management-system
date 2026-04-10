@@ -50,7 +50,7 @@ class RiskNoteDocumentController extends Controller
             'size' => $file->getSize() ?? 0,
         ]);
 
-        return back();
+        return back()->with('success', 'Document uploaded successfully.');
     }
 
     public function destroy(Request $request, RiskNote $motorRiskNote, Document $document): RedirectResponse

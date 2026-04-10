@@ -17,6 +17,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { formatDate } from '@/lib/date';
+import { deleteResource } from '@/lib/delete-resource';
 import type { BreadcrumbItem } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -215,7 +216,15 @@ export default function PaymentsIndex({ payments, filters }: Props) {
                                                                 <DialogClose asChild>
                                                                     <Button variant="secondary">Cancel</Button>
                                                                 </DialogClose>
-                                                                <Button variant="destructive" onClick={() => router.delete(`/payments/${pay.id}`)}>
+                                                                <Button
+                                                                    variant="destructive"
+                                                                    onClick={() =>
+                                                                        deleteResource(
+                                                                            `/payments/${pay.id}`,
+                                                                            'Payment deleted successfully.',
+                                                                        )
+                                                                    }
+                                                                >
                                                                     Confirm delete
                                                                 </Button>
                                                             </DialogFooter>

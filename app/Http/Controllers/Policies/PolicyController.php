@@ -77,7 +77,7 @@ class PolicyController extends Controller
     {
         $policy = $service->create($request->validated());
 
-        return to_route('policies.show', $policy);
+        return to_route('policies.show', $policy)->with('success', 'Policy created successfully.');
     }
 
     public function progressiveStore(ProgressivePolicyStoreRequest $request, PolicyService $service): RedirectResponse|JsonResponse
@@ -119,9 +119,15 @@ class PolicyController extends Controller
                     'cover_type' => $validated['cover_type'],
                     'private_use_class' => $validated['private_use_class'] ?? null,
                     'commercial_class' => $validated['commercial_class'] ?? null,
+                    'cover_plan' => $validated['cover_plan'] ?? null,
+                    'cover_addons' => $validated['cover_addons'] ?? null,
                     'capacity' => $validated['capacity'] ?? null,
                     'capacity_unit' => $validated['capacity_unit'] ?? null,
+                    'registration_number' => $validated['registration_number'] ?? null,
+                    'vehicle_make' => $validated['vehicle_make'] ?? null,
                     'vehicle_model' => $validated['vehicle_model'] ?? null,
+                    'year_of_manufacture' => $validated['year_of_manufacture'] ?? null,
+                    'vehicle_value' => $validated['vehicle_value'] ?? null,
                     'vehicle_color' => $validated['vehicle_color'] ?? null,
                     'chassis_number' => $validated['chassis_number'] ?? null,
                     'engine_number' => $validated['engine_number'] ?? null,
@@ -162,7 +168,7 @@ class PolicyController extends Controller
             ]);
         }
 
-        return to_route('policies.show', $policy);
+        return to_route('policies.show', $policy)->with('success', 'Policy created successfully.');
     }
 
     public function show(Policy $policy): Response
@@ -226,7 +232,7 @@ class PolicyController extends Controller
 
         $service->update($policy, $request->validated());
 
-        return to_route('policies.show', $policy);
+        return to_route('policies.show', $policy)->with('success', 'Policy updated successfully.');
     }
 
     public function destroy(Policy $policy, PolicyService $service): RedirectResponse

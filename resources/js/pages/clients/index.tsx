@@ -18,6 +18,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { deleteResource } from '@/lib/delete-resource';
 import type { BreadcrumbItem } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -409,8 +410,9 @@ export default function ClientsIndex({ clients, filters }: Props) {
                                                                         <Button
                                                                             variant="destructive"
                                                                             onClick={() =>
-                                                                                router.delete(
+                                                                                deleteResource(
                                                                                     `/clients/${client.id}`,
+                                                                                    'Client deleted successfully.',
                                                                                 )
                                                                             }
                                                                         >

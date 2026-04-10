@@ -16,6 +16,7 @@ import {
     DialogHeader,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { deleteResource } from '@/lib/delete-resource';
 import type { BreadcrumbItem } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -156,7 +157,15 @@ export default function ReportsIndex({ reports, filters }: Props) {
                                                                 <DialogClose asChild>
                                                                     <Button variant="secondary">Cancel</Button>
                                                                 </DialogClose>
-                                                                <Button variant="destructive" onClick={() => router.delete(`/reports/${r.id}`)}>
+                                                                <Button
+                                                                variant="destructive"
+                                                                onClick={() =>
+                                                                    deleteResource(
+                                                                        `/reports/${r.id}`,
+                                                                        'Report deleted successfully.',
+                                                                    )
+                                                                }
+                                                            >
                                                                     Confirm delete
                                                                 </Button>
                                                             </DialogFooter>

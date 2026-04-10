@@ -53,7 +53,7 @@ class PaymentController extends Controller
     {
         $payment = $service->create($request->validated());
 
-        return to_route('payments.show', $payment);
+        return to_route('payments.show', $payment)->with('success', 'Payment created successfully.');
     }
 
     public function show(Payment $payment): Response
@@ -90,7 +90,7 @@ class PaymentController extends Controller
 
         $service->update($payment, $request->validated());
 
-        return to_route('payments.show', $payment);
+        return to_route('payments.show', $payment)->with('success', 'Payment updated successfully.');
     }
 
     public function destroy(Payment $payment, PaymentService $service): RedirectResponse

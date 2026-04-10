@@ -16,6 +16,7 @@ import {
     DialogHeader,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { deleteResource } from '@/lib/delete-resource';
 import type { BreadcrumbItem } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -195,7 +196,15 @@ export default function CommissionsIndex({ commissions, filters }: Props) {
                                                                 <DialogClose asChild>
                                                                     <Button variant="secondary">Cancel</Button>
                                                                 </DialogClose>
-                                                                <Button variant="destructive" onClick={() => router.delete(`/commissions/${cm.id}`)}>
+                                                                <Button
+                                                                variant="destructive"
+                                                                onClick={() =>
+                                                                    deleteResource(
+                                                                        `/commissions/${cm.id}`,
+                                                                        'Commission deleted successfully.',
+                                                                    )
+                                                                }
+                                                            >
                                                                     Confirm delete
                                                                 </Button>
                                                             </DialogFooter>

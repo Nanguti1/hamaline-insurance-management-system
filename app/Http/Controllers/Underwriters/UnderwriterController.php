@@ -42,7 +42,7 @@ class UnderwriterController extends Controller
     {
         $underwriter = $service->create($request->validated());
 
-        return to_route('underwriters.show', $underwriter);
+        return to_route('underwriters.show', $underwriter)->with('success', 'Underwriter created successfully.');
     }
 
     public function show(Underwriter $underwriter): Response
@@ -68,7 +68,7 @@ class UnderwriterController extends Controller
     {
         $service->update($underwriter, $request->validated());
 
-        return to_route('underwriters.show', $underwriter);
+        return to_route('underwriters.show', $underwriter)->with('success', 'Underwriter updated successfully.');
     }
 
     public function destroy(Underwriter $underwriter, UnderwriterService $service): RedirectResponse

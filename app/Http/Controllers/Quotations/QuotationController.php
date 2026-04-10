@@ -64,7 +64,7 @@ class QuotationController extends Controller
             Mail::to($email)->send(new QuotationIssuedMail($quotation));
         }
 
-        return to_route('quotations.show', $quotation);
+        return to_route('quotations.show', $quotation)->with('success', 'Quotation created successfully.');
     }
 
     public function suggestions(Request $request): JsonResponse
@@ -157,7 +157,7 @@ class QuotationController extends Controller
             }
         }
 
-        return to_route('quotations.show', $quotation);
+        return to_route('quotations.show', $quotation)->with('success', 'Quotation updated successfully.');
     }
 
     public function destroy(Quotation $quotation, QuotationService $service): RedirectResponse

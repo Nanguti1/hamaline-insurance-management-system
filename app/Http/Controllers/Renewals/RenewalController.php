@@ -43,7 +43,7 @@ class RenewalController extends Controller
     public function store(StoreRenewalRequest $request, RenewalService $service): RedirectResponse
     {
         $renewal = $service->create($request->validated());
-        return to_route('renewals.show', $renewal);
+        return to_route('renewals.show', $renewal)->with('success', 'Renewal created successfully.');
     }
 
     public function show(Renewal $renewal): Response
@@ -66,7 +66,7 @@ class RenewalController extends Controller
     public function update(UpdateRenewalRequest $request, Renewal $renewal, RenewalService $service): RedirectResponse
     {
         $service->update($renewal, $request->validated());
-        return to_route('renewals.show', $renewal);
+        return to_route('renewals.show', $renewal)->with('success', 'Renewal updated successfully.');
     }
 
     public function destroy(Renewal $renewal, RenewalService $service): RedirectResponse

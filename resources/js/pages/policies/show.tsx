@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { formatDateRange } from '@/lib/date';
+import { deleteResource } from '@/lib/delete-resource';
 import type { BreadcrumbItem } from '@/types';
 
 type Client = { name?: string | null; company_name?: string | null };
@@ -190,7 +191,12 @@ export default function PoliciesShow({ policy, documents = [], linkedRiskNote = 
                                                 <Button
                                                     size="sm"
                                                     variant="destructive"
-                                                    onClick={() => router.delete(`/policies/${policy.id}/documents/${doc.id}`)}
+                                                    onClick={() =>
+                                                        deleteResource(
+                                                            `/policies/${policy.id}/documents/${doc.id}`,
+                                                            'Document removed successfully.',
+                                                        )
+                                                    }
                                                 >
                                                     Remove
                                                 </Button>

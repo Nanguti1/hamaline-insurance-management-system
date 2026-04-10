@@ -47,7 +47,7 @@ class ClaimController extends Controller
     {
         $claim = $service->create($request->validated());
 
-        return to_route('claims.show', $claim);
+        return to_route('claims.show', $claim)->with('success', 'Claim created successfully.');
     }
 
     public function show(Claim $claim): Response
@@ -89,7 +89,7 @@ class ClaimController extends Controller
 
         $service->update($claim, $request->validated());
 
-        return to_route('claims.show', $claim);
+        return to_route('claims.show', $claim)->with('success', 'Claim updated successfully.');
     }
 
     public function destroy(Claim $claim, ClaimService $service): RedirectResponse

@@ -50,26 +50,40 @@ class ProgressivePolicyStoreRequest extends FormRequest
         if ($this->input('policy_type') === 'motor') {
             $rules['vehicle_use'] = ['required', 'string', 'in:private,commercial'];
             $rules['cover_type'] = ['required', 'string', 'in:third_party,comprehensive'];
+            $rules['cover_plan'] = ['nullable', 'string', 'max:100'];
+            $rules['cover_addons'] = ['nullable', 'array'];
+            $rules['cover_addons.*'] = ['string', 'in:comprehensive,excess,pvt'];
 
-            if ($this->input('vehicle_use') === 'private') {
-                $rules['private_use_class'] = ['required', 'string', 'in:hire,chauffeur,taxi_hire,taxi_self_drive'];
+            if ($this->input('vehicle_use') === 'private' && $this->input('cover_type') === 'third_party') {
+                $rules['cover_plan'] = ['required', 'string', 'in:third_party_only,third_party_and_fire'];
             }
 
-            if ($this->input('vehicle_use') === 'commercial') {
-                $rules['commercial_class'] = ['required', 'string', 'in:matatu,bus,truck,taxi,other'];
-            }
-
-            if ($this->input('cover_type') === 'comprehensive') {
+            if ($this->input('vehicle_use') === 'private' && $this->input('cover_type') === 'comprehensive') {
+                $rules['cover_addons'] = ['required', 'array', 'min:1'];
                 $rules['capacity'] = ['required', 'numeric', 'min:0.01'];
                 $rules['capacity_unit'] = ['nullable', 'string', 'in:cc'];
             }
 
-            $rules['vehicle_model'] = ['required', 'string', 'max:255'];
+            if ($this->input('vehicle_use') === 'commercial' && $this->input('cover_type') === 'third_party') {
+                $rules['cover_plan'] = ['required', 'string', 'in:third_party_psv,third_party_matatu,third_party_general_cartag,third_party_own_goods,third_party_bus,third_party_heavy_trucks,third_party_school_bus,third_party_ambulance'];
+            }
+
+            if ($this->input('vehicle_use') === 'commercial' && $this->input('cover_type') === 'comprehensive') {
+                $rules['cover_plan'] = ['required', 'string', 'in:comprehensive_psv,comprehensive_matatu,comprehensive_general_cartag,comprehensive_own_goods,comprehensive_bus,comprehensive_heavy_trucks,comprehensive_school_bus,comprehensive_ambulance'];
+                $rules['capacity'] = ['required', 'numeric', 'min:0.01'];
+                $rules['capacity_unit'] = ['nullable', 'string', 'in:cc'];
+            }
+
+            $rules['registration_number'] = ['required', 'string', 'max:50'];
+            $rules['vehicle_value'] = ['required', 'numeric', 'min:0'];
+            $rules['vehicle_model'] = ['nullable', 'string', 'max:255'];
+            $rules['vehicle_make'] = ['nullable', 'string', 'max:100'];
+            $rules['year_of_manufacture'] = ['nullable', 'integer', 'min:1900', 'max:2100'];
             $rules['vehicle_color'] = ['required', 'string', 'max:50'];
             $rules['chassis_number'] = ['required', 'string', 'max:100'];
-            $rules['engine_number'] = ['required', 'string', 'max:100'];
-            $rules['carriage_capacity'] = ['required', 'numeric', 'min:0.01'];
-            $rules['engine_size'] = ['required', 'string', 'max:50'];
+            $rules['engine_number'] = ['nullable', 'string', 'max:100'];
+            $rules['carriage_capacity'] = ['nullable', 'numeric', 'min:0.01'];
+            $rules['engine_size'] = ['nullable', 'string', 'max:50'];
         }
 
         if (
@@ -101,15 +115,13 @@ class ProgressivePolicyStoreRequest extends FormRequest
             'premium_amount.required' => 'Premium amount is required.',
             'vehicle_use.required' => 'Vehicle use is required for motor policies.',
             'cover_type.required' => 'Cover type is required for motor policies.',
-            'private_use_class.required' => 'Private use class is required for private vehicles.',
-            'commercial_class.required' => 'Commercial class is required for commercial vehicles.',
+            'cover_plan.required' => 'Please select a cover plan for this motor policy.',
+            'cover_addons.required' => 'Please select at least one comprehensive option.',
             'capacity.required' => 'Capacity is required for comprehensive cover.',
-            'vehicle_model.required' => 'Vehicle model is required for motor policies.',
+            'registration_number.required' => 'Car registration number is required for motor policies.',
+            'vehicle_value.required' => 'Vehicle value is required for motor policies.',
             'vehicle_color.required' => 'Vehicle color is required for motor policies.',
             'chassis_number.required' => 'Chassis number is required for motor policies.',
-            'engine_number.required' => 'Engine number is required for motor policies.',
-            'carriage_capacity.required' => 'Carriage capacity is required for motor policies.',
-            'engine_size.required' => 'Engine size is required for motor policies.',
             'medical_category.required_if' => 'Medical category is required for corporate medical policies.',
             'members.*.phone.required' => 'Phone is required for corporate members.',
         ];

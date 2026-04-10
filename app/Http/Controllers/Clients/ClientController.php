@@ -63,7 +63,7 @@ class ClientController extends Controller
             $this->storeDocument($client, 'other', $otherDocument);
         }
 
-        return to_route('clients.show', $client);
+        return to_route('clients.show', $client)->with('success', 'Client created successfully.');
     }
 
     public function show(Client $client): Response
@@ -87,7 +87,7 @@ class ClientController extends Controller
     ): RedirectResponse {
         $service->update($client, $request->validated());
 
-        return to_route('clients.show', $client);
+        return to_route('clients.show', $client)->with('success', 'Client updated successfully.');
     }
 
     public function destroy(Client $client, ClientService $service): RedirectResponse

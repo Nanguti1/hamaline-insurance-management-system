@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { formatDateRange } from '@/lib/date';
+import { deleteResource } from '@/lib/delete-resource';
 import type { BreadcrumbItem } from '@/types';
 
 type Props = {
@@ -233,7 +234,10 @@ export default function MotorRiskNoteShow({ riskNote, documents = [] }: Props) {
                                                     disabled={doc.source === 'client' || doc.id < 0}
                                                     onClick={() => {
                                                         if (doc.id < 0) return;
-                                                        router.delete(`/motor-risks/${riskNote.id}/documents/${doc.id}`);
+                                                        deleteResource(
+                                                            `/motor-risks/${riskNote.id}/documents/${doc.id}`,
+                                                            'Document removed successfully.',
+                                                        );
                                                     }}
                                                 >
                                                     {doc.source === 'client' ? 'From Client' : 'Remove'}

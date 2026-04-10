@@ -47,7 +47,7 @@ class CommissionController extends Controller
     public function store(StoreCommissionRequest $request, CommissionService $service): RedirectResponse
     {
         $commission = $service->create($request->validated());
-        return to_route('commissions.show', $commission);
+        return to_route('commissions.show', $commission)->with('success', 'Commission created successfully.');
     }
 
     public function show(Commission $commission): Response
@@ -73,7 +73,7 @@ class CommissionController extends Controller
     public function update(UpdateCommissionRequest $request, Commission $commission, CommissionService $service): RedirectResponse
     {
         $service->update($commission, $request->validated());
-        return to_route('commissions.show', $commission);
+        return to_route('commissions.show', $commission)->with('success', 'Commission updated successfully.');
     }
 
     public function destroy(Commission $commission, CommissionService $service): RedirectResponse

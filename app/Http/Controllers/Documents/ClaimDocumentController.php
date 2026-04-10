@@ -49,7 +49,7 @@ class ClaimDocumentController extends Controller
             ]);
         }
 
-        return back();
+        return back()->with('success', 'Document uploaded successfully.');
     }
 
     public function destroy(Request $request, Claim $claim, Document $document): RedirectResponse

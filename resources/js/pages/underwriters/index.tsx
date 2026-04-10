@@ -17,6 +17,7 @@ import {
     DialogHeader,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { deleteResource } from '@/lib/delete-resource';
 import type { BreadcrumbItem } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -165,7 +166,10 @@ export default function UnderwritersIndex({ underwriters, filters }: Props) {
                                                                 <Button
                                                                     variant="destructive"
                                                                     onClick={() =>
-                                                                        router.delete(`/underwriters/${uw.id}`)
+                                                                        deleteResource(
+                                                                            `/underwriters/${uw.id}`,
+                                                                            'Underwriter deleted successfully.',
+                                                                        )
                                                                     }
                                                                 >
                                                                     Confirm delete
