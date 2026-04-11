@@ -104,6 +104,13 @@ class ProgressivePolicyStoreRequest extends FormRequest
             $rules['members.*.phone'] = ['required', 'string', 'max:50'];
         }
 
+        if (
+            $this->input('client_type') === 'corporate'
+            && $this->input('policy_type') === 'medical'
+        ) {
+            $rules['members.*.relationship'] = ['required', 'string', 'in:Employee'];
+        }
+
         return $rules;
     }
 
