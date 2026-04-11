@@ -13,7 +13,7 @@ type Client = {
     phone: string; 
     email: string;
     documents?: Array<{ document_type: string; filename: string; }>;
-    medical_categories?: Array<{ category_code: string; category_name: string; }>;
+    medical_categories?: Array<{ category_code: string; category_name: string; category_identifier: string; }>;
 };
 
 type Props = {

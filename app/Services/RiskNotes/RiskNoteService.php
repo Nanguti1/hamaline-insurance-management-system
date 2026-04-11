@@ -418,17 +418,23 @@ class RiskNoteService
             throw new \InvalidArgumentException('Risk note line_type must be medical.');
         }
 
-        $riskNote->load(['client', 'underwriter', 'insurer', 'medicalDetails', 'medicalMembers.benefits']);
+        $riskNote->load(['client.medicalCategories', 'underwriter', 'insurer', 'medicalDetails', 'medicalMembers.benefits']);
+
+        $planType = $riskNote->medicalDetails?->plan_type ?? 'individual';
+        $isCorporatePlan = $planType === 'corporate';
 
         $principal = $riskNote->medicalMembers->firstWhere('is_principal', true);
         if (! $principal) {
             $principal = $riskNote->medicalMembers->sortBy('member_sequence')->first();
         }
 
-        $dependants = $riskNote->medicalMembers
-            ->filter(fn (MedicalMember $m) => ! $m->is_principal)
+        $coveredMembers = $riskNote->medicalMembers
             ->sortBy('member_sequence')
             ->values();
+
+        $dependants = $isCorporatePlan
+            ? $coveredMembers
+            : $coveredMembers->filter(fn (MedicalMember $m) => ! $m->is_principal)->values();
 
         $benefitTypes = ['inpatient', 'outpatient', 'maternity', 'dental', 'optical'];
         $principalBenefits = $principal?->benefits ?? collect();
@@ -471,9 +477,22 @@ class RiskNoteService
             ...($dependantsTableLines ?: ['| - | - | - | - |']),
         ]);
 
-        $principalName = $principal?->name ?? '-';
+        $principalName = $isCorporatePlan
+            ? ($riskNote->client?->display_name ?? '-')
+            : ($principal?->name ?? '-');
         $underwriterName = $riskNote->underwriter?->name ?? '-';
         $insurerName = $riskNote->insurer?->name ?? '-';
+        $corporateCategoryDisplay = '-';
+
+        if ($isCorporatePlan) {
+            $categoryCode = $riskNote->medicalDetails?->corporate_category_code;
+            if ($categoryCode) {
+                $matchedCategory = $riskNote->client?->medicalCategories
+                    ?->firstWhere('category_code', $categoryCode);
+                $identifier = $matchedCategory?->category_identifier ?? $matchedCategory?->category_name ?? $categoryCode;
+                $corporateCategoryDisplay = sprintf('%s (%s)', $categoryCode, $identifier);
+            }
+        }
 
         $riskNoteContent = implode(PHP_EOL, [
             '=== MEDICAL RISK NOTE ===',
@@ -487,8 +506,9 @@ class RiskNoteService
             sprintf('Name: %s', $principalName),
             sprintf('Underwriter: %s', $underwriterName),
             sprintf('Period of Insurance: %s', $period),
+            ...($isCorporatePlan ? [sprintf('Category Type: %s', $corporateCategoryDisplay)] : []),
             '',
-            'Dependants',
+            $isCorporatePlan ? 'Employees' : 'Dependants',
             $dependantsTable,
             '',
             'Benefits Summary',
@@ -717,6 +737,22 @@ class RiskNoteService
                 'birth_certificate_number' => null,
                 'benefits' => $benefits,
             ]];
+        }
+
+        if ($policy->client?->type === 'corporate') {
+            return $policyMembers->values()->map(function (PolicyMember $member, int $index) use ($benefits): array {
+                return [
+                    'member_sequence' => $index,
+                    'is_principal' => $index === 0,
+                    'relationship' => 'employee',
+                    'name' => $member->name,
+                    'date_of_birth' => $member->date_of_birth?->toDateString() ?? now()->toDateString(),
+                    'phone' => $member->phone,
+                    'id_number' => $member->id_number ?? 'TO-BE-CAPTURED',
+                    'birth_certificate_number' => null,
+                    'benefits' => $index === 0 ? $benefits : [],
+                ];
+            })->all();
         }
 
         return $policyMembers->values()->map(function (PolicyMember $member, int $index) use ($benefits): array {

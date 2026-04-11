@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -33,6 +33,31 @@ export const policySchema = z
 export type PolicyFormValues = z.infer<typeof policySchema>;
 
 type SelectOption = { id: number; label: string };
+type CoverPeriod = '1_month' | '3_months' | '6_months' | '1_year';
+
+function todayDateString(): string {
+    return new Date().toISOString().slice(0, 10);
+}
+
+function calculateEndDate(startDate: string, coverPeriod: CoverPeriod): string {
+    if (!startDate) {
+        return '';
+    }
+
+    const date = new Date(startDate);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    if (coverPeriod === '1_year') {
+        date.setFullYear(date.getFullYear() + 1);
+    } else {
+        const monthsToAdd = coverPeriod === '1_month' ? 1 : coverPeriod === '3_months' ? 3 : 6;
+        date.setMonth(date.getMonth() + monthsToAdd);
+    }
+
+    return date.toISOString().slice(0, 10);
+}
 
 export type QuotationDetailOption = {
     id: number;
@@ -78,6 +103,8 @@ export default function PolicyForm({
     quotations,
     insurers,
 }: Props) {
+    const [coverPeriod, setCoverPeriod] = useState<CoverPeriod>('1_year');
+    const defaultStartDate = todayDateString();
     const {
         register,
         setValue,
@@ -95,8 +122,8 @@ export default function PolicyForm({
             policy_number: initialValues?.policy_number ?? '',
             policy_type: initialValues?.policy_type ?? '',
             status: initialValues?.status ?? 'pending',
-            start_date: initialValues?.start_date ?? '',
-            end_date: initialValues?.end_date ?? '',
+            start_date: initialValues?.start_date ?? defaultStartDate,
+            end_date: initialValues?.end_date ?? calculateEndDate(defaultStartDate, '1_year'),
             premium_amount: initialValues?.premium_amount ?? 0,
             currency: initialValues?.currency ?? 'KES',
             notes: initialValues?.notes ?? '',
@@ -165,6 +192,17 @@ export default function PolicyForm({
             setValue('notes', q.notes, { shouldValidate: true });
         }
     }, [quotationId, quotations, setValue]);
+
+    useEffect(() => {
+        if (method !== 'post') {
+            return;
+        }
+
+        const startDate = todayDateString();
+        const calculatedEndDate = calculateEndDate(startDate, coverPeriod);
+        setValue('start_date', startDate, { shouldValidate: true });
+        setValue('end_date', calculatedEndDate, { shouldValidate: true });
+    }, [coverPeriod, method, setValue]);
 
     const submit = (values: PolicyFormValues) => {
         const payload = {
@@ -350,13 +388,33 @@ export default function PolicyForm({
 
                     <div className="grid gap-2 md:grid-cols-2">
                         <div className="grid gap-2">
+                            <Label>Cover period</Label>
+                            <Select
+                                value={coverPeriod}
+                                onValueChange={(value) => setCoverPeriod(value as CoverPeriod)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="1_month">1 month</SelectItem>
+                                    <SelectItem value="3_months">3 months</SelectItem>
+                                    <SelectItem value="6_months">6 months</SelectItem>
+                                    <SelectItem value="1_year">1 year</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-2 md:grid-cols-2">
+                        <div className="grid gap-2">
                             <Label htmlFor="start_date">Start date</Label>
-                            <Input id="start_date" type="date" {...register('start_date')} />
+                            <Input id="start_date" type="date" readOnly={method === 'post'} {...register('start_date')} />
                             <InputError message={errors.start_date?.message} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="end_date">End date</Label>
-                            <Input id="end_date" type="date" {...register('end_date')} />
+                            <Input id="end_date" type="date" readOnly={method === 'post'} {...register('end_date')} />
                             <InputError message={errors.end_date?.message} />
                         </div>
                     </div>

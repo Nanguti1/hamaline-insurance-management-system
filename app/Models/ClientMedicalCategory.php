@@ -14,6 +14,7 @@ class ClientMedicalCategory extends Model
         'client_id',
         'category_code',
         'category_name',
+        'category_identifier',
         'description',
         'is_active',
     ];

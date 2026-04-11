@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 
 import AppLayout from '@/layouts/app-layout';
 import Heading from '@/components/heading';
+import ClientMedicalCategoryManager from '@/components/clients/ClientMedicalCategoryManager';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
@@ -125,8 +126,10 @@ export default function ClientsShow({ client }: Props) {
                         </Button>
                     </CardFooter>
                 </Card>
+                {client.type === 'corporate' && (
+                    <ClientMedicalCategoryManager clientId={client.id} />
+                )}
             </div>
         </AppLayout>
     );
 }
-

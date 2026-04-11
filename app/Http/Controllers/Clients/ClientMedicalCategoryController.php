@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Clients;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Clients\StoreClientMedicalCategoryRequest;
+use App\Http\Requests\Clients\UpdateClientMedicalCategoryRequest;
 use App\Models\ClientMedicalCategory;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class ClientMedicalCategoryController extends Controller
 {
@@ -21,19 +22,26 @@ class ClientMedicalCategoryController extends Controller
         ]);
     }
 
-    public function store(Request $request, $clientId): JsonResponse
+    public function store(StoreClientMedicalCategoryRequest $request, $clientId): JsonResponse
     {
-        $validated = $request->validate([
-            'category_code' => ['required', 'string', 'max:10', 'in:A,B,C,D,E,F'],
-            'category_name' => ['required', 'string', 'max:100'],
-            'description' => ['nullable', 'string'],
-            'is_active' => ['boolean'],
-        ]);
+        $validated = $request->validated();
+
+        $exists = ClientMedicalCategory::query()
+            ->where('client_id', $clientId)
+            ->where('category_code', $validated['category_code'])
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'message' => 'This category code already exists for this client.',
+            ], 422);
+        }
 
         $category = ClientMedicalCategory::create([
             'client_id' => $clientId,
             'category_code' => $validated['category_code'],
             'category_name' => $validated['category_name'],
+            'category_identifier' => $validated['category_identifier'],
             'description' => $validated['description'] ?? null,
             'is_active' => $validated['is_active'] ?? true,
         ]);
@@ -43,16 +51,23 @@ class ClientMedicalCategoryController extends Controller
         ]);
     }
 
-    public function update(Request $request, $clientId, $id): JsonResponse
+    public function update(UpdateClientMedicalCategoryRequest $request, $clientId, $id): JsonResponse
     {
         $category = ClientMedicalCategory::where('client_id', $clientId)->findOrFail($id);
 
-        $validated = $request->validate([
-            'category_code' => ['required', 'string', 'max:10', 'in:A,B,C,D,E,F'],
-            'category_name' => ['required', 'string', 'max:100'],
-            'description' => ['nullable', 'string'],
-            'is_active' => ['boolean'],
-        ]);
+        $validated = $request->validated();
+
+        $exists = ClientMedicalCategory::query()
+            ->where('client_id', $clientId)
+            ->where('category_code', $validated['category_code'])
+            ->where('id', '!=', $category->id)
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'message' => 'This category code already exists for this client.',
+            ], 422);
+        }
 
         $category->update($validated);
 

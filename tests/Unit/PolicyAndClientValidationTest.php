@@ -3,7 +3,9 @@
 namespace Tests\Unit;
 
 use App\Http\Requests\Clients\StoreClientRequest;
+use App\Http\Requests\Clients\StoreClientMedicalCategoryRequest;
 use App\Http\Requests\Policies\ProgressivePolicyStoreRequest;
+use App\Http\Requests\Quotations\StoreQuotationRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
@@ -71,6 +73,89 @@ class PolicyAndClientValidationTest extends TestCase
         ], $rules);
 
         self::assertFalse($validator->fails());
+    }
+
+    public function test_corporate_medical_members_must_use_employee_relationship(): void
+    {
+        $request = new ProgressivePolicyStoreRequest;
+        $rules = $this->withoutDatabaseRules($request->rules());
+
+        $validator = Validator::make([
+            'client_id' => 1,
+            'insurer_id' => 1,
+            'underwriter_id' => 1,
+            'policy_type' => 'medical',
+            'client_type' => 'corporate',
+            'start_date' => '2026-04-01',
+            'end_date' => '2026-05-01',
+            'premium_amount' => 1000,
+            'currency' => 'KES',
+            'medical_category' => 'A',
+            'members' => [[
+                'name' => 'Jane Doe',
+                'relationship' => 'Spouse',
+                'phone' => '+254700000000',
+                'id_number' => '12345678',
+                'payroll_number' => 'PR-100',
+                'annual_salary' => 1200000,
+            ]],
+        ], $rules);
+
+        self::assertTrue($validator->fails());
+        self::assertArrayHasKey('members.0.relationship', $validator->errors()->toArray());
+    }
+
+    public function test_installments_accept_between_two_and_ten(): void
+    {
+        $request = new StoreQuotationRequest;
+        $rules = $this->withoutDatabaseRules($request->rules());
+
+        $valid = Validator::make([
+            'client_id' => 1,
+            'underwriter_id' => 1,
+            'insurer_id' => 1,
+            'status' => 'draft',
+            'premium_amount' => 1000000,
+            'currency' => 'KES',
+            'valid_until' => '2026-05-01',
+            'policy_type' => 'medical',
+            'payment_plan' => 'installments',
+            'installment_count' => 10,
+        ], $rules);
+
+        self::assertFalse($valid->fails());
+
+        $invalid = Validator::make([
+            'client_id' => 1,
+            'underwriter_id' => 1,
+            'insurer_id' => 1,
+            'status' => 'draft',
+            'premium_amount' => 1000000,
+            'currency' => 'KES',
+            'valid_until' => '2026-05-01',
+            'policy_type' => 'medical',
+            'payment_plan' => 'installments',
+            'installment_count' => 11,
+        ], $rules);
+
+        self::assertTrue($invalid->fails());
+        self::assertArrayHasKey('installment_count', $invalid->errors()->toArray());
+    }
+
+    public function test_client_medical_category_requires_identifier(): void
+    {
+        $request = new StoreClientMedicalCategoryRequest;
+        $rules = $this->withoutDatabaseRules($request->rules());
+
+        $validator = Validator::make([
+            'category_code' => 'A',
+            'category_name' => 'Executive Plan',
+            'description' => 'Category for executives',
+            'is_active' => true,
+        ], $rules);
+
+        self::assertTrue($validator->fails());
+        self::assertArrayHasKey('category_identifier', $validator->errors()->toArray());
     }
 
     /**
