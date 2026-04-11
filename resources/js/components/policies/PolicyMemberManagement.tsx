@@ -28,8 +28,8 @@ type Props = {
 export default function PolicyMemberManagement({ members, onMembersChange, policyType, clientType }: Props) {
     const isCorporate = clientType === 'corporate';
     const isCorporateMedical = isCorporate && policyType === 'medical';
-    const [newMember, setNewMember] = useState<Member>({
-        id: nextMemberId.current++,
+    const createBlankMember = (): Member => ({
+        id: Date.now() + Math.floor(Math.random() * 100000),
         name: '',
         identifier: '',
         id_number: '',
@@ -38,6 +38,7 @@ export default function PolicyMemberManagement({ members, onMembersChange, polic
         relationship: isCorporateMedical ? 'Employee' : '',
         phone: '',
     });
+    const [newMember, setNewMember] = useState<Member>(createBlankMember);
 
     const addMember = () => {
         const missingCorporate = isCorporate
@@ -51,16 +52,7 @@ export default function PolicyMemberManagement({ members, onMembersChange, polic
         }
 
         onMembersChange([...members, newMember]);
-        setNewMember({
-            id: nextMemberId.current++,
-            name: '',
-            identifier: '',
-            id_number: '',
-            payroll_number: '',
-            annual_salary: undefined,
-            relationship: isCorporateMedical ? 'Employee' : '',
-            phone: '',
-        });
+        setNewMember(createBlankMember());
     };
 
     const removeMember = (index: number) => {
