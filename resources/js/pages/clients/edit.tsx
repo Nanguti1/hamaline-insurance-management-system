@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import Heading from '@/components/heading';
 import ClientForm from '@/components/clients/ClientForm';
+import ClientMedicalCategoryManager from '@/components/clients/ClientMedicalCategoryManager';
 import type { BreadcrumbItem } from '@/types';
 
 type Client = {
@@ -64,8 +65,10 @@ export default function ClientsEdit({ client }: Props) {
                     }}
                     onCancelHref={`/clients/${client.id}`}
                 />
+                {client.type === 'corporate' && (
+                    <ClientMedicalCategoryManager clientId={client.id} />
+                )}
             </div>
         </AppLayout>
     );
 }
-

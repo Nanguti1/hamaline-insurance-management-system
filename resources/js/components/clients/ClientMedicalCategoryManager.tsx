@@ -11,6 +11,7 @@ type MedicalCategory = {
     id: number;
     category_code: string;
     category_name: string;
+    category_identifier: string;
     description?: string;
     is_active: boolean;
 };
@@ -22,12 +23,14 @@ type Props = {
 export default function ClientMedicalCategoryManager({ clientId }: Props) {
     const [categories, setCategories] = useState<MedicalCategory[]>([]);
     const [loading, setLoading] = useState(true);
+    const [errorMessage, setErrorMessage] = useState('');
     const [showAddForm, setShowAddForm] = useState(false);
     const [editingCategory, setEditingCategory] = useState<MedicalCategory | null>(null);
     
     const [formData, setFormData] = useState({
         category_code: '',
         category_name: '',
+        category_identifier: '',
         description: '',
         is_active: true,
     });
@@ -35,11 +38,13 @@ export default function ClientMedicalCategoryManager({ clientId }: Props) {
     const loadCategories = async () => {
         setLoading(true);
         try {
+            setErrorMessage('');
             const response = await fetch(`/clients/${clientId}/medical-categories`);
             const data = await response.json();
             setCategories(data.data || []);
         } catch (error) {
             console.error('Failed to load categories:', error);
+            setErrorMessage('Failed to load categories.');
         } finally {
             setLoading(false);
         }
@@ -53,6 +58,7 @@ export default function ClientMedicalCategoryManager({ clientId }: Props) {
         e.preventDefault();
         
         try {
+            setErrorMessage('');
             const url = editingCategory 
                 ? `/clients/${clientId}/medical-categories/${editingCategory.id}`
                 : `/clients/${clientId}/medical-categories`;
@@ -72,10 +78,14 @@ export default function ClientMedicalCategoryManager({ clientId }: Props) {
                 await loadCategories();
                 setShowAddForm(false);
                 setEditingCategory(null);
-                setFormData({ category_code: '', category_name: '', description: '', is_active: true });
+                setFormData({ category_code: '', category_name: '', category_identifier: '', description: '', is_active: true });
+                return;
             }
+            const payload = await response.json();
+            setErrorMessage(payload.message ?? 'Failed to save category.');
         } catch (error) {
             console.error('Failed to save category:', error);
+            setErrorMessage('Failed to save category.');
         }
     };
 
@@ -84,6 +94,7 @@ export default function ClientMedicalCategoryManager({ clientId }: Props) {
         setFormData({
             category_code: category.category_code,
             category_name: category.category_name,
+            category_identifier: category.category_identifier,
             description: category.description || '',
             is_active: category.is_active,
         });
@@ -94,6 +105,7 @@ export default function ClientMedicalCategoryManager({ clientId }: Props) {
         if (!confirm(`Are you sure you want to delete ${category.category_name}?`)) return;
         
         try {
+            setErrorMessage('');
             const response = await fetch(`/clients/${clientId}/medical-categories/${category.id}`, {
                 method: 'DELETE',
                 headers: {
@@ -103,16 +115,20 @@ export default function ClientMedicalCategoryManager({ clientId }: Props) {
 
             if (response.ok) {
                 await loadCategories();
+                return;
             }
+            const payload = await response.json();
+            setErrorMessage(payload.message ?? 'Failed to delete category.');
         } catch (error) {
             console.error('Failed to delete category:', error);
+            setErrorMessage('Failed to delete category.');
         }
     };
 
     const handleCancel = () => {
         setShowAddForm(false);
         setEditingCategory(null);
-        setFormData({ category_code: '', category_name: '', description: '', is_active: true });
+        setFormData({ category_code: '', category_name: '', category_identifier: '', description: '', is_active: true });
     };
 
     return (
@@ -162,6 +178,15 @@ export default function ClientMedicalCategoryManager({ clientId }: Props) {
                                     placeholder="e.g., Executive Package"
                                 />
                             </div>
+                            <div>
+                                <Label htmlFor="category_identifier">Category Identifier</Label>
+                                <Input
+                                    id="category_identifier"
+                                    value={formData.category_identifier}
+                                    onChange={(e) => setFormData({ ...formData, category_identifier: e.target.value })}
+                                    placeholder="e.g., KCB-2,000,000"
+                                />
+                            </div>
                         </div>
                         <div>
                             <Label htmlFor="description">Description</Label>
@@ -195,6 +220,12 @@ export default function ClientMedicalCategoryManager({ clientId }: Props) {
                     </form>
                 )}
 
+                {errorMessage && (
+                    <div className="mb-4 rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                        {errorMessage}
+                    </div>
+                )}
+
                 {loading ? (
                     <div className="text-center py-4">Loading...</div>
                 ) : categories.length === 0 ? (
@@ -207,6 +238,7 @@ export default function ClientMedicalCategoryManager({ clientId }: Props) {
                             <TableRow>
                                 <TableHead>Code</TableHead>
                                 <TableHead>Name</TableHead>
+                                <TableHead>Identifier</TableHead>
                                 <TableHead>Description</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Actions</TableHead>
@@ -217,6 +249,7 @@ export default function ClientMedicalCategoryManager({ clientId }: Props) {
                                 <TableRow key={category.id}>
                                     <TableCell className="font-medium">{category.category_code}</TableCell>
                                     <TableCell>{category.category_name}</TableCell>
+                                    <TableCell>{category.category_identifier}</TableCell>
                                     <TableCell>{category.description || '-'}</TableCell>
                                     <TableCell>
                                         {category.is_active ? (
