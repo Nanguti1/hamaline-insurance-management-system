@@ -7,11 +7,11 @@ trait BuildsRiskNotePdfHtml
     protected function buildRiskNotePdfHtml(string $content, string $type, string $riskNoteNumber, string $insurerName): string
     {
         $formattedContent = $this->formatRiskNoteContent($content);
-        $intermediary = 'Hamline Insurance Agency (Intermediary)';
+        $intermediary = 'Hamaline Insurance Agency (Intermediary)';
         $logoDataUri = $this->resolvePdfLogoDataUri();
         $logoHtml = $logoDataUri !== null
-            ? "<img src=\"{$logoDataUri}\" alt=\"Hamline Insurance Agency\" class=\"brand-logo\" />"
-            : '<div class="brand-logo-fallback">Hamline Insurance Agency</div>';
+            ? "<img src=\"{$logoDataUri}\" alt=\"Hamaline Insurance Agency\" class=\"brand-logo\" />"
+            : '<div class="brand-logo-fallback">Hamaline Insurance Agency</div>';
 
         return <<<HTML
 <!DOCTYPE html>

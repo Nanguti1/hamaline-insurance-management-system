@@ -307,7 +307,7 @@ class RiskNoteService
             'Header',
             sprintf('Risk Note Number: %s', $riskNote->risk_note_number),
             sprintf('Date of Issue: %s', now()->format('Y-m-d')),
-            sprintf('Agency Name: Hamline Insurance Agency'),
+            sprintf('Agency Name: Hamaline Insurance Agency'),
             sprintf('Insurer: %s', $riskNote->insurer?->name ?? '-'),
             '',
             'Insured Information',
@@ -383,7 +383,7 @@ class RiskNoteService
             'Header',
             sprintf('Risk Note Number: %s', $riskNote->risk_note_number),
             sprintf('Date of Issue: %s', now()->format('Y-m-d')),
-            sprintf('Agency Name: Hamline Insurance Agency'),
+            sprintf('Agency Name: Hamaline Insurance Agency'),
             sprintf('Insurer: %s', $riskNote->insurer?->name ?? '-'),
             '',
             'Insured Information',
@@ -460,7 +460,7 @@ class RiskNoteService
             : '-';
 
         $issueDate = now()->format('Y-m-d');
-        $agencyName = 'Hamline Insurance Agency';
+        $agencyName = 'Hamaline Insurance Agency';
 
         $dependantsTableLines = [];
         foreach ($dependants as $i => $d) {
