@@ -136,6 +136,7 @@ export default function PolicyForm({
     const insurerId = watch('insurer_id');
     const quotationId = watch('quotation_id');
     const status = watch('status');
+    const startDate = watch('start_date');
 
     const underwriterInsurers = underwriters.find((u) => u.id === underwriterId)?.insurers;
     const allowedInsurers = underwriterInsurers && underwriterInsurers.length > 0 ? underwriterInsurers : insurers ?? [];
