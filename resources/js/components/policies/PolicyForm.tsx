@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -33,6 +33,27 @@ export const policySchema = z
 export type PolicyFormValues = z.infer<typeof policySchema>;
 
 type SelectOption = { id: number; label: string };
+type CoverPeriod = '1_month' | '3_months' | '6_months' | '1_year';
+
+function calculateEndDate(startDate: string, coverPeriod: CoverPeriod): string {
+    if (!startDate) {
+        return '';
+    }
+
+    const date = new Date(startDate);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    if (coverPeriod === '1_year') {
+        date.setFullYear(date.getFullYear() + 1);
+    } else {
+        const monthsToAdd = coverPeriod === '1_month' ? 1 : coverPeriod === '3_months' ? 3 : 6;
+        date.setMonth(date.getMonth() + monthsToAdd);
+    }
+
+    return date.toISOString().slice(0, 10);
+}
 
 export type QuotationDetailOption = {
     id: number;
@@ -78,6 +99,7 @@ export default function PolicyForm({
     quotations,
     insurers,
 }: Props) {
+    const [coverPeriod, setCoverPeriod] = useState<CoverPeriod>('1_year');
     const {
         register,
         setValue,
@@ -109,6 +131,7 @@ export default function PolicyForm({
     const insurerId = watch('insurer_id');
     const quotationId = watch('quotation_id');
     const status = watch('status');
+    const startDate = watch('start_date');
 
     const underwriterInsurers = underwriters.find((u) => u.id === underwriterId)?.insurers;
     const allowedInsurers = underwriterInsurers && underwriterInsurers.length > 0 ? underwriterInsurers : insurers ?? [];
@@ -165,6 +188,17 @@ export default function PolicyForm({
             setValue('notes', q.notes, { shouldValidate: true });
         }
     }, [quotationId, quotations, setValue]);
+
+    useEffect(() => {
+        if (!startDate) {
+            return;
+        }
+
+        const calculatedEndDate = calculateEndDate(startDate, coverPeriod);
+        if (calculatedEndDate) {
+            setValue('end_date', calculatedEndDate, { shouldValidate: true });
+        }
+    }, [coverPeriod, setValue, startDate]);
 
     const submit = (values: PolicyFormValues) => {
         const payload = {
@@ -346,6 +380,26 @@ export default function PolicyForm({
                             </SelectContent>
                         </Select>
                         <InputError message={errors.status?.message} />
+                    </div>
+
+                    <div className="grid gap-2 md:grid-cols-2">
+                        <div className="grid gap-2">
+                            <Label>Cover period</Label>
+                            <Select
+                                value={coverPeriod}
+                                onValueChange={(value) => setCoverPeriod(value as CoverPeriod)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="1_month">1 month</SelectItem>
+                                    <SelectItem value="3_months">3 months</SelectItem>
+                                    <SelectItem value="6_months">6 months</SelectItem>
+                                    <SelectItem value="1_year">1 year</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
 
                     <div className="grid gap-2 md:grid-cols-2">
