@@ -8,6 +8,10 @@ trait BuildsRiskNotePdfHtml
     {
         $formattedContent = $this->formatRiskNoteContent($content);
         $intermediary = 'Hamline Insurance Agency (Intermediary)';
+        $logoDataUri = $this->resolvePdfLogoDataUri();
+        $logoHtml = $logoDataUri !== null
+            ? "<img src=\"{$logoDataUri}\" alt=\"Hamline Insurance Agency\" class=\"brand-logo\" />"
+            : '<div class="brand-logo-fallback">Hamline Insurance Agency</div>';
 
         return <<<HTML
 <!DOCTYPE html>
@@ -22,25 +26,48 @@ trait BuildsRiskNotePdfHtml
             line-height: 1.5;
             color: #111827;
             margin: 0;
-            padding: 28px;
+            padding: 14px;
             background: #f8fafc;
         }
         .page {
             background: #ffffff;
             border: 1px solid #e5e7eb;
             border-radius: 12px;
-            padding: 24px;
+            padding: 16px;
         }
         .header {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            background: #1e40af;
             color: #ffffff;
-            padding: 18px 20px;
+            padding: 12px 14px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 14px;
+        }
+        .header-row {
+            width: 100%;
+        }
+        .header-row td {
+            vertical-align: middle;
+        }
+        .header-copy {
+            text-align: right;
+        }
+        .brand-logo {
+            height: 48px;
+            width: auto;
+            max-width: 180px;
+            display: block;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 4px 8px;
+        }
+        .brand-logo-fallback {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
         }
         .header h1 {
             margin: 0 0 4px 0;
-            font-size: 22px;
+            font-size: 20px;
             letter-spacing: 0.3px;
         }
         .header-meta {
@@ -110,12 +137,19 @@ trait BuildsRiskNotePdfHtml
 <body>
     <div class="page">
         <div class="header">
-            <h1>{$type} Risk Note</h1>
-            <p class="header-meta">{$intermediary}</p>
-            <div class="meta-grid">
-                <div><strong>Risk Note:</strong> {$riskNoteNumber}</div>
-                <div><strong>Insurer:</strong> {$insurerName}</div>
-            </div>
+            <table class="header-row" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td>{$logoHtml}</td>
+                    <td class="header-copy">
+                        <h1>{$type} Risk Note</h1>
+                        <p class="header-meta">{$intermediary}</p>
+                        <div class="meta-grid">
+                            <div><strong>Risk Note:</strong> {$riskNoteNumber}</div>
+                            <div><strong>Insurer:</strong> {$insurerName}</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
         </div>
         {$formattedContent}
     </div>
@@ -159,6 +193,10 @@ HTML;
             }
 
             if ($this->isSectionHeading($line)) {
+                if ($line === 'Header') {
+                    $i++;
+                    continue;
+                }
                 $flushSection();
                 $currentSection = $line;
                 $i++;
@@ -242,5 +280,33 @@ HTML;
 
         return "<table class=\"styled-table\"><thead><tr>{$headHtml}</tr></thead><tbody>{$bodyHtml}</tbody></table>";
     }
-}
 
+    protected function resolvePdfLogoDataUri(): ?string
+    {
+        $candidates = [
+            public_path('hamline-logo.png'),
+            public_path('hamline-logo.jpg'),
+            public_path('hamline-logo.jpeg'),
+            public_path('logo.png'),
+            public_path('logo.jpg'),
+            public_path('logo.jpeg'),
+            public_path('apple-touch-icon.png'),
+        ];
+
+        foreach ($candidates as $path) {
+            if (! is_file($path)) {
+                continue;
+            }
+
+            $raw = @file_get_contents($path);
+            if ($raw === false) {
+                continue;
+            }
+
+            $mime = mime_content_type($path) ?: 'image/png';
+            return 'data:'.$mime.';base64,'.base64_encode($raw);
+        }
+
+        return null;
+    }
+}
