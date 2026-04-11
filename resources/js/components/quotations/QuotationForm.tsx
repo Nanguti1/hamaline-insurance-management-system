@@ -40,16 +40,16 @@ function buildQuotationSchema(method: 'post' | 'put') {
                     const n = Number(val);
                     return Number.isNaN(n) ? undefined : n;
                 },
-                z.number().int().min(4).max(4).optional(),
+                z.number().int().min(2).max(10).optional(),
             ),
         })
         .superRefine((data, ctx) => {
             if (data.payment_plan === 'installments') {
                 const c = data.installment_count;
-                if (c === undefined || c !== 4) {
+                if (c === undefined || c < 2 || c > 10) {
                     ctx.addIssue({
                         code: z.ZodIssueCode.custom,
-                        message: 'Installments must be 4 equal parts.',
+                        message: 'Installments must be between 2 and 10 equal parts.',
                         path: ['installment_count'],
                     });
                 }
@@ -120,7 +120,7 @@ export default function QuotationForm({
             notes: initialValues?.notes ?? '',
             policy_type: (initialValues?.policy_type as QuotationFormValues['policy_type']) ?? 'motor',
             payment_plan: initialValues?.payment_plan ?? 'one_off',
-            installment_count: initialValues?.payment_plan === 'installments' ? 4 : initialValues?.installment_count ?? undefined,
+            installment_count: initialValues?.payment_plan === 'installments' ? (initialValues?.installment_count ?? 4) : undefined,
         },
     });
 
@@ -187,7 +187,7 @@ export default function QuotationForm({
                 if (data.payment_plan && data.payment_plan !== paymentPlan) {
                     setValue('payment_plan', data.payment_plan, { shouldValidate: true });
                     if (data.payment_plan === 'installments') {
-                        setValue('installment_count', 4, { shouldValidate: true });
+                        setValue('installment_count', data.installment_count && data.installment_count >= 2 && data.installment_count <= 10 ? data.installment_count : 4, { shouldValidate: true });
                     }
                 }
             } catch {
@@ -210,7 +210,7 @@ export default function QuotationForm({
             notes: values.notes ? values.notes : null,
             policy_type: values.policy_type,
             payment_plan: values.payment_plan,
-            installment_count: values.payment_plan === 'installments' ? 4 : null,
+            installment_count: values.payment_plan === 'installments' ? values.installment_count : null,
         };
 
         if (method === 'put') {
@@ -408,7 +408,6 @@ export default function QuotationForm({
                                     if (value === 'one_off') {
                                         setValue('installment_count', undefined, { shouldValidate: true });
                                     } else {
-                                        // Backend enforces exactly 4 installments (equal amounts).
                                         setValue('installment_count', 4, { shouldValidate: true });
                                     }
                                 }}
@@ -426,7 +425,7 @@ export default function QuotationForm({
                         {paymentPlan === 'installments' && (
                             <div className="grid gap-2">
                                 <Label htmlFor="installment_count">Installment count</Label>
-                                <Input id="installment_count" type="number" readOnly value={4} />
+                                <Input id="installment_count" type="number" min={2} max={10} {...register('installment_count', { valueAsNumber: true })} />
                                 <InputError message={errors.installment_count?.message} />
                             </div>
                         )}
