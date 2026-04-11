@@ -131,13 +131,19 @@ export default function ClientMedicalCategoryManager({ clientId }: Props) {
         setFormData({ category_code: '', category_name: '', category_identifier: '', description: '', is_active: true });
     };
 
+    const handleOpenAddForm = () => {
+        setEditingCategory(null);
+        setFormData({ category_code: '', category_name: '', category_identifier: '', description: '', is_active: true });
+        setShowAddForm(true);
+    };
+
     return (
         <Card>
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <CardTitle>Medical Categories</CardTitle>
                     {!showAddForm && (
-                        <Button onClick={() => setShowAddForm(true)}>
+                        <Button onClick={handleOpenAddForm}>
                             + Add Category
                         </Button>
                     )}

@@ -237,6 +237,13 @@ export default function ProgressivePolicyForm({
         setValue('end_date', calculatedEndDate, { shouldValidate: true });
     }, [coverPeriod, setValue]);
 
+    useEffect(() => {
+        const startDate = todayDateString();
+        const calculatedEndDate = calculateEndDate(startDate, coverPeriod);
+        setValue('start_date', startDate, { shouldValidate: true });
+        setValue('end_date', calculatedEndDate, { shouldValidate: true });
+    }, [coverPeriod, setValue]);
+
     const extractFirstErrorMessage = (errorBag: FieldErrors<PolicyValues>): string | null => {
         const visited = new WeakSet<object>();
 

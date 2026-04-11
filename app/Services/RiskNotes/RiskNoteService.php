@@ -418,7 +418,10 @@ class RiskNoteService
             throw new \InvalidArgumentException('Risk note line_type must be medical.');
         }
 
-        $riskNote->load(['client', 'underwriter', 'insurer', 'medicalDetails', 'medicalMembers.benefits']);
+        $riskNote->load(['client.medicalCategories', 'underwriter', 'insurer', 'medicalDetails', 'medicalMembers.benefits']);
+
+        $planType = $riskNote->medicalDetails?->plan_type ?? 'individual';
+        $isCorporatePlan = $planType === 'corporate';
 
         $planType = $riskNote->medicalDetails?->plan_type ?? 'individual';
         $isCorporatePlan = $planType === 'corporate';
@@ -482,6 +485,17 @@ class RiskNoteService
             : ($principal?->name ?? '-');
         $underwriterName = $riskNote->underwriter?->name ?? '-';
         $insurerName = $riskNote->insurer?->name ?? '-';
+        $corporateCategoryDisplay = '-';
+
+        if ($isCorporatePlan) {
+            $categoryCode = $riskNote->medicalDetails?->corporate_category_code;
+            if ($categoryCode) {
+                $matchedCategory = $riskNote->client?->medicalCategories
+                    ?->firstWhere('category_code', $categoryCode);
+                $identifier = $matchedCategory?->category_identifier ?? $matchedCategory?->category_name ?? $categoryCode;
+                $corporateCategoryDisplay = sprintf('%s (%s)', $categoryCode, $identifier);
+            }
+        }
 
         $riskNoteContent = implode(PHP_EOL, [
             '=== MEDICAL RISK NOTE ===',
@@ -495,6 +509,7 @@ class RiskNoteService
             sprintf('Name: %s', $principalName),
             sprintf('Underwriter: %s', $underwriterName),
             sprintf('Period of Insurance: %s', $period),
+            ...($isCorporatePlan ? [sprintf('Category Type: %s', $corporateCategoryDisplay)] : []),
             '',
             $isCorporatePlan ? 'Employees' : 'Dependants',
             $dependantsTable,
