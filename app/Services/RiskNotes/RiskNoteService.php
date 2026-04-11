@@ -423,6 +423,9 @@ class RiskNoteService
         $planType = $riskNote->medicalDetails?->plan_type ?? 'individual';
         $isCorporatePlan = $planType === 'corporate';
 
+        $planType = $riskNote->medicalDetails?->plan_type ?? 'individual';
+        $isCorporatePlan = $planType === 'corporate';
+
         $principal = $riskNote->medicalMembers->firstWhere('is_principal', true);
         if (! $principal) {
             $principal = $riskNote->medicalMembers->sortBy('member_sequence')->first();
