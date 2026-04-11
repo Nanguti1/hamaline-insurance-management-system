@@ -28,7 +28,6 @@ type Props = {
 export default function PolicyMemberManagement({ members, onMembersChange, policyType, clientType }: Props) {
     const isCorporate = clientType === 'corporate';
     const isCorporateMedical = isCorporate && policyType === 'medical';
-    const nextMemberId = useRef(1);
     const [newMember, setNewMember] = useState<Member>({
         id: nextMemberId.current++,
         name: '',
