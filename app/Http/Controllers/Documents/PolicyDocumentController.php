@@ -8,6 +8,7 @@ use App\Models\Policy;
 use App\Services\Access\ResourceAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class PolicyDocumentController extends Controller
@@ -27,7 +28,7 @@ class PolicyDocumentController extends Controller
             'name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        /** @var array<int, \Illuminate\Http\UploadedFile> $files */
+        /** @var array<int, UploadedFile> $files */
         $files = $request->file('documents', []);
         if (empty($files) && $request->hasFile('document')) {
             $files = [$request->file('document')];

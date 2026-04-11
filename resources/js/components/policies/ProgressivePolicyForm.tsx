@@ -25,8 +25,9 @@ const emptyToUndefined = (value: unknown) => {
 };
 
 const basePolicySchema = z.object({
-    client_id: z.number().int().min(1, 'Client is required'),
-    underwriter_id: z.number().int().min(1, 'Underwriter is required'),
+    client_id: z.coerce.number().int().min(1, 'Client is required'),
+    insurer_id: z.coerce.number().int().min(1, 'Insurer is required'),
+    underwriter_id: z.coerce.number().int().min(1, 'Underwriter is required'),
     policy_type: z.enum(['motor', 'medical', 'wiba']),
     client_type: z.enum(['individual', 'corporate']),
     policy_number: z.string().trim().max(50).optional().or(z.literal('')),
@@ -34,29 +35,61 @@ const basePolicySchema = z.object({
     end_date: z.string().trim().min(1),
     premium_amount: z.preprocess(
         emptyToUndefined,
-        z.number({ message: 'Premium amount is required' }).nonnegative('Premium amount must be 0 or more'),
+        z.coerce.number().nonnegative('Premium amount must be 0 or more'),
     ),
     currency: z.string().trim().max(3).default('KES'),
     notes: z.string().trim().max(5000).optional().or(z.literal('')),
-    medical_category: z.enum(['A', 'B', 'C', 'D']).optional(),
+    medical_category: z.enum(['A', 'B', 'C', 'D', 'E', 'F']).optional(),
     vehicle_use: z.enum(['private', 'commercial']).optional(),
     cover_type: z.enum(['third_party', 'comprehensive']).optional(),
     cover_plan: z.string().trim().max(100).optional(),
     cover_addons: z.array(z.enum(['comprehensive', 'excess', 'pvt'])).optional(),
     private_use_class: z.enum(['hire', 'chauffeur', 'taxi_hire', 'taxi_self_drive']).optional(),
     commercial_class: z.enum(['matatu', 'bus', 'truck', 'taxi', 'other']).optional(),
-    capacity: z.preprocess(emptyToUndefined, z.number().positive().optional()),
+    capacity: z.preprocess(
+        emptyToUndefined,
+        z.coerce.number().nonnegative().optional()
+    ),
+    capacity_unit: z.enum(['cc', 'tons']).optional(),
     registration_number: z.string().trim().max(50).optional(),
     vehicle_make: z.string().trim().max(100).optional(),
-    vehicle_model: z.string().trim().max(255).optional(),
-    year_of_manufacture: z.preprocess(emptyToUndefined, z.number().int().min(1900).max(2100).optional()),
-    vehicle_value: z.preprocess(emptyToUndefined, z.number().nonnegative().optional()),
+    vehicle_model: z.string().trim().max(100).optional(),
+    year_of_manufacture: z.preprocess(
+        emptyToUndefined,
+        z.coerce.number().int().optional()
+    ),
+    vehicle_value: z.preprocess(
+        emptyToUndefined,
+        z.coerce.number().nonnegative().optional()
+    ),
     vehicle_color: z.string().trim().max(50).optional(),
-    chassis_number: z.string().trim().max(100).optional(),
-    engine_number: z.string().trim().max(100).optional(),
-    carriage_capacity: z.preprocess(emptyToUndefined, z.number().positive().optional()),
-    engine_size: z.string().trim().max(50).optional(),
-    medical_benefits: z.array(z.enum(['inpatient', 'outpatient', 'optical', 'maternity'])).optional(),
+    chassis_number: z.string().trim().max(50).optional(),
+    engine_number: z.string().trim().max(50).optional(),
+    carriage_capacity: z.preprocess(
+        emptyToUndefined,
+        z.coerce.number().nonnegative().optional()
+    ),
+    engine_size: z.string().trim().max(50).optional().or(z.literal('')),
+    outpatient_benefit: z.boolean().optional(),
+    outpatient_amount: z.preprocess(
+        emptyToUndefined,
+        z.coerce.number().nonnegative().optional()
+    ),
+    inpatient_benefit: z.boolean().optional(),
+    inpatient_amount: z.preprocess(
+        emptyToUndefined,
+        z.coerce.number().nonnegative().optional()
+    ),
+    optical_benefit: z.boolean().optional(),
+    optical_amount: z.preprocess(
+        emptyToUndefined,
+        z.coerce.number().nonnegative().optional()
+    ),
+    maternity_benefit: z.boolean().optional(),
+    maternity_amount: z.preprocess(
+        emptyToUndefined,
+        z.coerce.number().nonnegative().optional()
+    ),
 });
 
 type BasePolicyValues = z.infer<typeof basePolicySchema>;
@@ -73,8 +106,8 @@ type PolicyMember = {
 };
 type PolicyValues = BasePolicyValues;
 
-type Client = { id: number; name: string; company_name?: string; type: string; phone: string; email: string; };
 type Underwriter = { id: number; name: string };
+type Insurer = { id: number; name: string };
 type Props = {
     title: string;
     submitLabel: string;
@@ -82,6 +115,7 @@ type Props = {
     onCancelHref: string;
     initialValues?: Partial<PolicyValues>;
     underwriters: Underwriter[];
+    insurers: Insurer[];
 };
 
 export default function ProgressivePolicyForm({
@@ -90,10 +124,12 @@ export default function ProgressivePolicyForm({
     onCancelHref,
     initialValues,
     underwriters,
+    insurers,
 }: Props) {
+    const [currentStep, setCurrentStep] = useState(1);
+    const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [showRiskNotePrompt, setShowRiskNotePrompt] = useState(false);
-    const [members, setMembers] = useState<PolicyMember[]>([]);
-    const [medicalBenefits, setMedicalBenefits] = useState<Array<'inpatient' | 'outpatient' | 'optical' | 'maternity'>>([]);
+    const [members, setMembers] = useState<any[]>([]);
     const [createdPolicy, setCreatedPolicy] = useState<{ id: number; type: string } | null>(null);
     const [isCreatingRiskNote, setIsCreatingRiskNote] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
@@ -136,12 +172,12 @@ export default function ProgressivePolicyForm({
             engine_number: initialValues?.engine_number,
             carriage_capacity: initialValues?.carriage_capacity,
             engine_size: initialValues?.engine_size,
-            medical_benefits: initialValues?.medical_benefits ?? [],
         },
     });
 
     const watchedClientId = watch('client_id');
     const watchedUnderwriterId = watch('underwriter_id');
+    const watchedInsurerId = watch('insurer_id');
     const watchedPolicyType = watch('policy_type');
     const watchedVehicleUse = watch('vehicle_use');
     const watchedCoverType = watch('cover_type');
@@ -260,7 +296,6 @@ export default function ProgressivePolicyForm({
             policy_number: values.policy_number || null,
             capacity_unit: values.cover_type === 'comprehensive' ? 'cc' : null,
             members,
-            medical_benefits: medicalBenefits,
         };
 
         try {
@@ -309,9 +344,10 @@ export default function ProgressivePolicyForm({
         setSubmitError(firstMessage ?? 'Please complete all required fields before creating the policy.');
     };
 
-    const handleClientSelect = (client: Client) => {
+    const handleClientSelect = (client: any) => {
         setValue('client_id', client.id, { shouldValidate: true });
         setValue('client_type', client.type as 'individual' | 'corporate', { shouldValidate: true });
+        setSelectedClient(client);
     };
 
     const handleCreateRiskNote = async () => {
@@ -388,6 +424,25 @@ export default function ProgressivePolicyForm({
                                         <InputError message={errors.underwriter_id?.message} />
                                     </div>
                                     <div>
+                                        <Label>Insurer</Label>
+                                        <Select
+                                            value={watchedInsurerId ? String(watchedInsurerId) : ''}
+                                            onValueChange={(value) => setValue('insurer_id', Number(value), { shouldValidate: true })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select insurer" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {insurers.map((insurer) => (
+                                                    <SelectItem key={insurer.id} value={String(insurer.id)}>
+                                                        {insurer.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError message={errors.insurer_id?.message} />
+                                    </div>
+                                    <div>
                                         <Label>Policy Type</Label>
                                         <Select
                                             value={watchedPolicyType}
@@ -448,42 +503,143 @@ export default function ProgressivePolicyForm({
                                         <div className="space-y-4">
                                             <div>
                                                 <Label>Medical Category</Label>
-                                                <Select onValueChange={(value) => setValue('medical_category', value as 'A' | 'B' | 'C' | 'D', { shouldValidate: true })}>
+                                                <Select onValueChange={(value) => setValue('medical_category', value as 'A' | 'B' | 'C' | 'D' | 'E' | 'F', { shouldValidate: true })}>
                                                     <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="A">A</SelectItem>
-                                                        <SelectItem value="B">B</SelectItem>
-                                                        <SelectItem value="C">C</SelectItem>
-                                                        <SelectItem value="D">D</SelectItem>
+                                                        {selectedClient?.medical_categories && selectedClient.medical_categories.length > 0 ? (
+                                                            selectedClient.medical_categories.map((cat: any) => (
+                                                                <SelectItem key={cat.category_code} value={cat.category_code}>
+                                                                    {cat.category_name} ({cat.category_code})
+                                                                </SelectItem>
+                                                            ))
+                                                        ) : (
+                                                            <>
+                                                                <SelectItem value="A">A</SelectItem>
+                                                                <SelectItem value="B">B</SelectItem>
+                                                                <SelectItem value="C">C</SelectItem>
+                                                                <SelectItem value="D">D</SelectItem>
+                                                                <SelectItem value="E">E</SelectItem>
+                                                                <SelectItem value="F">F</SelectItem>
+                                                            </>
+                                                        )}
                                                     </SelectContent>
                                                 </Select>
                                                 <InputError message={errors.medical_category?.message} />
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label>Benefits</Label>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {[
-                                                        { key: 'inpatient', label: 'Inpatient' },
-                                                        { key: 'outpatient', label: 'Outpatient' },
-                                                        { key: 'optical', label: 'Optical' },
-                                                        { key: 'maternity', label: 'Maternity' },
-                                                    ].map((benefit) => (
-                                                        <label key={benefit.key} className="flex items-center gap-2 rounded border p-2">
+                                            <div className="border rounded-lg p-4">
+                                                <h4 className="font-medium mb-3">Medical Benefits</h4>
+                                                <div className="space-y-3">
+                                                    {/* Outpatient Benefit */}
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center space-x-2">
                                                             <input
                                                                 type="checkbox"
-                                                                checked={medicalBenefits.includes(benefit.key as 'inpatient' | 'outpatient' | 'optical' | 'maternity')}
-                                                                onChange={(e) => {
-                                                                    const key = benefit.key as 'inpatient' | 'outpatient' | 'optical' | 'maternity';
-                                                                    const next = e.target.checked
-                                                                        ? [...medicalBenefits, key]
-                                                                        : medicalBenefits.filter((x) => x !== key);
-                                                                    setMedicalBenefits(next);
-                                                                    setValue('medical_benefits', next, { shouldValidate: true });
-                                                                }}
+                                                                id="outpatient_benefit"
+                                                                {...register('outpatient_benefit')}
+                                                                className="rounded border-gray-300"
                                                             />
-                                                            <span>{benefit.label}</span>
-                                                        </label>
-                                                    ))}
+                                                            <Label htmlFor="outpatient_benefit" className="cursor-pointer">
+                                                                Outpatient Benefit
+                                                            </Label>
+                                                        </div>
+                                                        {watch('outpatient_benefit') && (
+                                                            <div className="ml-6">
+                                                                <Label htmlFor="outpatient_amount">Outpatient Amount</Label>
+                                                                <Input
+                                                                    id="outpatient_amount"
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    placeholder="Enter amount"
+                                                                    {...register('outpatient_amount', { valueAsNumber: true })}
+                                                                />
+                                                                <InputError message={errors.outpatient_amount?.message} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Inpatient Benefit */}
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center space-x-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                id="inpatient_benefit"
+                                                                {...register('inpatient_benefit')}
+                                                                className="rounded border-gray-300"
+                                                            />
+                                                            <Label htmlFor="inpatient_benefit" className="cursor-pointer">
+                                                                Inpatient Benefit
+                                                            </Label>
+                                                        </div>
+                                                        {watch('inpatient_benefit') && (
+                                                            <div className="ml-6">
+                                                                <Label htmlFor="inpatient_amount">Inpatient Amount</Label>
+                                                                <Input
+                                                                    id="inpatient_amount"
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    placeholder="Enter amount"
+                                                                    {...register('inpatient_amount', { valueAsNumber: true })}
+                                                                />
+                                                                <InputError message={errors.inpatient_amount?.message} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Optical Benefit */}
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center space-x-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                id="optical_benefit"
+                                                                {...register('optical_benefit')}
+                                                                className="rounded border-gray-300"
+                                                            />
+                                                            <Label htmlFor="optical_benefit" className="cursor-pointer">
+                                                                Optical Benefit
+                                                            </Label>
+                                                        </div>
+                                                        {watch('optical_benefit') && (
+                                                            <div className="ml-6">
+                                                                <Label htmlFor="optical_amount">Optical Amount</Label>
+                                                                <Input
+                                                                    id="optical_amount"
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    placeholder="Enter amount"
+                                                                    {...register('optical_amount', { valueAsNumber: true })}
+                                                                />
+                                                                <InputError message={errors.optical_amount?.message} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Maternity Benefit */}
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center space-x-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                id="maternity_benefit"
+                                                                {...register('maternity_benefit')}
+                                                                className="rounded border-gray-300"
+                                                            />
+                                                            <Label htmlFor="maternity_benefit" className="cursor-pointer">
+                                                                Maternity Benefit
+                                                            </Label>
+                                                        </div>
+                                                        {watch('maternity_benefit') && (
+                                                            <div className="ml-6">
+                                                                <Label htmlFor="maternity_amount">Maternity Amount</Label>
+                                                                <Input
+                                                                    id="maternity_amount"
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    placeholder="Enter amount"
+                                                                    {...register('maternity_amount', { valueAsNumber: true })}
+                                                                />
+                                                                <InputError message={errors.maternity_amount?.message} />
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

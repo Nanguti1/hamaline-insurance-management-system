@@ -33,4 +33,3 @@ class RiskNoteUnderwritingDecision extends Model
         return $this->belongsTo(User::class, 'decided_by');
     }
 }
-

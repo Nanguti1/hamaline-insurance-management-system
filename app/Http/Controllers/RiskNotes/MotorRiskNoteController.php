@@ -11,14 +11,16 @@ use App\Models\RiskNote;
 use App\Models\Underwriter;
 use App\Services\Access\ResourceAccessService;
 use App\Services\RiskNotes\RiskNoteService;
+use Dompdf\Dompdf;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
-use Inertia\Response;
+use Inertia\Response as InertiaResponse;
 
 class MotorRiskNoteController extends Controller
 {
@@ -29,7 +31,7 @@ class MotorRiskNoteController extends Controller
         private RiskNoteService $riskNoteService,
     ) {}
 
-    public function index(Request $request): Response
+    public function index(Request $request): InertiaResponse
     {
         $status = $request->query('status');
         $q = $request->query('q');
@@ -63,7 +65,7 @@ class MotorRiskNoteController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): InertiaResponse
     {
         return Inertia::render('motor-risks/create', [
             'clients' => Client::query()->orderBy('name')->get(['id', 'name', 'company_name']),
@@ -78,7 +80,7 @@ class MotorRiskNoteController extends Controller
         return to_route('motor-risks.show', $riskNote);
     }
 
-    public function show(RiskNote $motorRiskNote): Response
+    public function show(RiskNote $motorRiskNote): InertiaResponse
     {
         $this->access->assertCanViewRiskNote(Auth::user(), $motorRiskNote);
 
@@ -160,6 +162,124 @@ class MotorRiskNoteController extends Controller
         $this->riskNoteService->generateMotorRiskNoteContent($motorRiskNote);
 
         return to_route('motor-risks.show', $motorRiskNote);
+    }
+
+    public function downloadPDF(RiskNote $motorRiskNote, Request $request): Response
+    {
+        $this->access->assertCanViewRiskNote($request->user(), $motorRiskNote);
+
+        if (! $motorRiskNote->risk_note_content) {
+            $this->riskNoteService->generateMotorRiskNoteContent($motorRiskNote);
+        }
+
+        $content = $motorRiskNote->risk_note_content;
+        $content = nl2br($content);
+
+        $html = $this->generatePDFHTML($content, $motorRiskNote->risk_note_number, 'Motor');
+
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->stream("{$motorRiskNote->risk_note_number}.pdf");
+    }
+
+    private function generatePDFHTML(string $content, string $riskNoteNumber, string $type): string
+    {
+        return <<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #333;
+            padding: 40px;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section h2 {
+            color: #1e40af;
+            font-size: 16px;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+        .info-row {
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #1e40af;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #f3f4f6;
+            color: #1e40af;
+            font-weight: bold;
+        }
+        .conditions {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        .conditions ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .notes {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+        }
+        .notes ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{$type} Risk Note</h1>
+        <p>Hamline Insurance Agency</p>
+    </div>
+    <div class="content">
+        {$content}
+    </div>
+</body>
+</html>
+HTML;
     }
 
     public function submit(RiskNote $motorRiskNote): RedirectResponse

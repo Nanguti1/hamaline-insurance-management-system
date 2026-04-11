@@ -27,4 +27,3 @@ return new class extends Migration
         DB::table('insurers')->whereIn('name', ['CIC', 'Jubilee', 'Britam', 'Pioneer'])->delete();
     }
 };
-

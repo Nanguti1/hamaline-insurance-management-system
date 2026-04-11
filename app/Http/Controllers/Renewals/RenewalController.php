@@ -8,8 +8,8 @@ use App\Http\Requests\Renewals\UpdateRenewalRequest;
 use App\Models\Policy;
 use App\Models\Renewal;
 use App\Services\Renewals\RenewalService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -43,6 +43,7 @@ class RenewalController extends Controller
     public function store(StoreRenewalRequest $request, RenewalService $service): RedirectResponse
     {
         $renewal = $service->create($request->validated());
+
         return to_route('renewals.show', $renewal)->with('success', 'Renewal created successfully.');
     }
 
@@ -66,13 +67,14 @@ class RenewalController extends Controller
     public function update(UpdateRenewalRequest $request, Renewal $renewal, RenewalService $service): RedirectResponse
     {
         $service->update($renewal, $request->validated());
+
         return to_route('renewals.show', $renewal)->with('success', 'Renewal updated successfully.');
     }
 
     public function destroy(Renewal $renewal, RenewalService $service): RedirectResponse
     {
         $service->delete($renewal);
+
         return to_route('renewals.index');
     }
 }
-

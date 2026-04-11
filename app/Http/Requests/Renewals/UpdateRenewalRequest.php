@@ -39,4 +39,3 @@ class UpdateRenewalRequest extends FormRequest
         ];
     }
 }
-

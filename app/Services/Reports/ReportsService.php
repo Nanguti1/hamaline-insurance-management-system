@@ -8,10 +8,9 @@ use App\Models\Payment;
 use App\Models\Policy;
 use App\Models\ReportRun;
 use App\Models\User;
-use App\Models\Underwriter;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 

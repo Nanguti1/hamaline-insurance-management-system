@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Users\UserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Role;
@@ -23,7 +24,7 @@ class UserController extends Controller
 
     public function index(Request $request): Response
     {
-        /** @var \Illuminate\Pagination\LengthAwarePaginator $paginator */
+        /** @var LengthAwarePaginator $paginator */
         $paginator = $this->users->paginate([
             'q' => $request->query('q'),
         ]);

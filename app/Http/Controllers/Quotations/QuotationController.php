@@ -5,18 +5,18 @@ namespace App\Http\Controllers\Quotations;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Quotations\StoreQuotationRequest;
 use App\Http\Requests\Quotations\UpdateQuotationRequest;
+use App\Mail\QuotationIssuedMail;
 use App\Models\Client;
 use App\Models\Insurer;
 use App\Models\Quotation;
 use App\Models\Underwriter;
 use App\Services\Access\ResourceAccessService;
-use App\Mail\QuotationIssuedMail;
 use App\Services\Quotations\QuotationService;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -84,7 +84,7 @@ class QuotationController extends Controller
             }
         }
 
-        $allowed = \Illuminate\Support\Facades\DB::table('insurer_underwriter')
+        $allowed = DB::table('insurer_underwriter')
             ->where('underwriter_id', (int) $data['underwriter_id'])
             ->where('insurer_id', (int) $data['insurer_id'])
             ->exists();

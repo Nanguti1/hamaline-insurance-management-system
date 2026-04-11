@@ -20,4 +20,3 @@ class Insurer extends Model
             ->withTimestamps();
     }
 }
-

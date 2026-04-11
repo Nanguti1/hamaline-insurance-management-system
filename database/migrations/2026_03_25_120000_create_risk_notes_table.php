@@ -55,4 +55,3 @@ return new class extends Migration
         Schema::dropIfExists('risk_notes');
     }
 };
-

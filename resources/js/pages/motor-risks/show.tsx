@@ -71,6 +71,7 @@ export default function MotorRiskNoteShow({ riskNote, documents = [] }: Props) {
     const onClickReject = () =>
         router.post(`/motor-risks/${riskNote.id}/reject`, { decision_notes: decisionNotes || null });
     const onClickCancel = () => router.post(`/motor-risks/${riskNote.id}/cancel`, { reason: cancelReason || null });
+    const onClickDownloadPDF = () => window.open(`/motor-risks/${riskNote.id}/download-pdf`, '_blank');
 
     const coverType = useMemo(() => {
         const ct = riskNote.motorDetails?.cover_type ?? '-';
@@ -133,7 +134,14 @@ export default function MotorRiskNoteShow({ riskNote, documents = [] }: Props) {
 
                     <CardContent className="pt-0">
                         <div className="space-y-3">
-                            <h3 className="text-sm font-medium">Risk note content</h3>
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-medium">Risk note content</h3>
+                                {can('motor_risks.view') && (
+                                    <Button variant="outline" size="sm" onClick={onClickDownloadPDF}>
+                                        Download PDF
+                                    </Button>
+                                )}
+                            </div>
                             <Textarea value={riskNote.risk_note_content ?? ''} readOnly rows={12} />
                         </div>
                     </CardContent>

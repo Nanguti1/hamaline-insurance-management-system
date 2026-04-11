@@ -42,4 +42,3 @@ class StoreWibaRiskNoteRequest extends FormRequest
         ];
     }
 }
-

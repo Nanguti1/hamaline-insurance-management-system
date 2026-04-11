@@ -29,4 +29,3 @@ return new class extends Migration
         Schema::dropIfExists('medical_member_benefits');
     }
 };
-

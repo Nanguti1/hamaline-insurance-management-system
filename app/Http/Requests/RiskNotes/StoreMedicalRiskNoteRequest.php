@@ -5,6 +5,7 @@ namespace App\Http\Requests\RiskNotes;
 use App\Http\Requests\Concerns\ValidatesUnderwriterBelongsToUser;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreMedicalRiskNoteRequest extends FormRequest
 {
@@ -73,7 +74,7 @@ class StoreMedicalRiskNoteRequest extends FormRequest
     }
 
     /**
-     * @param  \Illuminate\Validation\Validator  $validator
+     * @param  Validator  $validator
      */
     public function withValidator($validator): void
     {
@@ -88,6 +89,7 @@ class StoreMedicalRiskNoteRequest extends FormRequest
             $principal = collect($members)->firstWhere('is_principal', true);
             if (! $principal) {
                 $validator->errors()->add('members', 'A principal member (is_principal=true) is required.');
+
                 return;
             }
 
@@ -163,6 +165,7 @@ class StoreMedicalRiskNoteRequest extends FormRequest
                 $isPrincipal = (bool) ($m['is_principal'] ?? false);
                 if (! $isPrincipal && count($memberBenefits) > 0) {
                     $validator->errors()->add("members.$idx.benefits", 'Only the principal member can carry benefits.');
+
                     continue;
                 }
 
@@ -190,4 +193,3 @@ class StoreMedicalRiskNoteRequest extends FormRequest
         });
     }
 }
-

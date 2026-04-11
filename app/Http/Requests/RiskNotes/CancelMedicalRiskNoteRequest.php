@@ -18,4 +18,3 @@ class CancelMedicalRiskNoteRequest extends FormRequest
         ];
     }
 }
-

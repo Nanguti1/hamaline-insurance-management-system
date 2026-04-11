@@ -63,4 +63,3 @@ class UpdateCommissionRequest extends FormRequest
         ];
     }
 }
-

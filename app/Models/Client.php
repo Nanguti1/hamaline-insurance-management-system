@@ -64,6 +64,11 @@ class Client extends Model
         return $this->hasMany(ClientDocument::class);
     }
 
+    public function medicalCategories(): HasMany
+    {
+        return $this->hasMany(ClientMedicalCategory::class);
+    }
+
     public function hasRequiredDocuments(): bool
     {
         $requiredTypes = ['national_id', 'kra_pin'];

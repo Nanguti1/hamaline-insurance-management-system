@@ -18,6 +18,7 @@ class RiskNote extends Model
         'risk_note_number',
         'client_id',
         'underwriter_id',
+        'insurer_id',
         'status',
         'submitted_at',
         'decided_at',
@@ -51,6 +52,11 @@ class RiskNote extends Model
     public function underwriter(): BelongsTo
     {
         return $this->belongsTo(Underwriter::class, 'underwriter_id');
+    }
+
+    public function insurer(): BelongsTo
+    {
+        return $this->belongsTo(Insurer::class, 'insurer_id');
     }
 
     public function policy(): BelongsTo
@@ -89,4 +95,3 @@ class RiskNote extends Model
         return $this->morphMany(Document::class, 'documentable');
     }
 }
-

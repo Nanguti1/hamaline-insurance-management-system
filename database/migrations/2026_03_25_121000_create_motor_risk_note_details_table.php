@@ -43,4 +43,3 @@ return new class extends Migration
         Schema::dropIfExists('motor_risk_note_details');
     }
 };
-

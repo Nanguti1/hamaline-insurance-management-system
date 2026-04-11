@@ -48,6 +48,7 @@ class RenewalService
     public function update(Renewal $renewal, array $data): Renewal
     {
         $renewal->update($this->normalize($data));
+
         return $renewal->refresh();
     }
 
@@ -73,4 +74,3 @@ class RenewalService
         return $data;
     }
 }
-

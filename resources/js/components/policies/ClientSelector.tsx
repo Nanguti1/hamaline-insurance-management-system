@@ -13,6 +13,7 @@ type Client = {
     phone: string; 
     email: string;
     documents?: Array<{ document_type: string; filename: string; }>;
+    medical_categories?: Array<{ category_code: string; category_name: string; }>;
 };
 
 type Props = {
@@ -59,7 +60,19 @@ export default function ClientSelector({ onClientSelect }: Props) {
         setPage(1);
     }, [searchQuery]);
 
-    const handleClientSelect = (client: Client) => {
+    const handleClientSelect = async (client: Client) => {
+        // Load medical categories for corporate clients
+        if (client.type === 'corporate') {
+            try {
+                const response = await fetch(`/clients/${client.id}/medical-categories`);
+                const data = await response.json();
+                client.medical_categories = data.data || [];
+            } catch (error) {
+                console.error('Failed to load medical categories:', error);
+                client.medical_categories = [];
+            }
+        }
+        
         setSelectedClient(client);
         onClientSelect(client);
     };

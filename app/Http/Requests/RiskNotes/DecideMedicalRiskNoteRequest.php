@@ -21,4 +21,3 @@ class DecideMedicalRiskNoteRequest extends FormRequest
         ];
     }
 }
-

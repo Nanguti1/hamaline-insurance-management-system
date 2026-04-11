@@ -30,4 +30,3 @@ class WibaEmployee extends Model
         return $this->belongsTo(RiskNote::class, 'risk_note_id');
     }
 }
-

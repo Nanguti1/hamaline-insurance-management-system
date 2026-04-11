@@ -16,11 +16,23 @@ class MedicalPolicyDetail extends Model
         'medical_category',
         'benefits',
         'notes',
+        'outpatient_benefit',
+        'outpatient_amount',
+        'inpatient_benefit',
+        'inpatient_amount',
+        'optical_benefit',
+        'optical_amount',
+        'maternity_benefit',
+        'maternity_amount',
     ];
 
     protected $casts = [
         'medical_category' => 'string',
         'benefits' => 'array',
+        'outpatient_benefit' => 'boolean',
+        'inpatient_benefit' => 'boolean',
+        'optical_benefit' => 'boolean',
+        'maternity_benefit' => 'boolean',
     ];
 
     public function policy(): BelongsTo

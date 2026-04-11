@@ -40,4 +40,3 @@ class UpdateClaimRequest extends FormRequest
         ];
     }
 }
-

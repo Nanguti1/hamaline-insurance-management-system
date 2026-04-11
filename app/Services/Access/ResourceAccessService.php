@@ -6,8 +6,8 @@ use App\Models\Claim;
 use App\Models\Commission;
 use App\Models\Payment;
 use App\Models\Policy;
-use App\Models\RiskNote;
 use App\Models\Quotation;
+use App\Models\RiskNote;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -52,7 +52,8 @@ class ResourceAccessService
         }
 
         $base = $this->lineTypeToRiskPermissionBase($riskNote->line_type);
-        return $user->can($base . '.view');
+
+        return $user->can($base.'.view');
     }
 
     public function assertCanUnderwriteRiskNote(?User $user, RiskNote $riskNote): void
@@ -77,7 +78,8 @@ class ResourceAccessService
         }
 
         $base = $this->lineTypeToRiskPermissionBase($riskNote->line_type);
-        return $user->can($base . '.underwrite');
+
+        return $user->can($base.'.underwrite');
     }
 
     /**
@@ -115,7 +117,8 @@ class ResourceAccessService
 
         // Fallback to permissions-based access if required.
         $base = $this->lineTypeToRiskPermissionBase($lineType);
-        return $user->can($base . '.view') ? $query : $query->whereRaw('0 = 1');
+
+        return $user->can($base.'.view') ? $query : $query->whereRaw('0 = 1');
     }
 
     public function assertCanViewPolicy(?User $user, Policy $policy): void

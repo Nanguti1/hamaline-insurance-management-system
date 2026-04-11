@@ -13,6 +13,7 @@ class MedicalRiskNoteDetails extends Model
     protected $table = 'medical_risk_note_details';
 
     protected $primaryKey = 'risk_note_id';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -27,4 +28,3 @@ class MedicalRiskNoteDetails extends Model
         return $this->belongsTo(RiskNote::class, 'risk_note_id');
     }
 }
-

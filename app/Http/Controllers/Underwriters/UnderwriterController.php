@@ -10,8 +10,8 @@ use App\Models\Underwriter;
 use App\Services\Underwriters\UnderwriterService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Response;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class UnderwriterController extends Controller
 {
@@ -78,4 +78,3 @@ class UnderwriterController extends Controller
         return to_route('underwriters.index');
     }
 }
-

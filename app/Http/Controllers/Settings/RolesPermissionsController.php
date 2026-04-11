@@ -109,7 +109,7 @@ class RolesPermissionsController extends Controller
         return to_route('roles-permissions.index', ['role' => $roleModel->name]);
     }
 
-    private function normalizeName(null|string $name): string
+    private function normalizeName(?string $name): string
     {
         $normalized = strtolower(trim((string) $name));
         $normalized = preg_replace('/\s+/', '_', $normalized) ?? '';
@@ -118,4 +118,3 @@ class RolesPermissionsController extends Controller
         return trim((string) $normalized);
     }
 }
-

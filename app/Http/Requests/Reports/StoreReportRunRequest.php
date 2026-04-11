@@ -41,4 +41,3 @@ class StoreReportRunRequest extends FormRequest
         ];
     }
 }
-

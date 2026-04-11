@@ -3,7 +3,6 @@
 namespace App\Http\Requests\RiskNotes;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class AssignMedicalMemberNumbersRequest extends FormRequest
 {
@@ -21,4 +20,3 @@ class AssignMedicalMemberNumbersRequest extends FormRequest
         ];
     }
 }
-

@@ -6,6 +6,7 @@ import ProgressivePolicyForm from '@/components/policies/ProgressivePolicyForm';
 import type { BreadcrumbItem } from '@/types';
 
 type Underwriter = { id: number; name: string };
+type Insurer = { id: number; name: string };
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Policies', href: '/policies' },
@@ -14,9 +15,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 type Props = {
     underwriters: Underwriter[];
+    insurers: Insurer[];
 };
 
-export default function PoliciesCreate({ underwriters }: Props) {
+export default function PoliciesCreate({ underwriters, insurers }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="New Policy" />
@@ -31,6 +33,7 @@ export default function PoliciesCreate({ underwriters }: Props) {
                     method="post"
                     onCancelHref="/policies"
                     underwriters={underwriters}
+                    insurers={insurers}
                 />
             </div>
         </AppLayout>

@@ -34,7 +34,7 @@ export default function PolicyMemberManagement({ members, onMembersChange, polic
         id_number: '',
         payroll_number: '',
         annual_salary: undefined,
-        relationship: '',
+        relationship: isCorporate && policyType === 'medical' ? 'Employee' : '',
         phone: '',
     });
 

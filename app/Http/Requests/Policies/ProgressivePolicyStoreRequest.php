@@ -18,6 +18,7 @@ class ProgressivePolicyStoreRequest extends FormRequest
     {
         $rules = [
             'client_id' => ['required', 'integer', 'exists:clients,id'],
+            'insurer_id' => ['required', 'integer', 'exists:insurers,id'],
             'underwriter_id' => ['required', 'integer', 'exists:underwriters,id'],
             'policy_type' => ['required', 'string', 'in:motor,medical,wiba'],
             'policy_number' => ['nullable', 'string', 'max:50'],
@@ -34,17 +35,23 @@ class ProgressivePolicyStoreRequest extends FormRequest
             'members.*.id_number' => ['nullable', 'string', 'max:50'],
             'members.*.payroll_number' => ['nullable', 'string', 'max:50'],
             'members.*.annual_salary' => ['nullable', 'numeric', 'min:0'],
-            'medical_benefits' => ['nullable', 'array'],
-            'medical_benefits.*' => ['string', 'in:inpatient,outpatient,optical,maternity'],
         ];
 
         if ($this->input('policy_type') === 'medical') {
             $rules['medical_category'] = [
                 'nullable',
                 'string',
-                'in:A,B,C,D',
+                'in:A,B,C,D,E,F',
                 'required_if:client_type,corporate',
             ];
+            $rules['outpatient_benefit'] = ['nullable', 'boolean'];
+            $rules['outpatient_amount'] = ['nullable', 'numeric', 'min:0', 'required_if:outpatient_benefit,true'];
+            $rules['inpatient_benefit'] = ['nullable', 'boolean'];
+            $rules['inpatient_amount'] = ['nullable', 'numeric', 'min:0', 'required_if:inpatient_benefit,true'];
+            $rules['optical_benefit'] = ['nullable', 'boolean'];
+            $rules['optical_amount'] = ['nullable', 'numeric', 'min:0', 'required_if:optical_benefit,true'];
+            $rules['maternity_benefit'] = ['nullable', 'boolean'];
+            $rules['maternity_amount'] = ['nullable', 'numeric', 'min:0', 'required_if:maternity_benefit,true'];
         }
 
         if ($this->input('policy_type') === 'motor') {

@@ -39,4 +39,3 @@ class MedicalMember extends Model
         return $this->hasMany(MedicalMemberBenefit::class, 'medical_member_id');
     }
 }
-

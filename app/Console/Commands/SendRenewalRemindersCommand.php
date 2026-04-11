@@ -62,6 +62,7 @@ class SendRenewalRemindersCommand extends Command
         }
 
         $this->info("Done. Reminders sent for {$count} policy(ies).");
+
         return self::SUCCESS;
     }
 }

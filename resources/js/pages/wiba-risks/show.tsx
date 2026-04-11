@@ -58,6 +58,7 @@ export default function WibaRiskNoteShow({ riskNote }: Props) {
     const onClickApprove = () => router.post(`/wiba-risks/${riskNote.id}/approve`, { decision_notes: decisionNotes || null });
     const onClickReject = () => router.post(`/wiba-risks/${riskNote.id}/reject`, { decision_notes: decisionNotes || null });
     const onClickCancel = () => router.post(`/wiba-risks/${riskNote.id}/cancel`, { reason: cancelReason || null });
+    const onClickDownloadPDF = () => window.open(`/wiba-risks/${riskNote.id}/download-pdf`, '_blank');
 
     const employees = riskNote.wibaEmployees ?? [];
     const sortedEmployees = [...employees].sort((a, b) => a.employee_sequence - b.employee_sequence);
@@ -122,7 +123,14 @@ export default function WibaRiskNoteShow({ riskNote }: Props) {
 
                     <CardContent className="pt-0">
                         <div className="space-y-3">
-                            <h3 className="text-sm font-medium">Risk note content</h3>
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-medium">Risk note content</h3>
+                                {can('wiba_risks.view') && (
+                                    <Button variant="outline" size="sm" onClick={onClickDownloadPDF}>
+                                        Download PDF
+                                    </Button>
+                                )}
+                            </div>
                             <Textarea value={riskNote.risk_note_content ?? ''} readOnly rows={12} />
                         </div>
                     </CardContent>

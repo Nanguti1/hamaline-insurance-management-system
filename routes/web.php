@@ -3,6 +3,7 @@
 use App\Http\Controllers\Claims\ClaimController;
 use App\Http\Controllers\ClientDocumentController;
 use App\Http\Controllers\Clients\ClientController;
+use App\Http\Controllers\Clients\ClientMedicalCategoryController;
 use App\Http\Controllers\ClientSearchController;
 use App\Http\Controllers\Commissions\CommissionController;
 use App\Http\Controllers\Documents\ClaimDocumentController;
@@ -79,6 +80,12 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     // Client search routes - must come before parameterized routes
     Route::get('clients/search', [ClientSearchController::class, 'search'])->name('clients.search');
     Route::get('clients/suggestions', [ClientSearchController::class, 'suggestions'])->name('clients.suggestions');
+
+    // Client medical category routes
+    Route::get('clients/{client}/medical-categories', [ClientMedicalCategoryController::class, 'index'])->name('clients.medical-categories.index');
+    Route::post('clients/{client}/medical-categories', [ClientMedicalCategoryController::class, 'store'])->name('clients.medical-categories.store');
+    Route::put('clients/{client}/medical-categories/{category}', [ClientMedicalCategoryController::class, 'update'])->name('clients.medical-categories.update');
+    Route::delete('clients/{client}/medical-categories/{category}', [ClientMedicalCategoryController::class, 'destroy'])->name('clients.medical-categories.destroy');
 
     // Parameterized client routes
     Route::get('clients/{client}', [ClientController::class, 'show'])->middleware('permission:clients.view')->name('clients.show');
@@ -194,6 +201,10 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         ->middleware('permission:medical_risks.manage')
         ->name('medical-risks.generate');
 
+    Route::get('medical-risks/{medicalRiskNote}/download-pdf', [MedicalRiskNoteController::class, 'downloadPDF'])
+        ->middleware('permission:medical_risks.view')
+        ->name('medical-risks.download-pdf');
+
     Route::post('medical-risks/{medicalRiskNote}/submit', [MedicalRiskNoteController::class, 'submit'])
         ->middleware('permission:medical_risks.manage')
         ->name('medical-risks.submit');
@@ -235,6 +246,10 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         ->middleware('permission:motor_risks.manage')
         ->name('motor-risks.generate');
 
+    Route::get('motor-risks/{motorRiskNote}/download-pdf', [MotorRiskNoteController::class, 'downloadPDF'])
+        ->middleware('permission:motor_risks.view')
+        ->name('motor-risks.download-pdf');
+
     Route::post('motor-risks/{motorRiskNote}/submit', [MotorRiskNoteController::class, 'submit'])
         ->middleware('permission:motor_risks.manage')
         ->name('motor-risks.submit');
@@ -271,6 +286,10 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::post('wiba-risks/{wibaRiskNote}/generate', [WibaRiskNoteController::class, 'generate'])
         ->middleware('permission:wiba_risks.manage')
         ->name('wiba-risks.generate');
+
+    Route::get('wiba-risks/{wibaRiskNote}/download-pdf', [WibaRiskNoteController::class, 'downloadPDF'])
+        ->middleware('permission:wiba_risks.view')
+        ->name('wiba-risks.download-pdf');
 
     Route::post('wiba-risks/{wibaRiskNote}/submit', [WibaRiskNoteController::class, 'submit'])
         ->middleware('permission:wiba_risks.manage')

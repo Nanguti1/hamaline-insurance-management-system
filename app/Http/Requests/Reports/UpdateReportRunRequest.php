@@ -47,4 +47,3 @@ class UpdateReportRunRequest extends FormRequest
         ];
     }
 }
-

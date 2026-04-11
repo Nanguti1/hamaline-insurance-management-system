@@ -88,7 +88,7 @@ class PolicyController extends Controller
         $policyData = [
             'client_id' => $validated['client_id'],
             'underwriter_id' => $validated['underwriter_id'],
-            'insurer_id' => null,
+            'insurer_id' => $validated['insurer_id'],
             'policy_type' => $validated['policy_type'],
             'policy_number' => $validated['policy_number'] ?? null,
             'start_date' => $validated['start_date'],
@@ -104,12 +104,21 @@ class PolicyController extends Controller
 
         switch ($validated['policy_type']) {
             case 'medical':
-                MedicalPolicyDetail::create([
-                    'policy_id' => $policy->id,
-                    'medical_category' => $validated['medical_category'] ?? null,
-                    'benefits' => $validated['medical_benefits'] ?? [],
-                    'notes' => $validated['notes'] ?? null,
-                ]);
+                if (! empty($validated['medical_category']) || ! empty($validated['outpatient_benefit']) || ! empty($validated['inpatient_benefit']) || ! empty($validated['optical_benefit']) || ! empty($validated['maternity_benefit'])) {
+                    MedicalPolicyDetail::create([
+                        'policy_id' => $policy->id,
+                        'medical_category' => $validated['medical_category'] ?? null,
+                        'outpatient_benefit' => $validated['outpatient_benefit'] ?? false,
+                        'outpatient_amount' => $validated['outpatient_amount'] ?? null,
+                        'inpatient_benefit' => $validated['inpatient_benefit'] ?? false,
+                        'inpatient_amount' => $validated['inpatient_amount'] ?? null,
+                        'optical_benefit' => $validated['optical_benefit'] ?? false,
+                        'optical_amount' => $validated['optical_amount'] ?? null,
+                        'maternity_benefit' => $validated['maternity_benefit'] ?? false,
+                        'maternity_amount' => $validated['maternity_amount'] ?? null,
+                        'notes' => $validated['notes'] ?? null,
+                    ]);
+                }
                 break;
 
             case 'motor':

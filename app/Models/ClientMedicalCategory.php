@@ -6,22 +6,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class MedicalMemberBenefit extends Model
+class ClientMedicalCategory extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'medical_member_id',
-        'benefit_type',
-        'amount',
+        'client_id',
+        'category_code',
+        'category_name',
+        'description',
+        'is_active',
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'is_active' => 'boolean',
     ];
 
-    public function member(): BelongsTo
+    public function client(): BelongsTo
     {
-        return $this->belongsTo(MedicalMember::class, 'medical_member_id');
+        return $this->belongsTo(Client::class);
     }
 }

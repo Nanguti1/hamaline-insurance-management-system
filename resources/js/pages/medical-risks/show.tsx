@@ -85,6 +85,7 @@ export default function MedicalRiskNoteShow({ riskNote }: Props) {
     const onClickApprove = () => router.post(`/medical-risks/${riskNote.id}/approve`, { decision_notes: decisionNotes || null });
     const onClickReject = () => router.post(`/medical-risks/${riskNote.id}/reject`, { decision_notes: decisionNotes || null });
     const onClickCancel = () => router.post(`/medical-risks/${riskNote.id}/cancel`, { reason: cancelReason || null });
+    const onClickDownloadPDF = () => window.open(`/medical-risks/${riskNote.id}/download-pdf`, '_blank');
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -159,7 +160,14 @@ export default function MedicalRiskNoteShow({ riskNote }: Props) {
 
                     <CardContent className="pt-0">
                         <div className="space-y-3">
-                            <h3 className="text-sm font-medium">Risk note content</h3>
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-medium">Risk note content</h3>
+                                {can('medical_risks.view') && (
+                                    <Button variant="outline" size="sm" onClick={onClickDownloadPDF}>
+                                        Download PDF
+                                    </Button>
+                                )}
+                            </div>
                             <Textarea value={riskNote.risk_note_content ?? ''} readOnly rows={10} />
                         </div>
                     </CardContent>

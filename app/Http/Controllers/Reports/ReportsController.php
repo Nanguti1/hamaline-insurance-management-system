@@ -7,8 +7,8 @@ use App\Http\Requests\Reports\StoreReportRunRequest;
 use App\Http\Requests\Reports\UpdateReportRunRequest;
 use App\Models\ReportRun;
 use App\Services\Reports\ReportsService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -51,6 +51,7 @@ class ReportsController extends Controller
     public function store(StoreReportRunRequest $request, ReportsService $service): RedirectResponse
     {
         $report = $service->runReport($request->validated(), $request->user());
+
         return to_route('reports.show', $report)->with('success', 'Report generated successfully.');
     }
 
@@ -71,13 +72,14 @@ class ReportsController extends Controller
     public function update(UpdateReportRunRequest $request, ReportRun $reportRun, ReportsService $service): RedirectResponse
     {
         $service->recompute($reportRun, $request->validated(), $request->user());
+
         return to_route('reports.show', $reportRun)->with('success', 'Report updated successfully.');
     }
 
     public function destroy(ReportRun $reportRun, ReportsService $service): RedirectResponse
     {
         $reportRun->delete();
+
         return to_route('reports.index');
     }
 }
-

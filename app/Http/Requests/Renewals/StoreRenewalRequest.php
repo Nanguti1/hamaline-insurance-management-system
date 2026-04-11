@@ -29,4 +29,3 @@ class StoreRenewalRequest extends FormRequest
         ];
     }
 }
-

@@ -38,6 +38,7 @@ class RiskNoteService
             $riskNote = $this->createMotorRiskNote([
                 'client_id' => $policy->client_id,
                 'underwriter_id' => $policy->underwriter_id,
+                'insurer_id' => $policy->insurer_id,
                 'start_date' => $policy->start_date?->toDateString(),
                 'end_date' => $policy->end_date?->toDateString(),
                 'premium_amount' => (float) ($policy->premium_amount ?? 0),
@@ -64,14 +65,31 @@ class RiskNoteService
         }
 
         if ($policy->policy_type === 'medical') {
+            $benefitsMap = [];
+            if ($policy->medicalDetail) {
+                if ($policy->medicalDetail->outpatient_benefit) {
+                    $benefitsMap['outpatient'] = $policy->medicalDetail->outpatient_amount ?? 0;
+                }
+                if ($policy->medicalDetail->inpatient_benefit) {
+                    $benefitsMap['inpatient'] = $policy->medicalDetail->inpatient_amount ?? 0;
+                }
+                if ($policy->medicalDetail->optical_benefit) {
+                    $benefitsMap['optical'] = $policy->medicalDetail->optical_amount ?? 0;
+                }
+                if ($policy->medicalDetail->maternity_benefit) {
+                    $benefitsMap['maternity'] = $policy->medicalDetail->maternity_amount ?? 0;
+                }
+            }
+            
             $members = $this->mapPolicyMembersToMedicalMembers(
                 $policy,
-                (array) ($policy->medicalDetail?->benefits ?? [])
+                $benefitsMap
             );
 
             $riskNote = $this->createMedicalRiskNote([
                 'client_id' => $policy->client_id,
                 'underwriter_id' => $policy->underwriter_id,
+                'insurer_id' => $policy->insurer_id,
                 'plan_type' => $policy->client?->type === 'corporate' ? 'corporate' : 'individual',
                 'corporate_category_code' => $policy->medicalDetail?->medical_category,
                 'junior_children_count' => null,
@@ -92,6 +110,7 @@ class RiskNoteService
         $riskNote = $this->createWibaRiskNote([
             'client_id' => $policy->client_id,
             'underwriter_id' => $policy->underwriter_id,
+            'insurer_id' => $policy->insurer_id,
             'start_date' => $policy->start_date?->toDateString(),
             'end_date' => $policy->end_date?->toDateString(),
             'premium_amount' => (float) ($policy->premium_amount ?? 0),
@@ -128,6 +147,7 @@ class RiskNoteService
                 'risk_note_number' => $this->nextRiskNoteNumber($lineType),
                 'client_id' => $data['client_id'],
                 'underwriter_id' => $data['underwriter_id'],
+                'insurer_id' => $data['insurer_id'] ?? null,
                 'status' => self::STATUS_DRAFT,
                 'start_date' => $data['start_date'] ?? null,
                 'end_date' => $data['end_date'] ?? null,
@@ -188,6 +208,7 @@ class RiskNoteService
                 'risk_note_number' => $this->nextRiskNoteNumber($lineType),
                 'client_id' => $data['client_id'],
                 'underwriter_id' => $data['underwriter_id'],
+                'insurer_id' => $data['insurer_id'] ?? null,
                 'status' => self::STATUS_DRAFT,
                 'start_date' => $data['start_date'] ?? null,
                 'end_date' => $data['end_date'] ?? null,
@@ -236,6 +257,7 @@ class RiskNoteService
                 'risk_note_number' => $this->nextRiskNoteNumber($lineType),
                 'client_id' => $data['client_id'],
                 'underwriter_id' => $data['underwriter_id'],
+                'insurer_id' => $data['insurer_id'] ?? null,
                 'status' => self::STATUS_DRAFT,
                 'start_date' => $data['start_date'] ?? null,
                 'end_date' => $data['end_date'] ?? null,
@@ -266,7 +288,7 @@ class RiskNoteService
             throw new \InvalidArgumentException('Risk note line_type must be motor.');
         }
 
-        $riskNote->load(['client', 'underwriter', 'motorDetails']);
+        $riskNote->load(['client', 'underwriter', 'insurer', 'motorDetails']);
 
         $period = ($riskNote->start_date && $riskNote->end_date)
             ? sprintf('%s - %s', $riskNote->start_date->format('Y-m-d'), $riskNote->end_date->format('Y-m-d'))
@@ -285,7 +307,8 @@ class RiskNoteService
             'Header',
             sprintf('Risk Note Number: %s', $riskNote->risk_note_number),
             sprintf('Date of Issue: %s', now()->format('Y-m-d')),
-            sprintf('Agency Name: %s', config('app.name', 'Hamaline Insurance')),
+            sprintf('Agency Name: Hamline Insurance Agency'),
+            sprintf('Insurer: %s', $riskNote->insurer?->name ?? '-'),
             '',
             'Insured Information',
             sprintf('Name: %s', $d?->insured_name ?? '-'),
@@ -331,7 +354,7 @@ class RiskNoteService
             throw new \InvalidArgumentException('Risk note line_type must be wiba.');
         }
 
-        $riskNote->load(['client', 'underwriter', 'wibaEmployees']);
+        $riskNote->load(['client', 'underwriter', 'insurer', 'wibaEmployees']);
 
         $period = ($riskNote->start_date && $riskNote->end_date)
             ? sprintf('%s - %s', $riskNote->start_date->format('Y-m-d'), $riskNote->end_date->format('Y-m-d'))
@@ -361,7 +384,8 @@ class RiskNoteService
             'Header',
             sprintf('Risk Note Number: %s', $riskNote->risk_note_number),
             sprintf('Date of Issue: %s', now()->format('Y-m-d')),
-            sprintf('Agency Name: %s', config('app.name', 'Hamaline Insurance')),
+            sprintf('Agency Name: Hamline Insurance Agency'),
+            sprintf('Insurer: %s', $riskNote->insurer?->name ?? '-'),
             '',
             'Insured Information',
             sprintf('Corporate Name: %s', $riskNote->client?->display_name ?? '-'),
@@ -394,7 +418,7 @@ class RiskNoteService
             throw new \InvalidArgumentException('Risk note line_type must be medical.');
         }
 
-        $riskNote->load(['client', 'underwriter', 'medicalDetails', 'medicalMembers.benefits']);
+        $riskNote->load(['client', 'underwriter', 'insurer', 'medicalDetails', 'medicalMembers.benefits']);
 
         $principal = $riskNote->medicalMembers->firstWhere('is_principal', true);
         if (! $principal) {
@@ -429,7 +453,7 @@ class RiskNoteService
             : '-';
 
         $issueDate = now()->format('Y-m-d');
-        $agencyName = config('app.name', 'Hamaline Insurance');
+        $agencyName = 'Hamline Insurance Agency';
 
         $dependantsTableLines = [];
         foreach ($dependants as $i => $d) {
@@ -449,6 +473,7 @@ class RiskNoteService
 
         $principalName = $principal?->name ?? '-';
         $underwriterName = $riskNote->underwriter?->name ?? '-';
+        $insurerName = $riskNote->insurer?->name ?? '-';
 
         $riskNoteContent = implode(PHP_EOL, [
             '=== MEDICAL RISK NOTE ===',
@@ -456,6 +481,7 @@ class RiskNoteService
             sprintf('Risk Note Number: %s', $riskNote->risk_note_number),
             sprintf('Date of Issue: %s', $issueDate),
             sprintf('Agency Name: %s', $agencyName),
+            sprintf('Insurer: %s', $insurerName),
             '',
             'Insured Information',
             sprintf('Name: %s', $principalName),
@@ -668,13 +694,12 @@ class RiskNoteService
     /**
      * @return array<int, array<string, mixed>>
      */
-    private function mapPolicyMembersToMedicalMembers(Policy $policy, array $selectedBenefits = []): array
+    private function mapPolicyMembersToMedicalMembers(Policy $policy, array $benefitsMap = []): array
     {
-        $benefits = collect($selectedBenefits)
-            ->filter(fn (mixed $benefit): bool => is_string($benefit))
-            ->map(fn (string $benefit): array => [
-                'benefit_type' => $benefit,
-                'amount' => 0,
+        $benefits = collect($benefitsMap)
+            ->map(fn (float $amount, string $benefitType): array => [
+                'benefit_type' => $benefitType,
+                'amount' => $amount,
             ])
             ->values()
             ->all();
