@@ -210,6 +210,25 @@ export default function ProgressivePolicyForm({
     const watchedCoverType = watch('cover_type');
     const watchedCoverAddons = watch('cover_addons') ?? [];
     const watchedClientType = watch('client_type');
+    const watchedStartDate = watch('start_date');
+
+    useEffect(() => {
+        if (!watchedStartDate) {
+            return;
+        }
+
+        const calculatedEndDate = calculateEndDate(watchedStartDate, coverPeriod);
+        if (calculatedEndDate) {
+            setValue('end_date', calculatedEndDate, { shouldValidate: true });
+        }
+    }, [coverPeriod, setValue, watchedStartDate]);
+
+    useEffect(() => {
+        const startDate = todayDateString();
+        const calculatedEndDate = calculateEndDate(startDate, coverPeriod);
+        setValue('start_date', startDate, { shouldValidate: true });
+        setValue('end_date', calculatedEndDate, { shouldValidate: true });
+    }, [coverPeriod, setValue]);
 
     useEffect(() => {
         const startDate = todayDateString();
