@@ -7,7 +7,7 @@ export default function AppLogoIcon(props: ImgHTMLAttributes<HTMLImageElement>) 
         <img
             {...props}
             src={src}
-            alt="Hamline Insurance Agency"
+            alt="Hamaline Insurance Agency"
             onError={() => {
                 if (src === '/hamline-logo.png') {
                     setSrc('/logo.png');

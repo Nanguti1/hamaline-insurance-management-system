@@ -49,7 +49,7 @@ class RiskNoteService
                 'insured_phone' => $policy->client?->phone ?? 'TO-BE-CAPTURED',
                 'insured_email' => $policy->client?->email ?? 'to-be-captured@example.com',
                 'insured_postal_address' => $policy->client?->address ?? 'To be captured',
-                'registration_number' => $policy->policy_number ?? ('PENDING-'.$policy->id),
+                'registration_number' => $motorDetail?->registration_number ?? $policy->policy_number ?? ('PENDING-'.$policy->id),
                 'make_model' => $motorDetail?->vehicle_model ?? 'To be captured',
                 'year_of_manufacture' => (int) now()->year,
                 'chassis_number' => $motorDetail?->chassis_number ?? 'TO-BE-CAPTURED',
@@ -288,7 +288,7 @@ class RiskNoteService
             throw new \InvalidArgumentException('Risk note line_type must be motor.');
         }
 
-        $riskNote->load(['client', 'underwriter', 'insurer', 'motorDetails']);
+        $riskNote->load(['client', 'insurer', 'motorDetails']);
 
         $period = ($riskNote->start_date && $riskNote->end_date)
             ? sprintf('%s - %s', $riskNote->start_date->format('Y-m-d'), $riskNote->end_date->format('Y-m-d'))
@@ -307,12 +307,11 @@ class RiskNoteService
             'Header',
             sprintf('Risk Note Number: %s', $riskNote->risk_note_number),
             sprintf('Date of Issue: %s', now()->format('Y-m-d')),
-            sprintf('Agency Name: Hamline Insurance Agency'),
+            sprintf('Agency Name: Hamaline Insurance Agency'),
             sprintf('Insurer: %s', $riskNote->insurer?->name ?? '-'),
             '',
             'Insured Information',
             sprintf('Name: %s', $d?->insured_name ?? '-'),
-            sprintf('Underwriter: %s', $riskNote->underwriter?->name ?? '-'),
             sprintf('Period of Insurance: %s', $period),
             '',
             'Vehicle Details',
@@ -354,7 +353,7 @@ class RiskNoteService
             throw new \InvalidArgumentException('Risk note line_type must be wiba.');
         }
 
-        $riskNote->load(['client', 'underwriter', 'insurer', 'wibaEmployees']);
+        $riskNote->load(['client', 'insurer', 'wibaEmployees']);
 
         $period = ($riskNote->start_date && $riskNote->end_date)
             ? sprintf('%s - %s', $riskNote->start_date->format('Y-m-d'), $riskNote->end_date->format('Y-m-d'))
@@ -384,12 +383,11 @@ class RiskNoteService
             'Header',
             sprintf('Risk Note Number: %s', $riskNote->risk_note_number),
             sprintf('Date of Issue: %s', now()->format('Y-m-d')),
-            sprintf('Agency Name: Hamline Insurance Agency'),
+            sprintf('Agency Name: Hamaline Insurance Agency'),
             sprintf('Insurer: %s', $riskNote->insurer?->name ?? '-'),
             '',
             'Insured Information',
             sprintf('Corporate Name: %s', $riskNote->client?->display_name ?? '-'),
-            sprintf('Underwriter: %s', $riskNote->underwriter?->name ?? '-'),
             sprintf('Period of Insurance: %s', $period),
             '',
             'Employees',
@@ -418,7 +416,7 @@ class RiskNoteService
             throw new \InvalidArgumentException('Risk note line_type must be medical.');
         }
 
-        $riskNote->load(['client.medicalCategories', 'underwriter', 'insurer', 'medicalDetails', 'medicalMembers.benefits']);
+        $riskNote->load(['client.medicalCategories', 'insurer', 'medicalDetails', 'medicalMembers.benefits']);
 
         $planType = $riskNote->medicalDetails?->plan_type ?? 'individual';
         $isCorporatePlan = $planType === 'corporate';
@@ -462,7 +460,7 @@ class RiskNoteService
             : '-';
 
         $issueDate = now()->format('Y-m-d');
-        $agencyName = 'Hamline Insurance Agency';
+        $agencyName = 'Hamaline Insurance Agency';
 
         $dependantsTableLines = [];
         foreach ($dependants as $i => $d) {
@@ -483,7 +481,6 @@ class RiskNoteService
         $principalName = $isCorporatePlan
             ? ($riskNote->client?->display_name ?? '-')
             : ($principal?->name ?? '-');
-        $underwriterName = $riskNote->underwriter?->name ?? '-';
         $insurerName = $riskNote->insurer?->name ?? '-';
         $corporateCategoryDisplay = '-';
 
@@ -507,7 +504,6 @@ class RiskNoteService
             '',
             'Insured Information',
             sprintf('Name: %s', $principalName),
-            sprintf('Underwriter: %s', $underwriterName),
             sprintf('Period of Insurance: %s', $period),
             ...($isCorporatePlan ? [sprintf('Category Type: %s', $corporateCategoryDisplay)] : []),
             '',
