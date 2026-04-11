@@ -183,7 +183,12 @@ export default function MotorRiskNoteShow({ riskNote, documents = [] }: Props) {
                                     </div>
                                     <div className="grid gap-1 md:col-span-2">
                                         <Label>File</Label>
-                                        <input type="file" onChange={(e) => setDocumentFile(e.target.files?.[0] ?? null)} className="text-sm" />
+                                        <input
+                                            type="file"
+                                            onChange={(e) => setDocumentFile(e.target.files?.[0] ?? null)}
+                                            className="cursor-pointer rounded border border-dashed border-blue-300 bg-blue-50 px-3 py-2 text-sm file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-blue-600 file:px-3 file:py-1 file:text-white hover:bg-blue-100"
+                                        />
+                                        <p className="text-xs text-muted-foreground">Click “Choose File” to open file explorer.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -317,4 +322,3 @@ export default function MotorRiskNoteShow({ riskNote, documents = [] }: Props) {
         </AppLayout>
     );
 }
-

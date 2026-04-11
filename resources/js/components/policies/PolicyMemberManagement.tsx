@@ -27,6 +27,7 @@ type Props = {
 
 export default function PolicyMemberManagement({ members, onMembersChange, policyType, clientType }: Props) {
     const isCorporate = clientType === 'corporate';
+    const isCorporateMedical = isCorporate && policyType === 'medical';
     const [newMember, setNewMember] = useState<Member>({
         id: Date.now(),
         name: '',
@@ -34,7 +35,7 @@ export default function PolicyMemberManagement({ members, onMembersChange, polic
         id_number: '',
         payroll_number: '',
         annual_salary: undefined,
-        relationship: isCorporate && policyType === 'medical' ? 'Employee' : '',
+        relationship: isCorporateMedical ? 'Employee' : '',
         phone: '',
     });
 
@@ -57,7 +58,7 @@ export default function PolicyMemberManagement({ members, onMembersChange, polic
             id_number: '',
             payroll_number: '',
             annual_salary: undefined,
-            relationship: '',
+            relationship: isCorporateMedical ? 'Employee' : '',
             phone: '',
         });
     };
@@ -73,7 +74,7 @@ export default function PolicyMemberManagement({ members, onMembersChange, polic
     };
 
     const relationshipOptions = isCorporate
-        ? ['Employee', 'Spouse', 'Child', 'Other']
+        ? (isCorporateMedical ? ['Employee'] : ['Employee', 'Spouse', 'Child', 'Other'])
         : (policyType === 'medical' ? ['Principal', 'Spouse', 'Child', 'Parent', 'Other'] : ['Employee', 'Other']);
 
     return (
@@ -169,6 +170,7 @@ export default function PolicyMemberManagement({ members, onMembersChange, polic
                             <Select
                                 value={newMember.relationship || ''}
                                 onValueChange={(value) => setNewMember({ ...newMember, relationship: value })}
+                                disabled={isCorporateMedical}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select relationship" />
@@ -281,6 +283,7 @@ export default function PolicyMemberManagement({ members, onMembersChange, polic
                                             <Select
                                                 value={member.relationship}
                                                 onValueChange={(value) => updateMember(index, 'relationship', value)}
+                                                disabled={isCorporateMedical}
                                             >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select" />

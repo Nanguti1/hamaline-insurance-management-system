@@ -35,7 +35,8 @@ class StoreQuotationRequest extends FormRequest
             'installment_count' => [
                 'nullable',
                 'integer',
-                Rule::in([4]),
+                'min:2',
+                'max:10',
                 'required_if:payment_plan,installments',
             ],
         ];
