@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ export default function PolicyMemberManagement({ members, onMembersChange, polic
     const isCorporate = clientType === 'corporate';
     const isCorporateMedical = isCorporate && policyType === 'medical';
     const [newMember, setNewMember] = useState<Member>({
-        id: Date.now(),
+        id: nextMemberId.current++,
         name: '',
         identifier: '',
         id_number: '',
@@ -52,7 +52,7 @@ export default function PolicyMemberManagement({ members, onMembersChange, polic
 
         onMembersChange([...members, newMember]);
         setNewMember({
-            id: Date.now() + 1,
+            id: nextMemberId.current++,
             name: '',
             identifier: '',
             id_number: '',
