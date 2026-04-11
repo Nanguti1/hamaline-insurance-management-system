@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Http\Requests\Clients\StoreClientRequest;
+use App\Http\Requests\Clients\StoreClientMedicalCategoryRequest;
 use App\Http\Requests\Policies\ProgressivePolicyStoreRequest;
 use App\Http\Requests\Quotations\StoreQuotationRequest;
 use Illuminate\Http\UploadedFile;
@@ -139,6 +140,22 @@ class PolicyAndClientValidationTest extends TestCase
 
         self::assertTrue($invalid->fails());
         self::assertArrayHasKey('installment_count', $invalid->errors()->toArray());
+    }
+
+    public function test_client_medical_category_requires_identifier(): void
+    {
+        $request = new StoreClientMedicalCategoryRequest;
+        $rules = $this->withoutDatabaseRules($request->rules());
+
+        $validator = Validator::make([
+            'category_code' => 'A',
+            'category_name' => 'Executive Plan',
+            'description' => 'Category for executives',
+            'is_active' => true,
+        ], $rules);
+
+        self::assertTrue($validator->fails());
+        self::assertArrayHasKey('category_identifier', $validator->errors()->toArray());
     }
 
     /**

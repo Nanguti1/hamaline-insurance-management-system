@@ -230,6 +230,13 @@ export default function ProgressivePolicyForm({
         setValue('end_date', calculatedEndDate, { shouldValidate: true });
     }, [coverPeriod, setValue]);
 
+    useEffect(() => {
+        const startDate = todayDateString();
+        const calculatedEndDate = calculateEndDate(startDate, coverPeriod);
+        setValue('start_date', startDate, { shouldValidate: true });
+        setValue('end_date', calculatedEndDate, { shouldValidate: true });
+    }, [coverPeriod, setValue]);
+
     const extractFirstErrorMessage = (errorBag: FieldErrors<PolicyValues>): string | null => {
         const visited = new WeakSet<object>();
 
@@ -574,18 +581,13 @@ export default function ProgressivePolicyForm({
                                                         {selectedClient?.medical_categories && selectedClient.medical_categories.length > 0 ? (
                                                             selectedClient.medical_categories.map((cat: any) => (
                                                                 <SelectItem key={cat.category_code} value={cat.category_code}>
-                                                                    {cat.category_name} ({cat.category_code})
+                                                                    {cat.category_code} ({cat.category_identifier ?? cat.category_name})
                                                                 </SelectItem>
                                                             ))
                                                         ) : (
-                                                            <>
-                                                                <SelectItem value="A">A</SelectItem>
-                                                                <SelectItem value="B">B</SelectItem>
-                                                                <SelectItem value="C">C</SelectItem>
-                                                                <SelectItem value="D">D</SelectItem>
-                                                                <SelectItem value="E">E</SelectItem>
-                                                                <SelectItem value="F">F</SelectItem>
-                                                            </>
+                                                            <SelectItem value="__none" disabled>
+                                                                No categories configured for this client
+                                                            </SelectItem>
                                                         )}
                                                     </SelectContent>
                                                 </Select>
