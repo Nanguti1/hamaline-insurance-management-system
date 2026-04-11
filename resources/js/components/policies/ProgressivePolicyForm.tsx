@@ -119,6 +119,10 @@ type Props = {
     insurers: Insurer[];
 };
 
+function todayDateString(): string {
+    return new Date().toISOString().slice(0, 10);
+}
+
 function calculateEndDate(startDate: string, coverPeriod: CoverPeriod): string {
     if (!startDate) {
         return '';
@@ -155,6 +159,7 @@ export default function ProgressivePolicyForm({
     const [isCreatingRiskNote, setIsCreatingRiskNote] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [coverPeriod, setCoverPeriod] = useState<CoverPeriod>('1_year');
+    const defaultStartDate = todayDateString();
 
     const {
         register,
@@ -171,8 +176,8 @@ export default function ProgressivePolicyForm({
             client_type: 'individual',
             policy_type: (initialValues?.policy_type ?? 'motor') as PolicyValues['policy_type'],
             policy_number: initialValues?.policy_number ?? '',
-            start_date: initialValues?.start_date ?? '',
-            end_date: initialValues?.end_date ?? '',
+            start_date: initialValues?.start_date ?? defaultStartDate,
+            end_date: initialValues?.end_date ?? calculateEndDate(defaultStartDate, '1_year'),
             premium_amount: initialValues?.premium_amount ?? 0,
             currency: initialValues?.currency ?? 'KES',
             notes: initialValues?.notes ?? '',
@@ -217,6 +222,13 @@ export default function ProgressivePolicyForm({
             setValue('end_date', calculatedEndDate, { shouldValidate: true });
         }
     }, [coverPeriod, setValue, watchedStartDate]);
+
+    useEffect(() => {
+        const startDate = todayDateString();
+        const calculatedEndDate = calculateEndDate(startDate, coverPeriod);
+        setValue('start_date', startDate, { shouldValidate: true });
+        setValue('end_date', calculatedEndDate, { shouldValidate: true });
+    }, [coverPeriod, setValue]);
 
     const extractFirstErrorMessage = (errorBag: FieldErrors<PolicyValues>): string | null => {
         const visited = new WeakSet<object>();
@@ -524,6 +536,7 @@ export default function ProgressivePolicyForm({
                                         <Input
                                             id="start_date"
                                             type="date"
+                                            readOnly
                                             {...register('start_date')}
                                         />
                                         <InputError message={errors.start_date?.message} />
@@ -533,6 +546,7 @@ export default function ProgressivePolicyForm({
                                         <Input
                                             id="end_date"
                                             type="date"
+                                            readOnly
                                             {...register('end_date')}
                                         />
                                         <InputError message={errors.end_date?.message} />

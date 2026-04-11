@@ -35,6 +35,10 @@ export type PolicyFormValues = z.infer<typeof policySchema>;
 type SelectOption = { id: number; label: string };
 type CoverPeriod = '1_month' | '3_months' | '6_months' | '1_year';
 
+function todayDateString(): string {
+    return new Date().toISOString().slice(0, 10);
+}
+
 function calculateEndDate(startDate: string, coverPeriod: CoverPeriod): string {
     if (!startDate) {
         return '';
@@ -100,6 +104,7 @@ export default function PolicyForm({
     insurers,
 }: Props) {
     const [coverPeriod, setCoverPeriod] = useState<CoverPeriod>('1_year');
+    const defaultStartDate = todayDateString();
     const {
         register,
         setValue,
@@ -117,8 +122,8 @@ export default function PolicyForm({
             policy_number: initialValues?.policy_number ?? '',
             policy_type: initialValues?.policy_type ?? '',
             status: initialValues?.status ?? 'pending',
-            start_date: initialValues?.start_date ?? '',
-            end_date: initialValues?.end_date ?? '',
+            start_date: initialValues?.start_date ?? defaultStartDate,
+            end_date: initialValues?.end_date ?? calculateEndDate(defaultStartDate, '1_year'),
             premium_amount: initialValues?.premium_amount ?? 0,
             currency: initialValues?.currency ?? 'KES',
             notes: initialValues?.notes ?? '',
@@ -190,15 +195,15 @@ export default function PolicyForm({
     }, [quotationId, quotations, setValue]);
 
     useEffect(() => {
-        if (!startDate) {
+        if (method !== 'post') {
             return;
         }
 
+        const startDate = todayDateString();
         const calculatedEndDate = calculateEndDate(startDate, coverPeriod);
-        if (calculatedEndDate) {
-            setValue('end_date', calculatedEndDate, { shouldValidate: true });
-        }
-    }, [coverPeriod, setValue, startDate]);
+        setValue('start_date', startDate, { shouldValidate: true });
+        setValue('end_date', calculatedEndDate, { shouldValidate: true });
+    }, [coverPeriod, method, setValue]);
 
     const submit = (values: PolicyFormValues) => {
         const payload = {
@@ -405,12 +410,12 @@ export default function PolicyForm({
                     <div className="grid gap-2 md:grid-cols-2">
                         <div className="grid gap-2">
                             <Label htmlFor="start_date">Start date</Label>
-                            <Input id="start_date" type="date" {...register('start_date')} />
+                            <Input id="start_date" type="date" readOnly={method === 'post'} {...register('start_date')} />
                             <InputError message={errors.start_date?.message} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="end_date">End date</Label>
-                            <Input id="end_date" type="date" {...register('end_date')} />
+                            <Input id="end_date" type="date" readOnly={method === 'post'} {...register('end_date')} />
                             <InputError message={errors.end_date?.message} />
                         </div>
                     </div>

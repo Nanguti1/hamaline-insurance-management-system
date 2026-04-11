@@ -36,7 +36,7 @@ trait BuildsRiskNotePdfHtml
             padding: 16px;
         }
         .header {
-            background: #1e40af;
+            background: #062e4a;
             color: #ffffff;
             padding: 12px 14px;
             border-radius: 10px;
@@ -83,17 +83,17 @@ trait BuildsRiskNotePdfHtml
             margin-bottom: 16px;
         }
         .section h2 {
-            color: #1e40af;
+            color: #062e4a;
             font-size: 15px;
             margin: 0 0 10px 0;
             padding-bottom: 6px;
-            border-bottom: 2px solid #3b82f6;
+            border-bottom: 2px solid #062e4a;
         }
         .info-row {
             margin-bottom: 6px;
         }
         .info-label {
-            color: #1e40af;
+            color: #062e4a;
             font-weight: 700;
         }
         .styled-table {
@@ -109,13 +109,13 @@ trait BuildsRiskNotePdfHtml
             vertical-align: top;
         }
         .styled-table th {
-            background: #1e40af;
+            background: #062e4a;
             color: #ffffff;
             font-weight: 700;
         }
         .conditions {
-            background: #eff6ff;
-            border-left: 4px solid #3b82f6;
+            background: #edf4f8;
+            border-left: 4px solid #062e4a;
             border-radius: 8px;
             padding: 10px 12px;
         }
