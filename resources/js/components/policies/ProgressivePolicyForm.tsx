@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, type FieldErrors } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -105,6 +105,7 @@ type PolicyMember = {
     annual_salary?: number;
 };
 type PolicyValues = BasePolicyValues;
+type CoverPeriod = '1_month' | '3_months' | '6_months' | '1_year';
 
 type Underwriter = { id: number; name: string };
 type Insurer = { id: number; name: string };
@@ -117,6 +118,30 @@ type Props = {
     underwriters: Underwriter[];
     insurers: Insurer[];
 };
+
+function todayDateString(): string {
+    return new Date().toISOString().slice(0, 10);
+}
+
+function calculateEndDate(startDate: string, coverPeriod: CoverPeriod): string {
+    if (!startDate) {
+        return '';
+    }
+
+    const date = new Date(startDate);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    if (coverPeriod === '1_year') {
+        date.setFullYear(date.getFullYear() + 1);
+    } else {
+        const monthsToAdd = coverPeriod === '1_month' ? 1 : coverPeriod === '3_months' ? 3 : 6;
+        date.setMonth(date.getMonth() + monthsToAdd);
+    }
+
+    return date.toISOString().slice(0, 10);
+}
 
 export default function ProgressivePolicyForm({
     title,
@@ -133,6 +158,8 @@ export default function ProgressivePolicyForm({
     const [createdPolicy, setCreatedPolicy] = useState<{ id: number; type: string } | null>(null);
     const [isCreatingRiskNote, setIsCreatingRiskNote] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [coverPeriod, setCoverPeriod] = useState<CoverPeriod>('1_year');
+    const defaultStartDate = todayDateString();
 
     const {
         register,
@@ -149,8 +176,8 @@ export default function ProgressivePolicyForm({
             client_type: 'individual',
             policy_type: (initialValues?.policy_type ?? 'motor') as PolicyValues['policy_type'],
             policy_number: initialValues?.policy_number ?? '',
-            start_date: initialValues?.start_date ?? '',
-            end_date: initialValues?.end_date ?? '',
+            start_date: initialValues?.start_date ?? defaultStartDate,
+            end_date: initialValues?.end_date ?? calculateEndDate(defaultStartDate, '1_year'),
             premium_amount: initialValues?.premium_amount ?? 0,
             currency: initialValues?.currency ?? 'KES',
             notes: initialValues?.notes ?? '',
@@ -183,6 +210,13 @@ export default function ProgressivePolicyForm({
     const watchedCoverType = watch('cover_type');
     const watchedCoverAddons = watch('cover_addons') ?? [];
     const watchedClientType = watch('client_type');
+
+    useEffect(() => {
+        const startDate = todayDateString();
+        const calculatedEndDate = calculateEndDate(startDate, coverPeriod);
+        setValue('start_date', startDate, { shouldValidate: true });
+        setValue('end_date', calculatedEndDate, { shouldValidate: true });
+    }, [coverPeriod, setValue]);
 
     const extractFirstErrorMessage = (errorBag: FieldErrors<PolicyValues>): string | null => {
         const visited = new WeakSet<object>();
@@ -469,10 +503,28 @@ export default function ProgressivePolicyForm({
                                         <InputError message={errors.policy_number?.message} />
                                     </div>
                                     <div>
+                                        <Label>Cover Period</Label>
+                                        <Select
+                                            value={coverPeriod}
+                                            onValueChange={(value) => setCoverPeriod(value as CoverPeriod)}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select cover period" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="1_month">1 month</SelectItem>
+                                                <SelectItem value="3_months">3 months</SelectItem>
+                                                <SelectItem value="6_months">6 months</SelectItem>
+                                                <SelectItem value="1_year">1 year</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
                                         <Label htmlFor="start_date">Start Date</Label>
                                         <Input
                                             id="start_date"
                                             type="date"
+                                            readOnly
                                             {...register('start_date')}
                                         />
                                         <InputError message={errors.start_date?.message} />
@@ -482,6 +534,7 @@ export default function ProgressivePolicyForm({
                                         <Input
                                             id="end_date"
                                             type="date"
+                                            readOnly
                                             {...register('end_date')}
                                         />
                                         <InputError message={errors.end_date?.message} />
