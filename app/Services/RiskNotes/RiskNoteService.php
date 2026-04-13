@@ -17,7 +17,7 @@ class RiskNoteService
 {
     public function createRiskNoteFromPolicy(Policy $policy, User $user): RiskNote
     {
-        $policy->loadMissing(['client', 'motorDetail', 'medicalDetail', 'wibaDetail', 'members']);
+        $policy->loadMissing(['client', 'motorDetail.binderVersion.binder', 'medicalDetail', 'wibaDetail', 'members']);
 
         $existing = RiskNote::query()
             ->where('policy_id', $policy->id)
@@ -34,6 +34,12 @@ class RiskNoteService
                 : ($policy->motorDetail?->cover_type ?? 'comprehensive');
 
             $motorDetail = $policy->motorDetail;
+            $insurerName = strtolower((string) ($policy->insurer?->name ?? ''));
+            $derivedBinderName = $motorDetail?->binderVersion?->binder?->name
+                ?? $this->defaultBinderNameForInsurer($insurerName);
+            $derivedLimits = $motorDetail?->limits_liability ?: $this->defaultMotorLimitsForInsurer($insurerName);
+            $derivedClauses = $motorDetail?->applicable_clauses ?: $this->defaultMotorClausesForInsurer($insurerName);
+            $derivedExclusions = $motorDetail?->exclusions ?: $this->defaultMotorExclusionsForInsurer($insurerName);
 
             $riskNote = $this->createMotorRiskNote([
                 'client_id' => $policy->client_id,
@@ -49,15 +55,46 @@ class RiskNoteService
                 'insured_phone' => $policy->client?->phone ?? 'TO-BE-CAPTURED',
                 'insured_email' => $policy->client?->email ?? 'to-be-captured@example.com',
                 'insured_postal_address' => $policy->client?->address ?? 'To be captured',
+                'insurer_policy_number' => $motorDetail?->insurer_policy_number,
+                'internal_policy_number' => $motorDetail?->internal_policy_number,
+                'binder_name' => $derivedBinderName,
+                'customer_id' => $motorDetail?->customer_id,
+                'mobile_number' => $motorDetail?->mobile_number ?? $policy->client?->phone,
+                'telephone_other' => $motorDetail?->telephone_other,
+                'postal_code' => $motorDetail?->postal_code,
+                'country' => $motorDetail?->country,
+                'bank_account_number' => $motorDetail?->bank_account_number,
+                'branch_code' => $motorDetail?->branch_code,
+                'pin_number' => $motorDetail?->pin_number ?? $policy->client?->kra_pin,
                 'registration_number' => $motorDetail?->registration_number ?? $policy->policy_number ?? ('PENDING-'.$policy->id),
                 'make_model' => $motorDetail?->vehicle_model ?? 'To be captured',
-                'year_of_manufacture' => (int) now()->year,
+                'year_of_manufacture' => (int) ($motorDetail?->year_of_manufacture ?? now()->year),
                 'chassis_number' => $motorDetail?->chassis_number ?? 'TO-BE-CAPTURED',
                 'engine_number' => $motorDetail?->engine_number ?? 'TO-BE-CAPTURED',
                 'body_type' => $motorDetail?->vehicle_color ?? 'To be captured',
                 'vehicle_use' => $motorDetail?->vehicle_use ?? 'private',
                 'cover_type' => $coverType,
-                'sum_insured' => (float) (($motorDetail?->carriage_capacity ?? 0) * 1000),
+                'sum_insured' => (float) ($motorDetail?->vehicle_value ?? 0),
+                'time_on_risk_start_date' => $motorDetail?->time_on_risk_start_date?->toDateString(),
+                'time_on_risk_end_date' => $motorDetail?->time_on_risk_end_date?->toDateString(),
+                'passenger_count' => $motorDetail?->passenger_count,
+                'logbook_status' => $motorDetail?->logbook_status,
+                'accessories_value' => (float) ($motorDetail?->accessories_value ?? 0),
+                'windscreen_value' => (float) ($motorDetail?->windscreen_value ?? 0),
+                'radio_value' => (float) ($motorDetail?->radio_value ?? 0),
+                'limits_liability' => $derivedLimits,
+                'excess_rules' => $motorDetail?->excess_rules,
+                'applicable_clauses' => $derivedClauses,
+                'exclusions' => $derivedExclusions,
+                'time_on_risk_premium' => (float) ($motorDetail?->time_on_risk_premium ?? 0),
+                'policyholders_fund' => (float) ($motorDetail?->policyholders_fund ?? 0),
+                'training_levy' => (float) ($motorDetail?->training_levy ?? 0),
+                'first_premium_total' => (float) ($motorDetail?->first_premium_total ?? 0),
+                'time_on_risk_total_premium' => (float) ($motorDetail?->time_on_risk_total_premium ?? 0),
+                'payment_method' => $motorDetail?->payment_method,
+                'issuing_officer_name' => $motorDetail?->issuing_officer_name,
+                'verifying_officer_name' => $motorDetail?->verifying_officer_name,
+                'issued_on' => $motorDetail?->issued_on?->toDateString(),
             ], $user);
             $riskNote->update(['policy_id' => $policy->id]);
 
@@ -225,6 +262,17 @@ class RiskNoteService
                 'insured_phone' => $data['insured_phone'],
                 'insured_email' => $data['insured_email'],
                 'insured_postal_address' => $data['insured_postal_address'],
+                'insurer_policy_number' => $data['insurer_policy_number'] ?? null,
+                'internal_policy_number' => $data['internal_policy_number'] ?? null,
+                'binder_name' => $data['binder_name'] ?? null,
+                'customer_id' => $data['customer_id'] ?? null,
+                'mobile_number' => $data['mobile_number'] ?? null,
+                'telephone_other' => $data['telephone_other'] ?? null,
+                'postal_code' => $data['postal_code'] ?? null,
+                'country' => $data['country'] ?? null,
+                'bank_account_number' => $data['bank_account_number'] ?? null,
+                'branch_code' => $data['branch_code'] ?? null,
+                'pin_number' => $data['pin_number'] ?? null,
 
                 'registration_number' => $data['registration_number'],
                 'make_model' => $data['make_model'],
@@ -236,6 +284,26 @@ class RiskNoteService
 
                 'cover_type' => $data['cover_type'],
                 'sum_insured' => $data['sum_insured'] ?? 0,
+                'time_on_risk_start_date' => $data['time_on_risk_start_date'] ?? null,
+                'time_on_risk_end_date' => $data['time_on_risk_end_date'] ?? null,
+                'passenger_count' => $data['passenger_count'] ?? null,
+                'logbook_status' => $data['logbook_status'] ?? null,
+                'accessories_value' => $data['accessories_value'] ?? null,
+                'windscreen_value' => $data['windscreen_value'] ?? null,
+                'radio_value' => $data['radio_value'] ?? null,
+                'limits_liability' => $data['limits_liability'] ?? null,
+                'excess_rules' => $data['excess_rules'] ?? null,
+                'applicable_clauses' => $data['applicable_clauses'] ?? null,
+                'exclusions' => $data['exclusions'] ?? null,
+                'time_on_risk_premium' => $data['time_on_risk_premium'] ?? null,
+                'policyholders_fund' => $data['policyholders_fund'] ?? null,
+                'training_levy' => $data['training_levy'] ?? null,
+                'first_premium_total' => $data['first_premium_total'] ?? null,
+                'time_on_risk_total_premium' => $data['time_on_risk_total_premium'] ?? null,
+                'payment_method' => $data['payment_method'] ?? null,
+                'issuing_officer_name' => $data['issuing_officer_name'] ?? null,
+                'verifying_officer_name' => $data['verifying_officer_name'] ?? null,
+                'issued_on' => $data['issued_on'] ?? null,
             ]);
 
             return $riskNote->refresh();
@@ -291,10 +359,13 @@ class RiskNoteService
         $riskNote->load(['client', 'insurer', 'motorDetails']);
 
         $period = ($riskNote->start_date && $riskNote->end_date)
-            ? sprintf('%s - %s', $riskNote->start_date->format('Y-m-d'), $riskNote->end_date->format('Y-m-d'))
+            ? sprintf('%s - %s', $riskNote->start_date->format('d/m/Y'), $riskNote->end_date->format('d/m/Y'))
             : '-';
 
         $d = $riskNote->motorDetails;
+        $timeOnRiskPeriod = ($d?->time_on_risk_start_date && $d?->time_on_risk_end_date)
+            ? sprintf('%s - %s', $d->time_on_risk_start_date->format('d/m/Y'), $d->time_on_risk_end_date->format('d/m/Y'))
+            : '-';
         $coverLabel = match ($d?->cover_type) {
             'third_party_only' => 'Third Party Only',
             'third_party_fire_theft' => 'Third Party Fire & Theft',
@@ -306,13 +377,29 @@ class RiskNoteService
             '=== MOTOR RISK NOTE ===',
             'Header',
             sprintf('Risk Note Number: %s', $riskNote->risk_note_number),
-            sprintf('Date of Issue: %s', now()->format('Y-m-d')),
+            sprintf('Date of Issue: %s', ($d?->issued_on ?? now())->format('d/m/Y')),
             sprintf('Agency Name: Hamaline Insurance Agency'),
             sprintf('Insurer: %s', $riskNote->insurer?->name ?? '-'),
+            sprintf('Insurer Policy Number: %s', $d?->insurer_policy_number ?? '-'),
+            sprintf('Internal Policy Number: %s', $d?->internal_policy_number ?? '-'),
+            sprintf('Binder Name: %s', $d?->binder_name ?? '-'),
+            sprintf('Currency: %s', $riskNote->currency ?? 'KES'),
             '',
             'Insured Information',
             sprintf('Name: %s', $d?->insured_name ?? '-'),
+            sprintf('Customer ID: %s', $d?->customer_id ?? '-'),
+            sprintf('Phone: %s', $d?->insured_phone ?? '-'),
+            sprintf('Mobile: %s', $d?->mobile_number ?? '-'),
+            sprintf('Tel (Others): %s', $d?->telephone_other ?? '-'),
+            sprintf('Postal Address: %s', $d?->insured_postal_address ?? '-'),
+            sprintf('Postal Code: %s', $d?->postal_code ?? '-'),
+            sprintf('Country: %s', $d?->country ?? '-'),
+            sprintf('Bank A/C Number: %s', $d?->bank_account_number ?? '-'),
+            sprintf('ID Number: %s', $d?->insured_id_number ?? '-'),
+            sprintf('Branch Code: %s', $d?->branch_code ?? '-'),
+            sprintf('PIN Number: %s', $d?->pin_number ?? '-'),
             sprintf('Period of Insurance: %s', $period),
+            sprintf('Time on Risk: %s', $timeOnRiskPeriod),
             '',
             'Vehicle Details',
             sprintf('Registration Number: %s', $d?->registration_number ?? '-'),
@@ -321,22 +408,41 @@ class RiskNoteService
             sprintf('Chassis Number: %s', $d?->chassis_number ?? '-'),
             sprintf('Engine Number: %s', $d?->engine_number ?? '-'),
             sprintf('Body Type: %s', $d?->body_type ?? '-'),
+            sprintf('Passengers: %s', $d?->passenger_count ?? '-'),
+            sprintf('Logbook: %s', $d?->logbook_status ?? '-'),
             sprintf('Use of Vehicle: %s', $d?->vehicle_use ?? '-'),
+            sprintf('Accessories Value: %s', sprintf('%.2f', (float) ($d?->accessories_value ?? 0))),
+            sprintf('Windscreen Value: %s', sprintf('%.2f', (float) ($d?->windscreen_value ?? 0))),
+            sprintf('Radio Value: %s', sprintf('%.2f', (float) ($d?->radio_value ?? 0))),
             '',
             'Insurance Cover',
             sprintf('Cover Type: %s', $coverLabel),
             sprintf('Sum Insured: %s', $d?->sum_insured ?? 0),
             '',
+            'Limits of Liability',
+            '| Description | Limit | Excess |',
+            ...collect($d?->limits_liability ?? [])->map(fn ($row) => sprintf('| %s | %s | %s |', $row['description'] ?? '-', $row['limit'] ?? '-', $row['excess'] ?? '-'))->all(),
+            ...(empty($d?->limits_liability) ? ['| - | - | - |'] : []),
+            '',
             'Financials',
             sprintf('Premium Payable: %s %s', sprintf('%.2f', (float) $riskNote->premium_amount), $riskNote->currency),
+            sprintf('Time on Risk Premium: %s', sprintf('%.2f', (float) ($d?->time_on_risk_premium ?? 0))),
+            sprintf('Policyholders Fund: %s', sprintf('%.2f', (float) ($d?->policyholders_fund ?? 0))),
+            sprintf('Training Levy: %s', sprintf('%.2f', (float) ($d?->training_levy ?? 0))),
+            sprintf('First Premium Total: %s', sprintf('%.2f', (float) ($d?->first_premium_total ?? 0))),
+            sprintf('Time on Risk Total Premium: %s', sprintf('%.2f', (float) ($d?->time_on_risk_total_premium ?? 0))),
             '',
             'Conditions',
-            '- Subject to full premium payment',
-            '- Waiting periods / exclusions apply per underwriting rules',
+            ...collect($d?->applicable_clauses ?? ['Subject to full premium payment'])->map(fn ($clause) => '- '.(string) $clause)->all(),
+            '',
+            'Exclusions',
+            ...collect($d?->exclusions ?? ['Excluding nuclear risks, war, terrorism, and political risks.'])->map(fn ($clause) => '- '.(string) $clause)->all(),
             '',
             'Notes',
-            '- This is not the final policy document',
-            '- Serves as temporary confirmation of cover',
+            sprintf('- Payment Method: %s', $d?->payment_method ?? '-'),
+            sprintf('- Issuing Officer: %s', $d?->issuing_officer_name ?? '-'),
+            sprintf('- Verifying Officer: %s', $d?->verifying_officer_name ?? '-'),
+            '- This risk note serves as temporary confirmation of cover pending full policy issuance.',
         ]);
 
         $riskNote->update([
@@ -708,6 +814,84 @@ class RiskNoteService
         }
 
         return sprintf('%s-%s-%04d', $prefix, $year, $seq);
+    }
+
+    /**
+     * @return array<int, array{description: string, limit: string, excess: string}>
+     */
+    private function defaultMotorLimitsForInsurer(string $insurerName): array
+    {
+        if (str_contains($insurerName, 'jubilee')) {
+            return [
+                ['description' => 'Third Party Property Damage', 'limit' => 'Ksh 20,000,000', 'excess' => 'Ksh 7,500'],
+                ['description' => 'Third Party Bodily Injury', 'limit' => 'As per policy wording', 'excess' => 'NIL'],
+                ['description' => 'Windscreen', 'limit' => 'As selected sum insured', 'excess' => 'NIL'],
+            ];
+        }
+
+        if (str_contains($insurerName, 'cic')) {
+            return [
+                ['description' => 'Third Party Property Damage', 'limit' => 'Ksh 20,000,000', 'excess' => 'Ksh 7,500'],
+                ['description' => 'Passenger Legal Liability', 'limit' => 'Ksh 4,000,000 any one person', 'excess' => 'NIL'],
+                ['description' => 'Own Damage', 'limit' => 'Sum Insured', 'excess' => '2.5% min Ksh 15,000'],
+            ];
+        }
+
+        return [
+            ['description' => 'Third Party Property Damage', 'limit' => 'As per insurer limits', 'excess' => 'As per insurer limits'],
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function defaultMotorClausesForInsurer(string $insurerName): array
+    {
+        if (str_contains($insurerName, 'jubilee')) {
+            return [
+                'Including legal liability to passengers.',
+                'Including riot, strike and civil commotion.',
+                'Including special perils extension.',
+            ];
+        }
+
+        if (str_contains($insurerName, 'cic')) {
+            return [
+                'Including legal liability of passengers for acts of negligence.',
+                'Including Kenya jurisdiction clause.',
+                'No blame no excess subject to police abstract.',
+            ];
+        }
+
+        return ['Subject to insurer standard motor private wording.'];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function defaultMotorExclusionsForInsurer(string $insurerName): array
+    {
+        if (str_contains($insurerName, 'jubilee') || str_contains($insurerName, 'cic')) {
+            return [
+                'Excluding war, terrorism, and nuclear risks.',
+                'Excluding political violence unless specifically extended.',
+            ];
+        }
+
+        return ['Exclusions apply as per insurer policy wording.'];
+    }
+
+    private function defaultBinderNameForInsurer(string $insurerName): ?string
+    {
+        if (str_contains($insurerName, 'jubilee')) {
+            return 'Jubilee Motor Private Binder';
+        }
+
+        if (str_contains($insurerName, 'cic')) {
+            return 'CIC Motor Private Binder';
+        }
+
+        return null;
     }
 
     /**

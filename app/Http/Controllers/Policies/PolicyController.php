@@ -7,6 +7,7 @@ use App\Http\Requests\Policies\ProgressivePolicyStoreRequest;
 use App\Http\Requests\Policies\StorePolicyRequest;
 use App\Http\Requests\Policies\UpdatePolicyRequest;
 use App\Models\Client;
+use App\Models\BinderVersion;
 use App\Models\Insurer;
 use App\Models\MedicalPolicyDetail;
 use App\Models\MotorPolicyDetail;
@@ -122,8 +123,13 @@ class PolicyController extends Controller
                 break;
 
             case 'motor':
+                $binderVersionId = $validated['binder_version_id'] ?? $this->resolveActiveMotorBinderVersionId(
+                    (int) $validated['insurer_id']
+                );
+
                 MotorPolicyDetail::create([
                     'policy_id' => $policy->id,
+                    'binder_version_id' => $binderVersionId,
                     'vehicle_use' => $validated['vehicle_use'],
                     'cover_type' => $validated['cover_type'],
                     'private_use_class' => $validated['private_use_class'] ?? null,
@@ -142,6 +148,36 @@ class PolicyController extends Controller
                     'engine_number' => $validated['engine_number'] ?? null,
                     'carriage_capacity' => $validated['carriage_capacity'] ?? null,
                     'engine_size' => $validated['engine_size'] ?? null,
+                    'insurer_policy_number' => $validated['insurer_policy_number'] ?? null,
+                    'internal_policy_number' => $validated['internal_policy_number'] ?? null,
+                    'customer_id' => $validated['customer_id'] ?? null,
+                    'mobile_number' => $validated['mobile_number'] ?? null,
+                    'telephone_other' => $validated['telephone_other'] ?? null,
+                    'postal_code' => $validated['postal_code'] ?? null,
+                    'country' => $validated['country'] ?? null,
+                    'bank_account_number' => $validated['bank_account_number'] ?? null,
+                    'branch_code' => $validated['branch_code'] ?? null,
+                    'pin_number' => $validated['pin_number'] ?? null,
+                    'time_on_risk_start_date' => $validated['time_on_risk_start_date'] ?? null,
+                    'time_on_risk_end_date' => $validated['time_on_risk_end_date'] ?? null,
+                    'passenger_count' => $validated['passenger_count'] ?? null,
+                    'logbook_status' => $validated['logbook_status'] ?? null,
+                    'accessories_value' => $validated['accessories_value'] ?? null,
+                    'windscreen_value' => $validated['windscreen_value'] ?? null,
+                    'radio_value' => $validated['radio_value'] ?? null,
+                    'limits_liability' => $validated['limits_liability'] ?? null,
+                    'excess_rules' => $validated['excess_rules'] ?? null,
+                    'applicable_clauses' => $validated['applicable_clauses'] ?? null,
+                    'exclusions' => $validated['exclusions'] ?? null,
+                    'time_on_risk_premium' => $validated['time_on_risk_premium'] ?? null,
+                    'policyholders_fund' => $validated['policyholders_fund'] ?? null,
+                    'training_levy' => $validated['training_levy'] ?? null,
+                    'first_premium_total' => $validated['first_premium_total'] ?? null,
+                    'time_on_risk_total_premium' => $validated['time_on_risk_total_premium'] ?? null,
+                    'payment_method' => $validated['payment_method'] ?? null,
+                    'issuing_officer_name' => $validated['issuing_officer_name'] ?? null,
+                    'verifying_officer_name' => $validated['verifying_officer_name'] ?? null,
+                    'issued_on' => $validated['issued_on'] ?? null,
                     'notes' => $validated['notes'] ?? null,
                 ]);
                 break;
@@ -315,5 +351,18 @@ class PolicyController extends Controller
         }
 
         return Insurer::query()->orderBy('name')->get(['id', 'name']);
+    }
+
+    private function resolveActiveMotorBinderVersionId(int $insurerId): ?int
+    {
+        return BinderVersion::query()
+            ->where('is_active', true)
+            ->whereHas('binder', function ($query) use ($insurerId): void {
+                $query->where('insurer_id', $insurerId)
+                    ->where('line_type', 'motor')
+                    ->where('status', 'active');
+            })
+            ->orderByDesc('id')
+            ->value('id');
     }
 }
