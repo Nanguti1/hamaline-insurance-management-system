@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import { formatDateRange } from '@/lib/date';
 import { deleteResource } from '@/lib/delete-resource';
 import type { BreadcrumbItem } from '@/types';
@@ -78,6 +78,59 @@ export default function MotorRiskNoteShow({ riskNote, documents = [] }: Props) {
         return ct;
     }, [riskNote.motorDetails?.cover_type]);
 
+    const riskNoteCards = useMemo(() => {
+        const content = riskNote.risk_note_content ?? '';
+        const lines = content
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line !== '' && !line.startsWith('===') && line !== 'Header');
+
+        const sections: Array<{ title: string; items: Array<{ label: string; value: string }> }> = [];
+        let current: { title: string; items: Array<{ label: string; value: string }> } | null = null;
+
+        const headings = new Set([
+            'Insured Information',
+            'Vehicle Details',
+            'Insurance Cover',
+            'Financials',
+            'Notes',
+            'Conditions',
+            'Exclusions',
+            'Limits of Liability',
+        ]);
+
+        for (const line of lines) {
+            if (headings.has(line)) {
+                current = { title: line, items: [] };
+                sections.push(current);
+                continue;
+            }
+
+            if (!current) {
+                current = { title: 'Insured Information', items: [] };
+                sections.push(current);
+            }
+
+            if (line.startsWith('|')) {
+                continue;
+            }
+
+            if (line.startsWith('- ')) {
+                current.items.push({ label: '•', value: line.replace(/^- /, '') });
+                continue;
+            }
+
+            const [label, ...rest] = line.split(':');
+            if (rest.length > 0) {
+                current.items.push({ label: label.trim(), value: rest.join(':').trim() || '-' });
+            } else {
+                current.items.push({ label: 'Value', value: line });
+            }
+        }
+
+        return sections;
+    }, [riskNote.risk_note_content]);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Motor Risk Note: ${riskNote.risk_note_number}`} />
@@ -142,7 +195,23 @@ export default function MotorRiskNoteShow({ riskNote, documents = [] }: Props) {
                                     </Button>
                                 )}
                             </div>
-                            <Textarea value={riskNote.risk_note_content ?? ''} readOnly rows={12} />
+                            <div className="grid gap-4 md:grid-cols-2">
+                                {riskNoteCards.map((section, index) => (
+                                    <Card key={`${section.title}-${index}`}>
+                                        <CardContent className="pt-4">
+                                            <h4 className="mb-3 text-sm font-semibold">{section.title}</h4>
+                                            <div className="space-y-2 text-sm">
+                                                {section.items.map((item, itemIndex) => (
+                                                    <div key={`${item.label}-${itemIndex}`} className="grid grid-cols-[140px_1fr] gap-2">
+                                                        <span className="text-muted-foreground">{item.label}</span>
+                                                        <span>{item.value}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
                         </div>
                     </CardContent>
 

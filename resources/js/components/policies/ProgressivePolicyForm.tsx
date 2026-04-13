@@ -23,11 +23,13 @@ const emptyToUndefined = (value: unknown) => {
     }
     return value;
 };
+const currentYear = new Date().getFullYear();
 
 const basePolicySchema = z.object({
     client_id: z.coerce.number().int().min(1, 'Client is required'),
     insurer_id: z.coerce.number().int().min(1, 'Insurer is required'),
     underwriter_id: z.coerce.number().int().min(1, 'Underwriter is required'),
+    binder_version_id: z.preprocess(emptyToUndefined, z.coerce.number().int().optional()),
     policy_type: z.enum(['motor', 'medical', 'wiba']),
     client_type: z.enum(['individual', 'corporate']),
     policy_number: z.string().trim().max(50).optional().or(z.literal('')),
@@ -56,7 +58,7 @@ const basePolicySchema = z.object({
     vehicle_model: z.string().trim().max(100).optional(),
     year_of_manufacture: z.preprocess(
         emptyToUndefined,
-        z.coerce.number().int().optional()
+        z.coerce.number().int().min(1999).max(currentYear).optional()
     ),
     vehicle_value: z.preprocess(
         emptyToUndefined,
@@ -70,6 +72,33 @@ const basePolicySchema = z.object({
         z.coerce.number().nonnegative().optional()
     ),
     engine_size: z.string().trim().max(50).optional().or(z.literal('')),
+    telephone_other: z.string().trim().max(50).optional(),
+    postal_code: z.string().trim().max(20).optional(),
+    country: z.string().trim().max(80).optional(),
+    bank_account_number: z.string().trim().max(80).optional(),
+    branch_code: z.string().trim().max(50).optional(),
+    pin_number: z.string().trim().max(50).optional(),
+    time_on_risk_start_date: z.string().trim().optional(),
+    time_on_risk_end_date: z.string().trim().optional(),
+    passenger_count: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
+    logbook_status: z.string().trim().max(50).optional(),
+    accessories_value: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
+    windscreen_value: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
+    radio_value: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
+    applicable_clauses_text: z.string().trim().optional(),
+    exclusions_text: z.string().trim().optional(),
+    time_on_risk_premium: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
+    policyholders_fund: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
+    training_levy: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
+    first_premium_total: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
+    time_on_risk_total_premium: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
+    payment_method: z.string().trim().max(50).optional(),
+    issuing_officer_name: z.string().trim().max(255).optional(),
+    verifying_officer_name: z.string().trim().max(255).optional(),
+    issued_on: z.string().trim().optional(),
+    payment_plan_type: z.enum(['one_time', 'installments']).optional(),
+    installment_count: z.preprocess(emptyToUndefined, z.coerce.number().int().min(2).max(10).optional()),
+    installment_amount: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
     outpatient_benefit: z.boolean().optional(),
     outpatient_amount: z.preprocess(
         emptyToUndefined,
@@ -173,6 +202,7 @@ export default function ProgressivePolicyForm({
         defaultValues: {
             client_id: initialValues?.client_id ?? 0,
             underwriter_id: initialValues?.underwriter_id ?? 0,
+            binder_version_id: initialValues?.binder_version_id,
             client_type: 'individual',
             policy_type: (initialValues?.policy_type ?? 'motor') as PolicyValues['policy_type'],
             policy_number: initialValues?.policy_number ?? '',
@@ -199,6 +229,33 @@ export default function ProgressivePolicyForm({
             engine_number: initialValues?.engine_number,
             carriage_capacity: initialValues?.carriage_capacity,
             engine_size: initialValues?.engine_size,
+            telephone_other: initialValues?.telephone_other,
+            postal_code: initialValues?.postal_code,
+            country: initialValues?.country,
+            bank_account_number: initialValues?.bank_account_number,
+            branch_code: initialValues?.branch_code,
+            pin_number: initialValues?.pin_number,
+            time_on_risk_start_date: initialValues?.time_on_risk_start_date,
+            time_on_risk_end_date: initialValues?.time_on_risk_end_date,
+            passenger_count: initialValues?.passenger_count,
+            logbook_status: initialValues?.logbook_status,
+            accessories_value: initialValues?.accessories_value,
+            windscreen_value: initialValues?.windscreen_value,
+            radio_value: initialValues?.radio_value,
+            applicable_clauses_text: initialValues?.applicable_clauses_text,
+            exclusions_text: initialValues?.exclusions_text,
+            time_on_risk_premium: initialValues?.time_on_risk_premium,
+            policyholders_fund: initialValues?.policyholders_fund,
+            training_levy: initialValues?.training_levy,
+            first_premium_total: initialValues?.first_premium_total,
+            time_on_risk_total_premium: initialValues?.time_on_risk_total_premium,
+            payment_method: initialValues?.payment_method,
+            issuing_officer_name: initialValues?.issuing_officer_name,
+            verifying_officer_name: initialValues?.verifying_officer_name,
+            issued_on: initialValues?.issued_on,
+            payment_plan_type: initialValues?.payment_plan_type ?? 'one_time',
+            installment_count: initialValues?.installment_count,
+            installment_amount: initialValues?.installment_amount,
         },
     });
 
@@ -211,6 +268,9 @@ export default function ProgressivePolicyForm({
     const watchedCoverAddons = watch('cover_addons') ?? [];
     const watchedClientType = watch('client_type');
     const watchedStartDate = watch('start_date');
+    const watchedPremiumAmount = watch('premium_amount');
+    const watchedPaymentPlanType = watch('payment_plan_type');
+    const watchedInstallmentCount = watch('installment_count');
 
     useEffect(() => {
         if (!watchedStartDate) {
@@ -229,6 +289,16 @@ export default function ProgressivePolicyForm({
         setValue('start_date', startDate, { shouldValidate: true });
         setValue('end_date', calculatedEndDate, { shouldValidate: true });
     }, [coverPeriod, setValue]);
+
+    useEffect(() => {
+        if (watchedPaymentPlanType !== 'installments' || !watchedInstallmentCount || watchedInstallmentCount <= 0) {
+            setValue('installment_amount', undefined, { shouldValidate: true });
+            return;
+        }
+
+        const installmentAmount = Number((Number(watchedPremiumAmount || 0) / watchedInstallmentCount).toFixed(2));
+        setValue('installment_amount', installmentAmount, { shouldValidate: true });
+    }, [watchedInstallmentCount, watchedPaymentPlanType, watchedPremiumAmount, setValue]);
 
     useEffect(() => {
         const startDate = todayDateString();
@@ -355,6 +425,16 @@ export default function ProgressivePolicyForm({
             ...values,
             policy_number: values.policy_number || null,
             capacity_unit: values.cover_type === 'comprehensive' ? 'cc' : null,
+            installment_amount:
+                values.payment_plan_type === 'installments' && values.installment_count
+                    ? Number((Number(values.premium_amount || 0) / Number(values.installment_count)).toFixed(2))
+                    : null,
+            applicable_clauses: values.applicable_clauses_text
+                ? values.applicable_clauses_text.split('\n').map((item) => item.trim()).filter(Boolean)
+                : [],
+            exclusions: values.exclusions_text
+                ? values.exclusions_text.split('\n').map((item) => item.trim()).filter(Boolean)
+                : [],
             members,
         };
 
@@ -848,13 +928,6 @@ export default function ProgressivePolicyForm({
                                                 <InputError message={errors.cover_plan?.message} />
                                             </div>
                                         )}
-                                        {watchedCoverType === 'comprehensive' && (
-                                            <div>
-                                                <Label htmlFor="capacity">Capacity (cc)</Label>
-                                                <Input id="capacity" type="number" step="0.01" {...register('capacity', { valueAsNumber: true })} />
-                                                <InputError message={errors.capacity?.message} />
-                                            </div>
-                                        )}
                                         <div className="grid gap-4 md:grid-cols-2">
                                             <div>
                                                 <Label htmlFor="registration_number">Registration Number</Label>
@@ -905,6 +978,120 @@ export default function ProgressivePolicyForm({
                                                 <Label htmlFor="engine_size">Engine Size</Label>
                                                 <Input id="engine_size" placeholder="e.g. 1500cc" {...register('engine_size')} />
                                                 <InputError message={errors.engine_size?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="passenger_count">Passenger Count</Label>
+                                                <Input id="passenger_count" type="number" {...register('passenger_count', { valueAsNumber: true })} />
+                                                <InputError message={errors.passenger_count?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="logbook_status">Logbook Status</Label>
+                                                <Input id="logbook_status" placeholder="e.g. COPY" {...register('logbook_status')} />
+                                                <InputError message={errors.logbook_status?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="time_on_risk_start_date">Time on Risk Start</Label>
+                                                <Input id="time_on_risk_start_date" type="date" {...register('time_on_risk_start_date')} />
+                                                <InputError message={errors.time_on_risk_start_date?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="time_on_risk_end_date">Time on Risk End</Label>
+                                                <Input id="time_on_risk_end_date" type="date" {...register('time_on_risk_end_date')} />
+                                                <InputError message={errors.time_on_risk_end_date?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="policyholders_fund">Policyholders Fund</Label>
+                                                <Input id="policyholders_fund" type="number" step="0.01" {...register('policyholders_fund', { valueAsNumber: true })} />
+                                                <InputError message={errors.policyholders_fund?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="training_levy">Training Levy</Label>
+                                                <Input id="training_levy" type="number" step="0.01" {...register('training_levy', { valueAsNumber: true })} />
+                                                <InputError message={errors.training_levy?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="time_on_risk_premium">Time on Risk Premium</Label>
+                                                <Input id="time_on_risk_premium" type="number" step="0.01" {...register('time_on_risk_premium', { valueAsNumber: true })} />
+                                                <InputError message={errors.time_on_risk_premium?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="time_on_risk_total_premium">Time on Risk Total Premium</Label>
+                                                <Input id="time_on_risk_total_premium" type="number" step="0.01" {...register('time_on_risk_total_premium', { valueAsNumber: true })} />
+                                                <InputError message={errors.time_on_risk_total_premium?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="first_premium_total">First Premium Total</Label>
+                                                <Input id="first_premium_total" type="number" step="0.01" {...register('first_premium_total', { valueAsNumber: true })} />
+                                                <InputError message={errors.first_premium_total?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="payment_method">Payment Method</Label>
+                                                <Input id="payment_method" placeholder="e.g. CASH" {...register('payment_method')} />
+                                                <InputError message={errors.payment_method?.message} />
+                                            </div>
+                                            <div>
+                                                <Label>Payment Plan</Label>
+                                                <Select
+                                                    value={watch('payment_plan_type') ?? 'one_time'}
+                                                    onValueChange={(value) => setValue('payment_plan_type', value as 'one_time' | 'installments', { shouldValidate: true })}
+                                                >
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="one_time">One Time Payment</SelectItem>
+                                                        <SelectItem value="installments">Installments</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <InputError message={errors.payment_plan_type?.message} />
+                                            </div>
+                                            {watchedPaymentPlanType === 'installments' && (
+                                                <>
+                                                    <div>
+                                                        <Label>Installment Count</Label>
+                                                        <Select
+                                                            value={String(watch('installment_count') ?? '')}
+                                                            onValueChange={(value) => setValue('installment_count', Number(value), { shouldValidate: true })}
+                                                        >
+                                                            <SelectTrigger><SelectValue placeholder="Select installments" /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {Array.from({ length: 9 }, (_, i) => i + 2).map((count) => (
+                                                                    <SelectItem key={count} value={String(count)}>{count}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <InputError message={errors.installment_count?.message} />
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor="installment_amount">Amount per Installment</Label>
+                                                        <Input id="installment_amount" value={watch('installment_amount') ?? ''} readOnly />
+                                                    </div>
+                                                </>
+                                            )}
+                                            <div>
+                                                <Label htmlFor="issuing_officer_name">Issuing Officer</Label>
+                                                <Input id="issuing_officer_name" {...register('issuing_officer_name')} />
+                                                <InputError message={errors.issuing_officer_name?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="verifying_officer_name">Verifying Officer</Label>
+                                                <Input id="verifying_officer_name" {...register('verifying_officer_name')} />
+                                                <InputError message={errors.verifying_officer_name?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="issued_on">Issued On</Label>
+                                                <Input id="issued_on" type="date" {...register('issued_on')} />
+                                                <InputError message={errors.issued_on?.message} />
+                                            </div>
+                                        </div>
+                                        <div className="grid gap-4 md:grid-cols-2">
+                                            <div>
+                                                <Label htmlFor="applicable_clauses_text">Applicable Clauses (one per line)</Label>
+                                                <Textarea id="applicable_clauses_text" rows={4} {...register('applicable_clauses_text')} />
+                                                <InputError message={errors.applicable_clauses_text?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="exclusions_text">Exclusions (one per line)</Label>
+                                                <Textarea id="exclusions_text" rows={4} {...register('exclusions_text')} />
+                                                <InputError message={errors.exclusions_text?.message} />
                                             </div>
                                         </div>
                                     </div>
