@@ -951,6 +951,26 @@ export default function ProgressivePolicyForm({
                                                 <InputError message={errors.mobile_number?.message} />
                                             </div>
                                             <div>
+                                                <Label htmlFor="insurer_policy_number">Insurer Policy Number</Label>
+                                                <Input id="insurer_policy_number" {...register('insurer_policy_number')} />
+                                                <InputError message={errors.insurer_policy_number?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="internal_policy_number">Internal Policy Number</Label>
+                                                <Input id="internal_policy_number" {...register('internal_policy_number')} />
+                                                <InputError message={errors.internal_policy_number?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="customer_id">Customer ID</Label>
+                                                <Input id="customer_id" {...register('customer_id')} />
+                                                <InputError message={errors.customer_id?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="mobile_number">Mobile Number</Label>
+                                                <Input id="mobile_number" {...register('mobile_number')} />
+                                                <InputError message={errors.mobile_number?.message} />
+                                            </div>
+                                            <div>
                                                 <Label htmlFor="registration_number">Registration Number</Label>
                                                 <Input id="registration_number" placeholder="e.g. KDA 123A" {...register('registration_number')} />
                                                 <InputError message={errors.registration_number?.message} />
