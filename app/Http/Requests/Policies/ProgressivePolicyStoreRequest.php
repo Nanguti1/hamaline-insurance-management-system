@@ -92,7 +92,6 @@ class ProgressivePolicyStoreRequest extends FormRequest
             $rules['engine_number'] = ['nullable', 'string', 'max:100'];
             $rules['carriage_capacity'] = ['nullable', 'numeric', 'min:0.01'];
             $rules['engine_size'] = ['nullable', 'string', 'max:50'];
-            $rules['customer_id'] = ['nullable', 'string', 'max:80'];
             $rules['telephone_other'] = ['nullable', 'string', 'max:50'];
             $rules['postal_code'] = ['nullable', 'string', 'max:20'];
             $rules['country'] = ['nullable', 'string', 'max:80'];

@@ -92,6 +92,27 @@ trait BuildsRiskNotePdfHtml
         .info-row {
             margin-bottom: 6px;
         }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .kv-card {
+            border: 1px solid #dbe5ef;
+            border-radius: 8px;
+            padding: 8px 10px;
+            background: #f8fbff;
+        }
+        .kv-label {
+            font-size: 11px;
+            color: #334155;
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+        .kv-value {
+            font-size: 12px;
+            color: #0f172a;
+        }
         .info-label {
             color: #062e4a;
             font-weight: 700;
@@ -177,7 +198,13 @@ HTML;
             };
 
             $classAttr = $sectionClass ? " class=\"{$sectionClass}\"" : '';
-            $html .= "<div class=\"section\"><h2>{$currentSection}</h2><div{$classAttr}>{$sectionBody}</div></div>";
+            $usesCards = str_contains($sectionBody, 'kv-card')
+                && ! str_contains($sectionBody, 'styled-table')
+                && ! str_contains($sectionBody, 'bullet-list');
+
+            $bodyHtml = $usesCards ? "<div class=\"cards-grid\">{$sectionBody}</div>" : $sectionBody;
+
+            $html .= "<div class=\"section\"><h2>{$currentSection}</h2><div{$classAttr}>{$bodyHtml}</div></div>";
             $sectionBody = '';
         };
 
@@ -226,7 +253,7 @@ HTML;
 
             if (str_contains($line, ':')) {
                 [$label, $value] = array_map('trim', explode(':', $line, 2));
-                $sectionBody .= '<div class="info-row"><span class="info-label">'.e($label).':</span> '.e($value).'</div>';
+                $sectionBody .= '<div class="kv-card"><div class="kv-label">'.e($label).'</div><div class="kv-value">'.e($value).'</div></div>';
                 $i++;
                 continue;
             }

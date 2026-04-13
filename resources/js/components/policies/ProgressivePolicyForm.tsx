@@ -72,7 +72,6 @@ const basePolicySchema = z.object({
         z.coerce.number().nonnegative().optional()
     ),
     engine_size: z.string().trim().max(50).optional().or(z.literal('')),
-    customer_id: z.string().trim().max(80).optional(),
     telephone_other: z.string().trim().max(50).optional(),
     postal_code: z.string().trim().max(20).optional(),
     country: z.string().trim().max(80).optional(),
@@ -230,7 +229,6 @@ export default function ProgressivePolicyForm({
             engine_number: initialValues?.engine_number,
             carriage_capacity: initialValues?.carriage_capacity,
             engine_size: initialValues?.engine_size,
-            customer_id: initialValues?.customer_id,
             telephone_other: initialValues?.telephone_other,
             postal_code: initialValues?.postal_code,
             country: initialValues?.country,
@@ -931,11 +929,6 @@ export default function ProgressivePolicyForm({
                                             </div>
                                         )}
                                         <div className="grid gap-4 md:grid-cols-2">
-                                            <div>
-                                                <Label htmlFor="customer_id">Customer ID</Label>
-                                                <Input id="customer_id" {...register('customer_id')} />
-                                                <InputError message={errors.customer_id?.message} />
-                                            </div>
                                             <div>
                                                 <Label htmlFor="registration_number">Registration Number</Label>
                                                 <Input id="registration_number" placeholder="e.g. KDA 123A" {...register('registration_number')} />

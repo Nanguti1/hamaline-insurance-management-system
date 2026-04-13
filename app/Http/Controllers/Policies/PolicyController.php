@@ -155,7 +155,7 @@ class PolicyController extends Controller
                     'engine_size' => $validated['engine_size'] ?? null,
                     'insurer_policy_number' => $policy->policy_number,
                     'internal_policy_number' => $this->generateInternalPolicyNumber($policy),
-                    'customer_id' => $validated['customer_id'] ?? null,
+                    'customer_id' => $this->generateCustomerId((int) $validated['client_id']),
                     'mobile_number' => null,
                     'telephone_other' => $validated['telephone_other'] ?? null,
                     'postal_code' => $validated['postal_code'] ?? null,
@@ -377,5 +377,10 @@ class PolicyController extends Controller
     private function generateInternalPolicyNumber(Policy $policy): string
     {
         return sprintf('INI-%s-%s', $policy->id, now()->format('Y'));
+    }
+
+    private function generateCustomerId(int $clientId): string
+    {
+        return sprintf('CUST-%06d', $clientId);
     }
 }
