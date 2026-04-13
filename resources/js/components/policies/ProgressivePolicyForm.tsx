@@ -72,9 +72,7 @@ const basePolicySchema = z.object({
         z.coerce.number().nonnegative().optional()
     ),
     engine_size: z.string().trim().max(50).optional().or(z.literal('')),
-    insurer_policy_number: z.string().trim().max(80).optional(),
     customer_id: z.string().trim().max(80).optional(),
-    mobile_number: z.string().trim().max(50).optional(),
     telephone_other: z.string().trim().max(50).optional(),
     postal_code: z.string().trim().max(20).optional(),
     country: z.string().trim().max(80).optional(),
@@ -232,9 +230,7 @@ export default function ProgressivePolicyForm({
             engine_number: initialValues?.engine_number,
             carriage_capacity: initialValues?.carriage_capacity,
             engine_size: initialValues?.engine_size,
-            insurer_policy_number: initialValues?.insurer_policy_number,
             customer_id: initialValues?.customer_id,
-            mobile_number: initialValues?.mobile_number,
             telephone_other: initialValues?.telephone_other,
             postal_code: initialValues?.postal_code,
             country: initialValues?.country,
@@ -936,39 +932,9 @@ export default function ProgressivePolicyForm({
                                         )}
                                         <div className="grid gap-4 md:grid-cols-2">
                                             <div>
-                                                <Label htmlFor="insurer_policy_number">Insurer Policy Number</Label>
-                                                <Input id="insurer_policy_number" {...register('insurer_policy_number')} />
-                                                <InputError message={errors.insurer_policy_number?.message} />
-                                            </div>
-                                            <div>
                                                 <Label htmlFor="customer_id">Customer ID</Label>
                                                 <Input id="customer_id" {...register('customer_id')} />
                                                 <InputError message={errors.customer_id?.message} />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="mobile_number">Mobile Number</Label>
-                                                <Input id="mobile_number" {...register('mobile_number')} />
-                                                <InputError message={errors.mobile_number?.message} />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="insurer_policy_number">Insurer Policy Number</Label>
-                                                <Input id="insurer_policy_number" {...register('insurer_policy_number')} />
-                                                <InputError message={errors.insurer_policy_number?.message} />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="internal_policy_number">Internal Policy Number</Label>
-                                                <Input id="internal_policy_number" {...register('internal_policy_number')} />
-                                                <InputError message={errors.internal_policy_number?.message} />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="customer_id">Customer ID</Label>
-                                                <Input id="customer_id" {...register('customer_id')} />
-                                                <InputError message={errors.customer_id?.message} />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="mobile_number">Mobile Number</Label>
-                                                <Input id="mobile_number" {...register('mobile_number')} />
-                                                <InputError message={errors.mobile_number?.message} />
                                             </div>
                                             <div>
                                                 <Label htmlFor="registration_number">Registration Number</Label>
