@@ -126,6 +126,11 @@ class PolicyController extends Controller
                 $binderVersionId = $validated['binder_version_id'] ?? $this->resolveActiveMotorBinderVersionId(
                     (int) $validated['insurer_id']
                 );
+                $paymentPlanType = $validated['payment_plan_type'] ?? 'one_time';
+                $installmentCount = $paymentPlanType === 'installments' ? (int) ($validated['installment_count'] ?? 0) : null;
+                $installmentAmount = $paymentPlanType === 'installments' && $installmentCount
+                    ? round(((float) $validated['premium_amount']) / $installmentCount, 2)
+                    : null;
 
                 MotorPolicyDetail::create([
                     'policy_id' => $policy->id,
@@ -149,7 +154,7 @@ class PolicyController extends Controller
                     'carriage_capacity' => $validated['carriage_capacity'] ?? null,
                     'engine_size' => $validated['engine_size'] ?? null,
                     'insurer_policy_number' => $validated['insurer_policy_number'] ?? null,
-                    'internal_policy_number' => $validated['internal_policy_number'] ?? null,
+                    'internal_policy_number' => $this->generateInternalPolicyNumber($policy),
                     'customer_id' => $validated['customer_id'] ?? null,
                     'mobile_number' => $validated['mobile_number'] ?? null,
                     'telephone_other' => $validated['telephone_other'] ?? null,
@@ -175,6 +180,9 @@ class PolicyController extends Controller
                     'first_premium_total' => $validated['first_premium_total'] ?? null,
                     'time_on_risk_total_premium' => $validated['time_on_risk_total_premium'] ?? null,
                     'payment_method' => $validated['payment_method'] ?? null,
+                    'payment_plan_type' => $paymentPlanType,
+                    'installment_count' => $installmentCount,
+                    'installment_amount' => $installmentAmount,
                     'issuing_officer_name' => $validated['issuing_officer_name'] ?? null,
                     'verifying_officer_name' => $validated['verifying_officer_name'] ?? null,
                     'issued_on' => $validated['issued_on'] ?? null,
@@ -364,5 +372,10 @@ class PolicyController extends Controller
             })
             ->orderByDesc('id')
             ->value('id');
+    }
+
+    private function generateInternalPolicyNumber(Policy $policy): string
+    {
+        return sprintf('INI-%s-%s', $policy->id, now()->format('Y'));
     }
 }

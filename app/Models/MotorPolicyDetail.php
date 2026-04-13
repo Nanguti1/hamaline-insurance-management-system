@@ -58,6 +58,9 @@ class MotorPolicyDetail extends Model
         'first_premium_total',
         'time_on_risk_total_premium',
         'payment_method',
+        'payment_plan_type',
+        'installment_count',
+        'installment_amount',
         'issuing_officer_name',
         'verifying_officer_name',
         'issued_on',
@@ -99,6 +102,8 @@ class MotorPolicyDetail extends Model
         'training_levy' => 'decimal:2',
         'first_premium_total' => 'decimal:2',
         'time_on_risk_total_premium' => 'decimal:2',
+        'installment_count' => 'integer',
+        'installment_amount' => 'decimal:2',
         'issued_on' => 'date',
     ];
 

@@ -49,7 +49,7 @@ class StoreMotorRiskNoteRequest extends FormRequest
             // Vehicle details
             'registration_number' => ['required', 'string', 'max:50'],
             'make_model' => ['required', 'string', 'max:255'],
-            'year_of_manufacture' => ['required', 'integer', 'min:1900', 'max:2100'],
+            'year_of_manufacture' => ['required', 'integer', 'min:1999', 'max:'.now()->year],
             'chassis_number' => ['required', 'string', 'max:100'],
             'engine_number' => ['required', 'string', 'max:100'],
             'body_type' => ['required', 'string', 'max:50'],
@@ -75,6 +75,9 @@ class StoreMotorRiskNoteRequest extends FormRequest
             'first_premium_total' => ['nullable', 'numeric', 'min:0'],
             'time_on_risk_total_premium' => ['nullable', 'numeric', 'min:0'],
             'payment_method' => ['nullable', 'string', 'max:50'],
+            'payment_plan_type' => ['nullable', 'string', 'in:one_time,installments'],
+            'installment_count' => ['nullable', 'integer', 'min:2', 'max:10', 'required_if:payment_plan_type,installments'],
+            'installment_amount' => ['nullable', 'numeric', 'min:0'],
             'issuing_officer_name' => ['nullable', 'string', 'max:255'],
             'verifying_officer_name' => ['nullable', 'string', 'max:255'],
             'issued_on' => ['nullable', 'date'],

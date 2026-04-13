@@ -23,6 +23,7 @@ const emptyToUndefined = (value: unknown) => {
     }
     return value;
 };
+const currentYear = new Date().getFullYear();
 
 const basePolicySchema = z.object({
     client_id: z.coerce.number().int().min(1, 'Client is required'),
@@ -57,7 +58,7 @@ const basePolicySchema = z.object({
     vehicle_model: z.string().trim().max(100).optional(),
     year_of_manufacture: z.preprocess(
         emptyToUndefined,
-        z.coerce.number().int().optional()
+        z.coerce.number().int().min(1999).max(currentYear).optional()
     ),
     vehicle_value: z.preprocess(
         emptyToUndefined,
@@ -72,7 +73,6 @@ const basePolicySchema = z.object({
     ),
     engine_size: z.string().trim().max(50).optional().or(z.literal('')),
     insurer_policy_number: z.string().trim().max(80).optional(),
-    internal_policy_number: z.string().trim().max(80).optional(),
     customer_id: z.string().trim().max(80).optional(),
     mobile_number: z.string().trim().max(50).optional(),
     telephone_other: z.string().trim().max(50).optional(),
@@ -99,6 +99,9 @@ const basePolicySchema = z.object({
     issuing_officer_name: z.string().trim().max(255).optional(),
     verifying_officer_name: z.string().trim().max(255).optional(),
     issued_on: z.string().trim().optional(),
+    payment_plan_type: z.enum(['one_time', 'installments']).optional(),
+    installment_count: z.preprocess(emptyToUndefined, z.coerce.number().int().min(2).max(10).optional()),
+    installment_amount: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
     outpatient_benefit: z.boolean().optional(),
     outpatient_amount: z.preprocess(
         emptyToUndefined,
@@ -230,7 +233,6 @@ export default function ProgressivePolicyForm({
             carriage_capacity: initialValues?.carriage_capacity,
             engine_size: initialValues?.engine_size,
             insurer_policy_number: initialValues?.insurer_policy_number,
-            internal_policy_number: initialValues?.internal_policy_number,
             customer_id: initialValues?.customer_id,
             mobile_number: initialValues?.mobile_number,
             telephone_other: initialValues?.telephone_other,
@@ -257,6 +259,9 @@ export default function ProgressivePolicyForm({
             issuing_officer_name: initialValues?.issuing_officer_name,
             verifying_officer_name: initialValues?.verifying_officer_name,
             issued_on: initialValues?.issued_on,
+            payment_plan_type: initialValues?.payment_plan_type ?? 'one_time',
+            installment_count: initialValues?.installment_count,
+            installment_amount: initialValues?.installment_amount,
         },
     });
 
@@ -269,6 +274,9 @@ export default function ProgressivePolicyForm({
     const watchedCoverAddons = watch('cover_addons') ?? [];
     const watchedClientType = watch('client_type');
     const watchedStartDate = watch('start_date');
+    const watchedPremiumAmount = watch('premium_amount');
+    const watchedPaymentPlanType = watch('payment_plan_type');
+    const watchedInstallmentCount = watch('installment_count');
 
     useEffect(() => {
         if (!watchedStartDate) {
@@ -287,6 +295,16 @@ export default function ProgressivePolicyForm({
         setValue('start_date', startDate, { shouldValidate: true });
         setValue('end_date', calculatedEndDate, { shouldValidate: true });
     }, [coverPeriod, setValue]);
+
+    useEffect(() => {
+        if (watchedPaymentPlanType !== 'installments' || !watchedInstallmentCount || watchedInstallmentCount <= 0) {
+            setValue('installment_amount', undefined, { shouldValidate: true });
+            return;
+        }
+
+        const installmentAmount = Number((Number(watchedPremiumAmount || 0) / watchedInstallmentCount).toFixed(2));
+        setValue('installment_amount', installmentAmount, { shouldValidate: true });
+    }, [watchedInstallmentCount, watchedPaymentPlanType, watchedPremiumAmount, setValue]);
 
     useEffect(() => {
         const startDate = todayDateString();
@@ -413,6 +431,10 @@ export default function ProgressivePolicyForm({
             ...values,
             policy_number: values.policy_number || null,
             capacity_unit: values.cover_type === 'comprehensive' ? 'cc' : null,
+            installment_amount:
+                values.payment_plan_type === 'installments' && values.installment_count
+                    ? Number((Number(values.premium_amount || 0) / Number(values.installment_count)).toFixed(2))
+                    : null,
             applicable_clauses: values.applicable_clauses_text
                 ? values.applicable_clauses_text.split('\n').map((item) => item.trim()).filter(Boolean)
                 : [],
@@ -912,14 +934,22 @@ export default function ProgressivePolicyForm({
                                                 <InputError message={errors.cover_plan?.message} />
                                             </div>
                                         )}
-                                        {watchedCoverType === 'comprehensive' && (
-                                            <div>
-                                                <Label htmlFor="capacity">Capacity (cc)</Label>
-                                                <Input id="capacity" type="number" step="0.01" {...register('capacity', { valueAsNumber: true })} />
-                                                <InputError message={errors.capacity?.message} />
-                                            </div>
-                                        )}
                                         <div className="grid gap-4 md:grid-cols-2">
+                                            <div>
+                                                <Label htmlFor="insurer_policy_number">Insurer Policy Number</Label>
+                                                <Input id="insurer_policy_number" {...register('insurer_policy_number')} />
+                                                <InputError message={errors.insurer_policy_number?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="customer_id">Customer ID</Label>
+                                                <Input id="customer_id" {...register('customer_id')} />
+                                                <InputError message={errors.customer_id?.message} />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="mobile_number">Mobile Number</Label>
+                                                <Input id="mobile_number" {...register('mobile_number')} />
+                                                <InputError message={errors.mobile_number?.message} />
+                                            </div>
                                             <div>
                                                 <Label htmlFor="insurer_policy_number">Insurer Policy Number</Label>
                                                 <Input id="insurer_policy_number" {...register('insurer_policy_number')} />
@@ -1040,6 +1070,43 @@ export default function ProgressivePolicyForm({
                                                 <Input id="payment_method" placeholder="e.g. CASH" {...register('payment_method')} />
                                                 <InputError message={errors.payment_method?.message} />
                                             </div>
+                                            <div>
+                                                <Label>Payment Plan</Label>
+                                                <Select
+                                                    value={watch('payment_plan_type') ?? 'one_time'}
+                                                    onValueChange={(value) => setValue('payment_plan_type', value as 'one_time' | 'installments', { shouldValidate: true })}
+                                                >
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="one_time">One Time Payment</SelectItem>
+                                                        <SelectItem value="installments">Installments</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <InputError message={errors.payment_plan_type?.message} />
+                                            </div>
+                                            {watchedPaymentPlanType === 'installments' && (
+                                                <>
+                                                    <div>
+                                                        <Label>Installment Count</Label>
+                                                        <Select
+                                                            value={String(watch('installment_count') ?? '')}
+                                                            onValueChange={(value) => setValue('installment_count', Number(value), { shouldValidate: true })}
+                                                        >
+                                                            <SelectTrigger><SelectValue placeholder="Select installments" /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {Array.from({ length: 9 }, (_, i) => i + 2).map((count) => (
+                                                                    <SelectItem key={count} value={String(count)}>{count}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <InputError message={errors.installment_count?.message} />
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor="installment_amount">Amount per Installment</Label>
+                                                        <Input id="installment_amount" value={watch('installment_amount') ?? ''} readOnly />
+                                                    </div>
+                                                </>
+                                            )}
                                             <div>
                                                 <Label htmlFor="issuing_officer_name">Issuing Officer</Label>
                                                 <Input id="issuing_officer_name" {...register('issuing_officer_name')} />
