@@ -79,10 +79,24 @@ trait BuildsRiskNotePdfHtml
             margin-top: 10px;
             font-size: 11px;
         }
-        .section {
-            margin-bottom: 16px;
+        .section-grid {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 10px 12px;
+            margin-left: -10px;
+            margin-right: -10px;
         }
-        .section h2 {
+        .section-col {
+            width: 50%;
+            vertical-align: top;
+        }
+        .section-card {
+            border: 1px solid #dbe5ef;
+            border-radius: 10px;
+            background: #f8fbff;
+            padding: 12px;
+        }
+        .section-card h2 {
             color: #062e4a;
             font-size: 15px;
             margin: 0 0 10px 0;
@@ -90,32 +104,24 @@ trait BuildsRiskNotePdfHtml
             border-bottom: 2px solid #062e4a;
         }
         .info-row {
-            margin-bottom: 6px;
-        }
-        .cards-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .kv-card {
-            border: 1px solid #dbe5ef;
-            border-radius: 8px;
-            padding: 8px 10px;
-            background: #f8fbff;
-        }
-        .kv-label {
-            font-size: 11px;
-            color: #334155;
-            margin-bottom: 4px;
-            font-weight: 700;
-        }
-        .kv-value {
             font-size: 12px;
-            color: #0f172a;
+            margin-bottom: 7px;
+            line-height: 1.45;
+        }
+        .info-row:last-child {
+            margin-bottom: 0;
         }
         .info-label {
             color: #062e4a;
             font-weight: 700;
+        }
+        .section-card-conditions {
+            background: #edf4f8;
+            border-left: 4px solid #062e4a;
+        }
+        .section-card-notes {
+            background: #fef9c3;
+            border-left: 4px solid #f59e0b;
         }
         .styled-table {
             width: 100%;
@@ -133,18 +139,6 @@ trait BuildsRiskNotePdfHtml
             background: #062e4a;
             color: #ffffff;
             font-weight: 700;
-        }
-        .conditions {
-            background: #edf4f8;
-            border-left: 4px solid #062e4a;
-            border-radius: 8px;
-            padding: 10px 12px;
-        }
-        .notes {
-            background: #fef9c3;
-            border-left: 4px solid #f59e0b;
-            border-radius: 8px;
-            padding: 10px 12px;
         }
         .bullet-list {
             margin: 0;
@@ -182,29 +176,31 @@ HTML;
     protected function formatRiskNoteContent(string $content): string
     {
         $lines = preg_split('/\R/u', trim($content)) ?: [];
-        $html = '';
+        $sections = [];
         $currentSection = null;
         $sectionBody = '';
 
-        $flushSection = function () use (&$html, &$currentSection, &$sectionBody): void {
+        $flushSection = function () use (&$sections, &$currentSection, &$sectionBody): void {
             if ($currentSection === null) {
                 return;
             }
 
-            $sectionClass = match (strtolower($currentSection)) {
-                'conditions' => 'conditions',
-                'notes' => 'notes',
-                default => '',
+            $normalizedSection = strtolower($currentSection);
+            $cardClass = match ($normalizedSection) {
+                'conditions' => 'section-card section-card-conditions',
+                'notes' => 'section-card section-card-notes',
+                default => 'section-card',
             };
+            $shouldSpanFullWidth = in_array($normalizedSection, ['conditions', 'notes', 'exclusions'], true)
+                || str_contains($sectionBody, 'styled-table')
+                || str_contains($sectionBody, 'bullet-list');
 
-            $classAttr = $sectionClass ? " class=\"{$sectionClass}\"" : '';
-            $usesCards = str_contains($sectionBody, 'kv-card')
-                && ! str_contains($sectionBody, 'styled-table')
-                && ! str_contains($sectionBody, 'bullet-list');
-
-            $bodyHtml = $usesCards ? "<div class=\"cards-grid\">{$sectionBody}</div>" : $sectionBody;
-
-            $html .= "<div class=\"section\"><h2>{$currentSection}</h2><div{$classAttr}>{$bodyHtml}</div></div>";
+            $sections[] = [
+                'title' => $currentSection,
+                'body' => $sectionBody,
+                'class' => $cardClass,
+                'full_width' => $shouldSpanFullWidth,
+            ];
             $sectionBody = '';
         };
 
@@ -253,7 +249,7 @@ HTML;
 
             if (str_contains($line, ':')) {
                 [$label, $value] = array_map('trim', explode(':', $line, 2));
-                $sectionBody .= '<div class="kv-card"><div class="kv-label">'.e($label).'</div><div class="kv-value">'.e($value).'</div></div>';
+                $sectionBody .= '<div class="info-row"><span class="info-label">'.e($label).':</span> '.e($value).'</div>';
                 $i++;
                 continue;
             }
@@ -264,7 +260,48 @@ HTML;
 
         $flushSection();
 
-        return $html;
+        return $this->renderSectionGrid($sections);
+    }
+
+    /**
+     * @param  array<int, array{title: string, body: string, class: string, full_width: bool}>  $sections
+     */
+    protected function renderSectionGrid(array $sections): string
+    {
+        if ($sections === []) {
+            return '';
+        }
+
+        $rows = '';
+        $pendingSection = null;
+
+        foreach ($sections as $section) {
+            $sectionHtml = '<div class="'.e($section['class']).'"><h2>'.e($section['title']).'</h2>'.$section['body'].'</div>';
+
+            if ($section['full_width']) {
+                if ($pendingSection !== null) {
+                    $rows .= '<tr><td class="section-col">'.$pendingSection.'</td><td class="section-col"></td></tr>';
+                    $pendingSection = null;
+                }
+
+                $rows .= '<tr><td class="section-col" colspan="2">'.$sectionHtml.'</td></tr>';
+                continue;
+            }
+
+            if ($pendingSection === null) {
+                $pendingSection = $sectionHtml;
+                continue;
+            }
+
+            $rows .= '<tr><td class="section-col">'.$pendingSection.'</td><td class="section-col">'.$sectionHtml.'</td></tr>';
+            $pendingSection = null;
+        }
+
+        if ($pendingSection !== null) {
+            $rows .= '<tr><td class="section-col">'.$pendingSection.'</td><td class="section-col"></td></tr>';
+        }
+
+        return '<table class="section-grid" width="100%" cellpadding="0" cellspacing="0">'.$rows.'</table>';
     }
 
     protected function isSectionHeading(string $line): bool
