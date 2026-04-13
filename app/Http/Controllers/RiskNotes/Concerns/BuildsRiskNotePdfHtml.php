@@ -247,11 +247,13 @@ HTML;
             'Insured Information',
             'Vehicle Details',
             'Insurance Cover',
+            'Limits of Liability',
             'Financials',
             'Employees',
             'Dependants',
             'Benefits Summary',
             'Conditions',
+            'Exclusions',
             'Notes',
         ], true);
     }

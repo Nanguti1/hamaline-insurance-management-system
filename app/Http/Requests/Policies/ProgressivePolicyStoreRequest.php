@@ -20,6 +20,7 @@ class ProgressivePolicyStoreRequest extends FormRequest
             'client_id' => ['required', 'integer', 'exists:clients,id'],
             'insurer_id' => ['required', 'integer', 'exists:insurers,id'],
             'underwriter_id' => ['required', 'integer', 'exists:underwriters,id'],
+            'binder_version_id' => ['nullable', 'integer', 'exists:binder_versions,id'],
             'policy_type' => ['required', 'string', 'in:motor,medical,wiba'],
             'policy_number' => ['nullable', 'string', 'max:50'],
             'start_date' => ['required', 'date'],
@@ -91,6 +92,41 @@ class ProgressivePolicyStoreRequest extends FormRequest
             $rules['engine_number'] = ['nullable', 'string', 'max:100'];
             $rules['carriage_capacity'] = ['nullable', 'numeric', 'min:0.01'];
             $rules['engine_size'] = ['nullable', 'string', 'max:50'];
+            $rules['insurer_policy_number'] = ['nullable', 'string', 'max:80'];
+            $rules['internal_policy_number'] = ['nullable', 'string', 'max:80'];
+            $rules['customer_id'] = ['nullable', 'string', 'max:80'];
+            $rules['mobile_number'] = ['nullable', 'string', 'max:50'];
+            $rules['telephone_other'] = ['nullable', 'string', 'max:50'];
+            $rules['postal_code'] = ['nullable', 'string', 'max:20'];
+            $rules['country'] = ['nullable', 'string', 'max:80'];
+            $rules['bank_account_number'] = ['nullable', 'string', 'max:80'];
+            $rules['branch_code'] = ['nullable', 'string', 'max:50'];
+            $rules['pin_number'] = ['nullable', 'string', 'max:50'];
+            $rules['time_on_risk_start_date'] = ['nullable', 'date'];
+            $rules['time_on_risk_end_date'] = ['nullable', 'date', 'after_or_equal:time_on_risk_start_date'];
+            $rules['passenger_count'] = ['nullable', 'integer', 'min:1'];
+            $rules['logbook_status'] = ['nullable', 'string', 'max:50'];
+            $rules['accessories_value'] = ['nullable', 'numeric', 'min:0'];
+            $rules['windscreen_value'] = ['nullable', 'numeric', 'min:0'];
+            $rules['radio_value'] = ['nullable', 'numeric', 'min:0'];
+            $rules['limits_liability'] = ['nullable', 'array'];
+            $rules['limits_liability.*.description'] = ['required_with:limits_liability', 'string', 'max:255'];
+            $rules['limits_liability.*.limit'] = ['nullable', 'string', 'max:255'];
+            $rules['limits_liability.*.excess'] = ['nullable', 'string', 'max:255'];
+            $rules['excess_rules'] = ['nullable', 'array'];
+            $rules['applicable_clauses'] = ['nullable', 'array'];
+            $rules['applicable_clauses.*'] = ['string', 'max:500'];
+            $rules['exclusions'] = ['nullable', 'array'];
+            $rules['exclusions.*'] = ['string', 'max:500'];
+            $rules['time_on_risk_premium'] = ['nullable', 'numeric', 'min:0'];
+            $rules['policyholders_fund'] = ['nullable', 'numeric', 'min:0'];
+            $rules['training_levy'] = ['nullable', 'numeric', 'min:0'];
+            $rules['first_premium_total'] = ['nullable', 'numeric', 'min:0'];
+            $rules['time_on_risk_total_premium'] = ['nullable', 'numeric', 'min:0'];
+            $rules['payment_method'] = ['nullable', 'string', 'max:50'];
+            $rules['issuing_officer_name'] = ['nullable', 'string', 'max:255'];
+            $rules['verifying_officer_name'] = ['nullable', 'string', 'max:255'];
+            $rules['issued_on'] = ['nullable', 'date'];
         }
 
         if (
