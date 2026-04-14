@@ -135,4 +135,31 @@ TXT;
         self::assertStringContainsString('<h2>Insurance Cover</h2>', $html);
         self::assertStringContainsString('<h2>Financials</h2>', $html);
     }
+
+    public function test_it_merges_duplicate_sections_in_downloadable_html(): void
+    {
+        $renderer = new class
+        {
+            use BuildsRiskNotePdfHtml;
+
+            public function renderContent(string $content): string
+            {
+                return $this->formatRiskNoteContent($content);
+            }
+        };
+
+        $content = <<<TXT
+Notes
+- Initial note.
+
+Notes
+- Follow-up note.
+TXT;
+
+        $html = $renderer->renderContent($content);
+
+        self::assertSame(1, substr_count($html, '<h2>Notes</h2>'));
+        self::assertStringContainsString('Initial note.', $html);
+        self::assertStringContainsString('Follow-up note.', $html);
+    }
 }

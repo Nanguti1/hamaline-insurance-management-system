@@ -220,6 +220,17 @@ HTML;
                 'class' => $cardClass,
                 'full_width' => $shouldSpanFullWidth,
             ];
+            $sectionIndex = array_key_last($sections);
+            foreach ($sections as $index => $section) {
+                if ($index === $sectionIndex || $section['title'] !== $currentSection) {
+                    continue;
+                }
+
+                $sections[$index]['body'] .= $sections[$sectionIndex]['body'];
+                $sections[$index]['full_width'] = $sections[$index]['full_width'] || $sections[$sectionIndex]['full_width'];
+                array_pop($sections);
+                break;
+            }
             $sectionBody = '';
         };
 
@@ -324,11 +335,6 @@ HTML;
         }
 
         $rows .= '<tr><td class="section-col"><div class="section-stack">'.$leftColumnCards.'</div></td><td class="section-col"><div class="section-stack">'.$rightColumnCards.'</div></td></tr>';
-
-        foreach ($fullWidthSections as $section) {
-            $sectionHtml = '<div class="'.e($section['class']).'"><h2>'.e($section['title']).'</h2>'.$section['body'].'</div>';
-            $rows .= '<tr><td class="section-col" colspan="2">'.$sectionHtml.'</td></tr>';
-        }
 
         foreach ($fullWidthSections as $section) {
             $sectionHtml = '<div class="'.e($section['class']).'"><h2>'.e($section['title']).'</h2>'.$section['body'].'</div>';

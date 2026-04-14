@@ -81,8 +81,6 @@ const basePolicySchema = z.object({
     bank_account_number: z.string().trim().max(80).optional(),
     branch_code: z.string().trim().max(50).optional(),
     pin_number: z.string().trim().max(50).optional(),
-    time_on_risk_start_date: z.string().trim().optional(),
-    time_on_risk_end_date: z.string().trim().optional(),
     passenger_count: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
     logbook_status: z.string().trim().max(50).optional(),
     accessories_value: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
@@ -240,8 +238,6 @@ export default function ProgressivePolicyForm({
             bank_account_number: initialValues?.bank_account_number,
             branch_code: initialValues?.branch_code,
             pin_number: initialValues?.pin_number,
-            time_on_risk_start_date: initialValues?.time_on_risk_start_date,
-            time_on_risk_end_date: initialValues?.time_on_risk_end_date,
             passenger_count: initialValues?.passenger_count,
             logbook_status: initialValues?.logbook_status,
             accessories_value: initialValues?.accessories_value,
@@ -1049,16 +1045,6 @@ export default function ProgressivePolicyForm({
                                                 <Label htmlFor="logbook_status">Logbook Status</Label>
                                                 <Input id="logbook_status" placeholder="e.g. COPY" {...register('logbook_status')} />
                                                 <InputError message={errors.logbook_status?.message} />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="time_on_risk_start_date">Time on Risk Start</Label>
-                                                <Input id="time_on_risk_start_date" type="date" {...register('time_on_risk_start_date')} />
-                                                <InputError message={errors.time_on_risk_start_date?.message} />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="time_on_risk_end_date">Time on Risk End</Label>
-                                                <Input id="time_on_risk_end_date" type="date" {...register('time_on_risk_end_date')} />
-                                                <InputError message={errors.time_on_risk_end_date?.message} />
                                             </div>
                                             <div>
                                                 <Label htmlFor="policyholders_fund">Policyholders Fund</Label>
