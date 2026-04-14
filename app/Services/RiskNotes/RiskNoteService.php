@@ -369,8 +369,8 @@ class RiskNoteService
             : '-';
 
         $d = $riskNote->motorDetails;
-        $timeOnRiskPeriod = ($d?->time_on_risk_start_date && $d?->time_on_risk_end_date)
-            ? sprintf('%s - %s', $d->time_on_risk_start_date->format('d/m/Y'), $d->time_on_risk_end_date->format('d/m/Y'))
+        $timeOnRiskPeriod = ($riskNote->start_date && $riskNote->end_date)
+            ? sprintf('%s - %s', $riskNote->start_date->format('d/m/Y'), $riskNote->end_date->format('d/m/Y'))
             : '-';
         $coverLabel = match ($d?->cover_type) {
             'third_party_only' => 'Third Party Only',

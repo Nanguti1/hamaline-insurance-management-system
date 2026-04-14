@@ -20,27 +20,31 @@ trait BuildsRiskNotePdfHtml
     <meta charset="UTF-8">
     <title>{$riskNoteNumber}</title>
     <style>
+        @page {
+            margin: 6mm;
+            size: A4 portrait;
+        }
         body {
             font-family: DejaVu Sans, Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.5;
+            font-size: 9px;
+            line-height: 1.2;
             color: #111827;
             margin: 0;
-            padding: 14px;
-            background: #f8fafc;
+            padding: 0;
+            background: #ffffff;
         }
         .page {
             background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 16px;
+            border: 1px solid #d6dee8;
+            border-radius: 8px;
+            padding: 8px;
         }
         .header {
             background: #062e4a;
             color: #ffffff;
-            padding: 12px 14px;
-            border-radius: 10px;
-            margin-bottom: 14px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
         }
         .header-row {
             width: 100%;
@@ -52,61 +56,68 @@ trait BuildsRiskNotePdfHtml
             text-align: right;
         }
         .brand-logo {
-            height: 48px;
+            height: 34px;
             width: auto;
-            max-width: 180px;
+            max-width: 140px;
             display: block;
             background: #ffffff;
-            border-radius: 8px;
-            padding: 4px 8px;
+            border-radius: 6px;
+            padding: 3px 6px;
         }
         .brand-logo-fallback {
-            font-size: 14px;
+            font-size: 10px;
             font-weight: 700;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
         }
         .header h1 {
-            margin: 0 0 4px 0;
-            font-size: 20px;
-            letter-spacing: 0.3px;
+            margin: 0 0 2px 0;
+            font-size: 14px;
+            letter-spacing: 0.2px;
         }
         .header-meta {
             margin: 0;
-            font-size: 11px;
+            font-size: 8px;
             opacity: 0.95;
         }
         .meta-grid {
-            margin-top: 10px;
-            font-size: 11px;
+            margin-top: 5px;
+            font-size: 8px;
         }
         .section-grid {
             width: 100%;
             border-collapse: separate;
-            border-spacing: 10px 12px;
-            margin-left: -10px;
-            margin-right: -10px;
+            border-spacing: 6px 6px;
+            margin-left: -6px;
+            margin-right: -6px;
         }
         .section-col {
             width: 50%;
             vertical-align: top;
         }
+        .section-stack .section-card {
+            margin-bottom: 6px;
+        }
+        .section-stack .section-card:last-child {
+            margin-bottom: 0;
+        }
         .section-card {
             border: 1px solid #dbe5ef;
-            border-radius: 10px;
+            border-radius: 6px;
             background: #f8fbff;
-            padding: 12px;
+            padding: 7px;
+            page-break-inside: avoid;
         }
         .section-card h2 {
             color: #062e4a;
-            font-size: 15px;
-            margin: 0 0 10px 0;
-            padding-bottom: 6px;
-            border-bottom: 2px solid #062e4a;
+            font-size: 11px;
+            margin: 0 0 6px 0;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #062e4a;
         }
         .info-row {
-            font-size: 12px;
-            margin-bottom: 7px;
-            line-height: 1.45;
+            font-size: 9px;
+            margin-bottom: 4px;
+            line-height: 1.2;
         }
         .info-row:last-child {
             margin-bottom: 0;
@@ -126,12 +137,13 @@ trait BuildsRiskNotePdfHtml
         .styled-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 8px;
+            margin-top: 4px;
+            font-size: 8px;
         }
         .styled-table th,
         .styled-table td {
             border: 1px solid #dbeafe;
-            padding: 8px;
+            padding: 4px;
             text-align: left;
             vertical-align: top;
         }
@@ -142,10 +154,17 @@ trait BuildsRiskNotePdfHtml
         }
         .bullet-list {
             margin: 0;
-            padding-left: 16px;
+            padding-left: 12px;
         }
         .bullet-list li {
-            margin-bottom: 4px;
+            margin-bottom: 2px;
+            line-height: 1.2;
+        }
+        p {
+            margin: 0 0 4px 0;
+        }
+        p:last-child {
+            margin-bottom: 0;
         }
     </style>
 </head>
@@ -201,6 +220,17 @@ HTML;
                 'class' => $cardClass,
                 'full_width' => $shouldSpanFullWidth,
             ];
+            $sectionIndex = array_key_last($sections);
+            foreach ($sections as $index => $section) {
+                if ($index === $sectionIndex || $section['title'] !== $currentSection) {
+                    continue;
+                }
+
+                $sections[$index]['body'] .= $sections[$sectionIndex]['body'];
+                $sections[$index]['full_width'] = $sections[$index]['full_width'] || $sections[$sectionIndex]['full_width'];
+                array_pop($sections);
+                break;
+            }
             $sectionBody = '';
         };
 
@@ -272,33 +302,43 @@ HTML;
             return '';
         }
 
-        $rows = '';
-        $pendingSection = null;
+        $standardSections = [];
+        $fullWidthSections = [];
 
         foreach ($sections as $section) {
-            $sectionHtml = '<div class="'.e($section['class']).'"><h2>'.e($section['title']).'</h2>'.$section['body'].'</div>';
-
             if ($section['full_width']) {
-                if ($pendingSection !== null) {
-                    $rows .= '<tr><td class="section-col">'.$pendingSection.'</td><td class="section-col"></td></tr>';
-                    $pendingSection = null;
-                }
-
-                $rows .= '<tr><td class="section-col" colspan="2">'.$sectionHtml.'</td></tr>';
+                $fullWidthSections[] = $section;
                 continue;
             }
 
-            if ($pendingSection === null) {
-                $pendingSection = $sectionHtml;
-                continue;
-            }
-
-            $rows .= '<tr><td class="section-col">'.$pendingSection.'</td><td class="section-col">'.$sectionHtml.'</td></tr>';
-            $pendingSection = null;
+            $standardSections[] = $section;
         }
 
-        if ($pendingSection !== null) {
-            $rows .= '<tr><td class="section-col">'.$pendingSection.'</td><td class="section-col"></td></tr>';
+        $rows = '';
+        $leftColumnCards = '';
+        $rightColumnCards = '';
+        $leftWeight = 0;
+        $rightWeight = 0;
+
+        foreach ($standardSections as $section) {
+            $sectionHtml = '<div class="'.e($section['class']).'"><h2>'.e($section['title']).'</h2>'.$section['body'].'</div>';
+            $sectionWeight = mb_strlen(strip_tags($section['body']));
+
+            if ($leftWeight <= $rightWeight) {
+                $leftColumnCards .= $sectionHtml;
+                $leftWeight += $sectionWeight;
+                continue;
+            }
+
+            $rightColumnCards .= $sectionHtml;
+            $rightWeight += $sectionWeight;
+        }
+
+        $rows .= '<tr><td class="section-col"><div class="section-stack">'.$leftColumnCards.'</div></td><td class="section-col"><div class="section-stack">'.$rightColumnCards.'</div></td></tr>';
+
+        foreach ($fullWidthSections as $section) {
+            $sectionHtml = '<div class="'.e($section['class']).'"><h2>'.e($section['title']).'</h2>'.$section['body'].'</div>';
+            $rows .= '<tr><td class="section-col" colspan="2">'.$sectionHtml.'</td></tr>';
         }
 
         return '<table class="section-grid" width="100%" cellpadding="0" cellspacing="0">'.$rows.'</table>';
