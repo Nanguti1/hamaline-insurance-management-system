@@ -285,21 +285,23 @@ HTML;
             return '';
         }
 
+        $standardSections = [];
+        $fullWidthSections = [];
+
+        foreach ($sections as $section) {
+            if ($section['full_width']) {
+                $fullWidthSections[] = $section;
+                continue;
+            }
+
+            $standardSections[] = $section;
+        }
+
         $rows = '';
         $pendingSection = null;
 
-        foreach ($sections as $section) {
+        foreach ($standardSections as $section) {
             $sectionHtml = '<div class="'.e($section['class']).'"><h2>'.e($section['title']).'</h2>'.$section['body'].'</div>';
-
-            if ($section['full_width']) {
-                if ($pendingSection !== null) {
-                    $rows .= '<tr><td class="section-col">'.$pendingSection.'</td><td class="section-col"></td></tr>';
-                    $pendingSection = null;
-                }
-
-                $rows .= '<tr><td class="section-col" colspan="2">'.$sectionHtml.'</td></tr>';
-                continue;
-            }
 
             if ($pendingSection === null) {
                 $pendingSection = $sectionHtml;
@@ -312,6 +314,11 @@ HTML;
 
         if ($pendingSection !== null) {
             $rows .= '<tr><td class="section-col">'.$pendingSection.'</td><td class="section-col"></td></tr>';
+        }
+
+        foreach ($fullWidthSections as $section) {
+            $sectionHtml = '<div class="'.e($section['class']).'"><h2>'.e($section['title']).'</h2>'.$section['body'].'</div>';
+            $rows .= '<tr><td class="section-col" colspan="2">'.$sectionHtml.'</td></tr>';
         }
 
         return '<table class="section-grid" width="100%" cellpadding="0" cellspacing="0">'.$rows.'</table>';

@@ -1,26 +1,29 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { useForm, type FieldErrors } from 'react-hook-form';
+import { useForm  } from 'react-hook-form';
+import type {FieldErrors} from 'react-hook-form';
 import { z } from 'zod';
 
 import InputError from '@/components/input-error';
+import ClientSelector from '@/components/policies/ClientSelector';
+import PolicyMemberManagement from '@/components/policies/PolicyMemberManagement';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import ClientSelector from '@/components/policies/ClientSelector';
-import PolicyMemberManagement from '@/components/policies/PolicyMemberManagement';
 
 const emptyToUndefined = (value: unknown) => {
     if (value === '' || value === null || value === undefined) {
         return undefined;
     }
+
     if (typeof value === 'number' && Number.isNaN(value)) {
         return undefined;
     }
+
     return value;
 };
 const currentYear = new Date().getFullYear();
@@ -85,6 +88,7 @@ const basePolicySchema = z.object({
     accessories_value: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
     windscreen_value: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
     radio_value: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
+    limits_liability_text: z.string().trim().optional(),
     applicable_clauses_text: z.string().trim().optional(),
     exclusions_text: z.string().trim().optional(),
     time_on_risk_premium: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().optional()),
@@ -158,6 +162,7 @@ function calculateEndDate(startDate: string, coverPeriod: CoverPeriod): string {
     }
 
     const date = new Date(startDate);
+
     if (Number.isNaN(date.getTime())) {
         return '';
     }
@@ -242,6 +247,7 @@ export default function ProgressivePolicyForm({
             accessories_value: initialValues?.accessories_value,
             windscreen_value: initialValues?.windscreen_value,
             radio_value: initialValues?.radio_value,
+            limits_liability_text: initialValues?.limits_liability_text,
             applicable_clauses_text: initialValues?.applicable_clauses_text,
             exclusions_text: initialValues?.exclusions_text,
             time_on_risk_premium: initialValues?.time_on_risk_premium,
@@ -278,6 +284,7 @@ export default function ProgressivePolicyForm({
         }
 
         const calculatedEndDate = calculateEndDate(watchedStartDate, coverPeriod);
+
         if (calculatedEndDate) {
             setValue('end_date', calculatedEndDate, { shouldValidate: true });
         }
@@ -293,6 +300,7 @@ export default function ProgressivePolicyForm({
     useEffect(() => {
         if (watchedPaymentPlanType !== 'installments' || !watchedInstallmentCount || watchedInstallmentCount <= 0) {
             setValue('installment_amount', undefined, { shouldValidate: true });
+
             return;
         }
 
@@ -321,9 +329,11 @@ export default function ProgressivePolicyForm({
             if (!value || typeof value !== 'object') {
                 return null;
             }
+
             if (visited.has(value)) {
                 return null;
             }
+
             visited.add(value);
 
             if ('message' in value && typeof (value as { message?: unknown }).message === 'string') {
@@ -333,10 +343,12 @@ export default function ProgressivePolicyForm({
             if (Array.isArray(value)) {
                 for (const item of value) {
                     const found = walk(item);
+
                     if (found) {
                         return found;
                     }
                 }
+
                 return null;
             }
 
@@ -344,7 +356,9 @@ export default function ProgressivePolicyForm({
                 if (key === 'ref' || key === 'types' || key === 'root') {
                     continue;
                 }
+
                 const found = walk(nested);
+
                 if (found) {
                     return found;
                 }
@@ -359,41 +373,73 @@ export default function ProgressivePolicyForm({
     const submit = async (values: PolicyValues) => {
         setSubmitError(null);
 
+        const limitsLiability = (values.limits_liability_text ?? '')
+            .split('\n')
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .map((row) => {
+                const [description = '', limit = '', excess = ''] = row.split('|').map((cell) => cell.trim());
+
+                return {
+                    description,
+                    limit,
+                    excess,
+                };
+            })
+            .filter((row) => row.description !== '');
+
         if (values.policy_type === 'motor') {
             if (!values.vehicle_use) {
                 setError('vehicle_use', { message: 'Vehicle use is required for motor policies.' });
+
                 return;
             }
+
             if (!values.cover_type) {
                 setError('cover_type', { message: 'Cover type is required for motor policies.' });
+
                 return;
             }
+
             if (values.vehicle_use === 'private' && values.cover_type === 'third_party' && !values.cover_plan) {
                 setError('cover_plan', { message: 'Please select a third party option.' });
+
                 return;
             }
+
             if (values.vehicle_use === 'private' && values.cover_type === 'comprehensive' && (!values.cover_addons || values.cover_addons.length === 0)) {
                 setError('cover_addons', { message: 'Please select at least one comprehensive option.' });
+
                 return;
             }
+
             if (values.vehicle_use === 'commercial' && !values.cover_plan) {
                 setError('cover_plan', { message: 'Please select a commercial cover option.' });
+
                 return;
             }
+
             if (!values.registration_number?.trim()) {
                 setError('registration_number', { message: 'Registration number is required for motor policies.' });
+
                 return;
             }
+
             if (values.vehicle_value === undefined || values.vehicle_value === null || Number.isNaN(values.vehicle_value)) {
                 setError('vehicle_value', { message: 'Vehicle value is required for motor policies.' });
+
                 return;
             }
+
             if (!values.vehicle_color?.trim()) {
                 setError('vehicle_color', { message: 'Vehicle color is required for motor policies.' });
+
                 return;
             }
+
             if (!values.chassis_number?.trim()) {
                 setError('chassis_number', { message: 'Chassis number is required for motor policies.' });
+
                 return;
             }
         }
@@ -404,6 +450,7 @@ export default function ProgressivePolicyForm({
         ) {
             if (members.length === 0) {
                 setSubmitError('Please add at least one employee before creating this policy.');
+
                 return;
             }
 
@@ -415,8 +462,10 @@ export default function ProgressivePolicyForm({
                 || !member.phone
                 || member.annual_salary === undefined,
             );
+
             if (hasInvalidEmployee) {
                 setSubmitError('Please complete all employee fields: Name, Relationship, ID Number, Payroll Number, Phone, and Annual Salary.');
+
                 return;
             }
         }
@@ -435,6 +484,7 @@ export default function ProgressivePolicyForm({
             exclusions: values.exclusions_text
                 ? values.exclusions_text.split('\n').map((item) => item.trim()).filter(Boolean)
                 : [],
+            limits_liability: limitsLiability,
             members,
         };
 
@@ -451,15 +501,18 @@ export default function ProgressivePolicyForm({
 
             if (!response.ok) {
                 let errorPayload: Record<string, any> = {};
+
                 try {
                     errorPayload = await response.json();
                 } catch {
                     setSubmitError('Could not process your request. Please refresh and try again.');
+
                     return;
                 }
 
                 const serverErrors = errorPayload.errors ?? {};
                 const firstError = Object.values(serverErrors)[0];
+
                 if (firstError) {
                     setSubmitError(Array.isArray(firstError) ? String(firstError[0]) : String(firstError));
                 }
@@ -468,6 +521,7 @@ export default function ProgressivePolicyForm({
                     const messageText = Array.isArray(messages) ? String(messages[0]) : String(messages);
                     setError(key as keyof PolicyValues, { message: messageText });
                 });
+
                 return;
             }
 
@@ -492,12 +546,15 @@ export default function ProgressivePolicyForm({
 
     const handleCreateRiskNote = async () => {
         setShowRiskNotePrompt(false);
+
         if (!createdPolicy) {
             router.visit('/policies');
+
             return;
         }
 
         setIsCreatingRiskNote(true);
+
         try {
             const response = await fetch(`/policies/${createdPolicy.id}/risk-note`, {
                 method: 'POST',
@@ -509,14 +566,18 @@ export default function ProgressivePolicyForm({
 
             if (!response.ok) {
                 router.visit('/policies');
+
                 return;
             }
 
             const data = await response.json();
+
             if (data.url) {
                 router.visit(data.url);
+
                 return;
             }
+
             router.visit('/policies');
         } finally {
             setIsCreatingRiskNote(false);
@@ -1083,6 +1144,16 @@ export default function ProgressivePolicyForm({
                                             </div>
                                         </div>
                                         <div className="grid gap-4 md:grid-cols-2">
+                                            <div>
+                                                <Label htmlFor="limits_liability_text">Limits of Liability (Description | Limit | Excess)</Label>
+                                                <Textarea
+                                                    id="limits_liability_text"
+                                                    rows={4}
+                                                    placeholder="Third Party Property Damage | Ksh 20,000,000 | Ksh 7,500"
+                                                    {...register('limits_liability_text')}
+                                                />
+                                                <InputError message={errors.limits_liability_text?.message} />
+                                            </div>
                                             <div>
                                                 <Label htmlFor="applicable_clauses_text">Applicable Clauses (one per line)</Label>
                                                 <Textarea id="applicable_clauses_text" rows={4} {...register('applicable_clauses_text')} />
