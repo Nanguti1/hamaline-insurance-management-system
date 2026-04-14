@@ -131,9 +131,8 @@ TXT;
         self::assertIsInt($financialsPosition);
         self::assertIsInt($limitsPosition);
         self::assertLessThan($financialsPosition, $limitsPosition);
-        self::assertStringContainsString(
-            '<tr><td class="section-col"><div class="section-card"><h2>Insurance Cover</h2><div class="info-row"><span class="info-label">Cover Type:</span> Comprehensive</div></div></td><td class="section-col"><div class="section-card"><h2>Financials</h2><div class="info-row"><span class="info-label">Premium Payable:</span> 25000.00 KES</div></div></td></tr>',
-            $html
-        );
+        self::assertStringContainsString('<div class="section-stack">', $html);
+        self::assertStringContainsString('<h2>Insurance Cover</h2>', $html);
+        self::assertStringContainsString('<h2>Financials</h2>', $html);
     }
 }

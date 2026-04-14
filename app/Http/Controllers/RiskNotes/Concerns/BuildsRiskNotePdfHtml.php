@@ -94,6 +94,12 @@ trait BuildsRiskNotePdfHtml
             width: 50%;
             vertical-align: top;
         }
+        .section-stack .section-card {
+            margin-bottom: 6px;
+        }
+        .section-stack .section-card:last-child {
+            margin-bottom: 0;
+        }
         .section-card {
             border: 1px solid #dbe5ef;
             border-radius: 6px;
@@ -298,22 +304,30 @@ HTML;
         }
 
         $rows = '';
-        $pendingSection = null;
+        $leftColumnCards = '';
+        $rightColumnCards = '';
+        $leftWeight = 0;
+        $rightWeight = 0;
 
         foreach ($standardSections as $section) {
             $sectionHtml = '<div class="'.e($section['class']).'"><h2>'.e($section['title']).'</h2>'.$section['body'].'</div>';
+            $sectionWeight = mb_strlen(strip_tags($section['body']));
 
-            if ($pendingSection === null) {
-                $pendingSection = $sectionHtml;
+            if ($leftWeight <= $rightWeight) {
+                $leftColumnCards .= $sectionHtml;
+                $leftWeight += $sectionWeight;
                 continue;
             }
 
-            $rows .= '<tr><td class="section-col">'.$pendingSection.'</td><td class="section-col">'.$sectionHtml.'</td></tr>';
-            $pendingSection = null;
+            $rightColumnCards .= $sectionHtml;
+            $rightWeight += $sectionWeight;
         }
 
-        if ($pendingSection !== null) {
-            $rows .= '<tr><td class="section-col">'.$pendingSection.'</td><td class="section-col"></td></tr>';
+        $rows .= '<tr><td class="section-col"><div class="section-stack">'.$leftColumnCards.'</div></td><td class="section-col"><div class="section-stack">'.$rightColumnCards.'</div></td></tr>';
+
+        foreach ($fullWidthSections as $section) {
+            $sectionHtml = '<div class="'.e($section['class']).'"><h2>'.e($section['title']).'</h2>'.$section['body'].'</div>';
+            $rows .= '<tr><td class="section-col" colspan="2">'.$sectionHtml.'</td></tr>';
         }
 
         foreach ($fullWidthSections as $section) {
