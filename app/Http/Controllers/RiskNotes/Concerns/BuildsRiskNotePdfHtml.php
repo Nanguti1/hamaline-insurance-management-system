@@ -330,6 +330,11 @@ HTML;
             $rows .= '<tr><td class="section-col" colspan="2">'.$sectionHtml.'</td></tr>';
         }
 
+        foreach ($fullWidthSections as $section) {
+            $sectionHtml = '<div class="'.e($section['class']).'"><h2>'.e($section['title']).'</h2>'.$section['body'].'</div>';
+            $rows .= '<tr><td class="section-col" colspan="2">'.$sectionHtml.'</td></tr>';
+        }
+
         return '<table class="section-grid" width="100%" cellpadding="0" cellspacing="0">'.$rows.'</table>';
     }
 
