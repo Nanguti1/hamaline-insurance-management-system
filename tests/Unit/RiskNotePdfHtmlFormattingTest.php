@@ -70,4 +70,24 @@ TXT;
         $this->assertStringContainsString('section-card-notes', $html);
         $this->assertStringContainsString('colspan="2"', $html);
     }
+
+    public function test_it_uses_compact_pdf_layout_styles_for_single_page_output(): void
+    {
+        $renderer = new class
+        {
+            use BuildsRiskNotePdfHtml;
+
+            public function renderDocument(string $content): string
+            {
+                return $this->buildRiskNotePdfHtml($content, 'Motor', 'MTRN-2026-0016', 'Insurer A');
+            }
+        };
+
+        $html = $renderer->renderDocument('Insured Information'."\n".'Insured Name: Jane Doe');
+
+        $this->assertStringContainsString('@page {', $html);
+        $this->assertStringContainsString('margin: 6mm;', $html);
+        $this->assertStringContainsString('font-size: 9px;', $html);
+        $this->assertStringContainsString('line-height: 1.2;', $html);
+    }
 }
