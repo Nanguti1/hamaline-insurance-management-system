@@ -71,7 +71,27 @@ TXT;
         $this->assertStringContainsString('colspan="2"', $html);
     }
 
-    public function test_it_uses_compact_pdf_layout_styles_for_single_page_output(): void
+    public function test_it_uses_compact_pdf_layout_styles_for_non_motor_output(): void
+    {
+        $renderer = new class
+        {
+            use BuildsRiskNotePdfHtml;
+
+            public function renderDocument(string $content): string
+            {
+                return $this->buildRiskNotePdfHtml($content, 'Medical', 'MTRN-2026-0016', 'Insurer A');
+            }
+        };
+
+        $html = $renderer->renderDocument('Insured Information'."\n".'Insured Name: Jane Doe');
+
+        $this->assertStringContainsString('@page {', $html);
+        $this->assertStringContainsString('margin: 6mm;', $html);
+        $this->assertStringContainsString('font-size: 9px;', $html);
+        $this->assertStringContainsString('line-height: 1.2;', $html);
+    }
+
+    public function test_it_renders_motor_pdf_with_legacy_layout_and_derived_premium_breakdown(): void
     {
         $renderer = new class
         {
@@ -83,12 +103,60 @@ TXT;
             }
         };
 
-        $html = $renderer->renderDocument('Insured Information'."\n".'Insured Name: Jane Doe');
+        $content = <<<TXT
+Header
+Risk Note Number: MTRN-2026-0016
+Insurer: CIC
+Insurer Policy Number: MTR/123
+Internal Policy Number: MPC/1
+Binder Name: Motor Binder
+Currency: KSH
+Date of Issue: 07/01/2026
 
-        $this->assertStringContainsString('@page {', $html);
-        $this->assertStringContainsString('margin: 6mm;', $html);
-        $this->assertStringContainsString('font-size: 9px;', $html);
-        $this->assertStringContainsString('line-height: 1.2;', $html);
+Insured Information
+Name: Jane Doe
+Customer ID: C-001
+Email: jane@example.com
+Mobile: 0711111111
+Tel (Others): 0722222222
+Postal Address: P.O Box 3178
+PIN Number: A001
+Period of Insurance: 08/01/2026 - 07/01/2027
+Time on Risk: 08/01/2026 - 07/03/2026
+
+Vehicle Details
+Registration Number: KDA123A
+Make & Model: Toyota Axio
+Year of Manufacture: 2017
+Passengers: 5
+Logbook: COPY
+
+Insurance Cover
+Cover Type: Comprehensive
+Sum Insured: 3200000
+
+Limits of Liability
+| Description | Limit | Excess |
+| Radio Cassette | Sum Insured | NIL |
+
+Financials
+Premium Payable: 20000.00 KSH
+TXT;
+
+        $html = $renderer->renderDocument($content);
+
+        $this->assertStringContainsString('POLICY DETAILS', $html);
+        $this->assertStringContainsString('Hamaline Insurance Agency - Registration KDA123A', $html);
+        $this->assertStringContainsString('Motor Private Insurance Quotation', $html);
+        $this->assertStringContainsString('header-divider', $html);
+        $this->assertStringContainsString('CLIENT DETAILS', $html);
+        $this->assertStringContainsString('Time on Risk From', $html);
+        $this->assertStringContainsString('PREMIUM COMPUTATION(KSHS)', $html);
+        $this->assertStringContainsString('Policyholders Fund (0.25%)', $html);
+        $this->assertStringContainsString('50.00', $html);
+        $this->assertStringContainsString('Training Levy (0.20%)', $html);
+        $this->assertStringContainsString('40.00', $html);
+        $this->assertStringContainsString('19,870.00', $html);
     }
 
     public function test_it_renders_standard_cards_before_full_width_sections_to_reduce_empty_space(): void

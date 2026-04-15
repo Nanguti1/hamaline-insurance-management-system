@@ -1047,29 +1047,9 @@ export default function ProgressivePolicyForm({
                                                 <InputError message={errors.logbook_status?.message} />
                                             </div>
                                             <div>
-                                                <Label htmlFor="policyholders_fund">Policyholders Fund</Label>
-                                                <Input id="policyholders_fund" type="number" step="0.01" {...register('policyholders_fund', { valueAsNumber: true })} />
-                                                <InputError message={errors.policyholders_fund?.message} />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="training_levy">Training Levy</Label>
-                                                <Input id="training_levy" type="number" step="0.01" {...register('training_levy', { valueAsNumber: true })} />
-                                                <InputError message={errors.training_levy?.message} />
-                                            </div>
-                                            <div>
                                                 <Label htmlFor="time_on_risk_premium">Time on Risk Premium</Label>
                                                 <Input id="time_on_risk_premium" type="number" step="0.01" {...register('time_on_risk_premium', { valueAsNumber: true })} />
                                                 <InputError message={errors.time_on_risk_premium?.message} />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="time_on_risk_total_premium">Time on Risk Total Premium</Label>
-                                                <Input id="time_on_risk_total_premium" type="number" step="0.01" {...register('time_on_risk_total_premium', { valueAsNumber: true })} />
-                                                <InputError message={errors.time_on_risk_total_premium?.message} />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="first_premium_total">First Premium Total</Label>
-                                                <Input id="first_premium_total" type="number" step="0.01" {...register('first_premium_total', { valueAsNumber: true })} />
-                                                <InputError message={errors.first_premium_total?.message} />
                                             </div>
                                             <div>
                                                 <Label htmlFor="payment_method">Payment Method</Label>
