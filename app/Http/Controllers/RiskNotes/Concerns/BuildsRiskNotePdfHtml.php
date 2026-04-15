@@ -382,6 +382,42 @@ HTML;
         .signatures td {
             padding-top: 10px;
         }
+        .approval-strip {
+            margin-top: 8px;
+            background: #f4be00;
+            border: 1px solid #d29e00;
+            padding: 8px 10px;
+        }
+        .approval-note {
+            margin: 0 0 6px 0;
+            color: #9a1f2f;
+            font-weight: 700;
+        }
+        .approval-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+        .approval-table td {
+            padding: 2px 4px;
+            vertical-align: top;
+        }
+        .signature-box {
+            display: inline-block;
+            min-width: 100px;
+            height: 28px;
+            border: 1px solid #b9b9b9;
+            background: #ffffff;
+            border-radius: 3px;
+            text-align: center;
+            line-height: 28px;
+            font-style: italic;
+            color: #2e3b8f;
+        }
+        .approval-label {
+            font-weight: 700;
+            color: #9a1f2f;
+        }
     </style>
 </head>
 <body>
@@ -472,6 +508,28 @@ HTML;
         <tr><td class="label">ISSUING INSURANCE OFFICER:</td><td>{$issuingOfficer}</td><td class="label">DATE:</td><td>{$this->valueOrDash($header['Date of Issue'] ?? null)}</td></tr>
         <tr><td class="label">VERIFIED OPERATIONS MANAGER:</td><td>{$verifyingOfficer}</td><td class="label">DATE:</td><td>{$this->valueOrDash($header['Date of Issue'] ?? null)}</td></tr>
     </table>
+
+    <div class="approval-strip">
+        <p class="approval-note">Subject to our standard policy terms and conditions</p>
+        <table class="approval-table">
+            <tr>
+                <td style="width:42%;">
+                    <span class="approval-label">SIGNATURE :</span>
+                    <span class="signature-box">{$this->valueOrDash($issuingOfficer !== '-' ? $issuingOfficer : 'Signed')}</span>
+                </td>
+                <td style="width:29%;"><span class="approval-label">PREPARED BY:</span> {$issuingOfficer}</td>
+                <td style="width:29%;"><span class="approval-label">REVIEWED BY:</span> {$verifyingOfficer}</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>{$this->valueOrDash($header['Date of Issue'] ?? null)}</td>
+                <td>{$this->valueOrDash($header['Date of Issue'] ?? null)}</td>
+            </tr>
+            <tr>
+                <td colspan="3" class="approval-label">{$this->valueOrDash($insurerName)}</td>
+            </tr>
+        </table>
+    </div>
 </body>
 </html>
 HTML;
