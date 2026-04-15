@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -190,6 +190,7 @@ export default function QuotationForm({
     underwriters,
     insurers,
 }: Props) {
+    const [isSaving, setIsSaving] = useState(false);
     const schema = buildQuotationSchema(method);
 
     const {
@@ -235,6 +236,7 @@ export default function QuotationForm({
     const clientId = watch('client_id');
     const underwriterId = watch('underwriter_id');
     const insurerId = watch('insurer_id');
+    const premiumAmount = watch('premium_amount');
     const status = watch('status');
     const paymentPlan = watch('payment_plan');
     const policyType = watch('policy_type');
@@ -242,16 +244,47 @@ export default function QuotationForm({
 
     const underwriterInsurers = underwriters.find((u) => u.id === underwriterId)?.insurers;
     const allowedInsurers = underwriterInsurers && underwriterInsurers.length > 0 ? underwriterInsurers : insurers ?? [];
+    const normalizedAllowedInsurers = useMemo(
+        () =>
+            allowedInsurers
+                .map((insurer) => {
+                    const raw = insurer as { id: number; label?: string; name?: string };
+                    return {
+                        id: raw.id,
+                        label: raw.label ?? raw.name ?? '',
+                    };
+                })
+                .filter((insurer) => insurer.label !== ''),
+        [allowedInsurers],
+    );
 
     useEffect(() => {
-        if (! allowedInsurers || allowedInsurers.length === 0) {
+        if (! normalizedAllowedInsurers || normalizedAllowedInsurers.length === 0) {
             return;
         }
-        if (! insurerId || ! allowedInsurers.some((i) => i.id === insurerId)) {
+        if (! insurerId || ! normalizedAllowedInsurers.some((i) => i.id === insurerId)) {
             // Auto-pick the first available insurer for the chosen underwriter.
-            setValue('insurer_id', allowedInsurers[0]!.id, { shouldValidate: true });
+            setValue('insurer_id', normalizedAllowedInsurers[0]!.id, { shouldValidate: true });
         }
-    }, [allowedInsurers, insurerId, setValue]);
+    }, [normalizedAllowedInsurers, insurerId, setValue]);
+
+    useEffect(() => {
+        const totalPremium = Number(premiumAmount ?? 0);
+        if (! Number.isFinite(totalPremium) || totalPremium < 0) {
+            return;
+        }
+
+        const trainingLevy = Math.round(totalPremium * 0.002 * 100) / 100;
+        const phcf = Math.round(totalPremium * 0.0025 * 100) / 100;
+        const stampDuty = totalPremium > 0 ? 40 : 0;
+        const basicPremium = Math.max(0, Math.round((totalPremium - trainingLevy - phcf - stampDuty) * 100) / 100);
+
+        setValue('quoted_total_premium', totalPremium, { shouldValidate: true });
+        setValue('quoted_training_levy', trainingLevy, { shouldValidate: true });
+        setValue('quoted_phcf', phcf, { shouldValidate: true });
+        setValue('quoted_stamp_duty', stampDuty, { shouldValidate: true });
+        setValue('quoted_base_premium', basicPremium, { shouldValidate: true });
+    }, [premiumAmount, setValue]);
 
     useEffect(() => {
         if (! clientId || ! underwriterId || ! insurerId || ! policyType) {
@@ -307,12 +340,18 @@ export default function QuotationForm({
     }, [clientId, underwriterId, insurerId, policyType, notes, paymentPlan, setValue]);
 
     const submit = (values: QuotationFormValues) => {
+        const totalPremium = Number(values.premium_amount ?? 0);
+        const trainingLevy = Math.round(totalPremium * 0.002 * 100) / 100;
+        const phcf = Math.round(totalPremium * 0.0025 * 100) / 100;
+        const stampDuty = totalPremium > 0 ? 40 : 0;
+        const basePremium = Math.max(0, Math.round((totalPremium - trainingLevy - phcf - stampDuty) * 100) / 100);
+
         const payload: Record<string, unknown> = {
             client_id: values.client_id,
             underwriter_id: values.underwriter_id,
             insurer_id: values.insurer_id,
             status: values.status,
-            premium_amount: values.premium_amount,
+            premium_amount: totalPremium,
             currency: values.currency,
             valid_until: values.valid_until,
             notes: values.notes ? values.notes : null,
@@ -324,11 +363,11 @@ export default function QuotationForm({
             year_of_manufacture: values.year_of_manufacture ?? null,
             registration_number: values.registration_number || null,
             sum_insured: values.sum_insured ?? null,
-            quoted_base_premium: values.quoted_base_premium ?? null,
-            quoted_training_levy: values.quoted_training_levy ?? null,
-            quoted_phcf: values.quoted_phcf ?? null,
-            quoted_stamp_duty: values.quoted_stamp_duty ?? null,
-            quoted_total_premium: values.quoted_total_premium ?? null,
+            quoted_base_premium: basePremium,
+            quoted_training_levy: trainingLevy,
+            quoted_phcf: phcf,
+            quoted_stamp_duty: stampDuty,
+            quoted_total_premium: totalPremium,
             interests_insured: values.interests_insured || null,
             excess_remarks: values.excess_remarks || null,
             prepared_by: values.prepared_by || null,
@@ -351,16 +390,20 @@ export default function QuotationForm({
         };
 
         if (method === 'post') {
+            setIsSaving(true);
             router.post(submitUrl, payload, {
                 preserveScroll: true,
                 onError,
+                onFinish: () => setIsSaving(false),
             });
             return;
         }
 
+        setIsSaving(true);
         router.put(submitUrl, payload, {
             preserveScroll: true,
             onError,
+            onFinish: () => setIsSaving(false),
         });
     };
 
@@ -433,7 +476,7 @@ export default function QuotationForm({
                                 <SelectValue placeholder="Select company" />
                             </SelectTrigger>
                             <SelectContent>
-                                {allowedInsurers.map((i) => (
+                                {normalizedAllowedInsurers.map((i) => (
                                     <SelectItem key={i.id} value={String(i.id)}>
                                         {i.label}
                                     </SelectItem>
@@ -600,12 +643,12 @@ export default function QuotationForm({
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="quoted_base_premium">Base premium</Label>
-                            <Input id="quoted_base_premium" type="number" step="0.01" {...register('quoted_base_premium', { valueAsNumber: true })} />
+                            <Input id="quoted_base_premium" type="number" step="0.01" readOnly {...register('quoted_base_premium', { valueAsNumber: true })} />
                             <InputError message={errors.quoted_base_premium?.message} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="quoted_total_premium">Total premium</Label>
-                            <Input id="quoted_total_premium" type="number" step="0.01" {...register('quoted_total_premium', { valueAsNumber: true })} />
+                            <Input id="quoted_total_premium" type="number" step="0.01" readOnly {...register('quoted_total_premium', { valueAsNumber: true })} />
                             <InputError message={errors.quoted_total_premium?.message} />
                         </div>
                     </div>
@@ -613,17 +656,17 @@ export default function QuotationForm({
                     <div className="grid gap-2 md:grid-cols-3">
                         <div className="grid gap-2">
                             <Label htmlFor="quoted_training_levy">Training levy</Label>
-                            <Input id="quoted_training_levy" type="number" step="0.01" {...register('quoted_training_levy', { valueAsNumber: true })} />
+                            <Input id="quoted_training_levy" type="number" step="0.01" readOnly {...register('quoted_training_levy', { valueAsNumber: true })} />
                             <InputError message={errors.quoted_training_levy?.message} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="quoted_phcf">PHCF</Label>
-                            <Input id="quoted_phcf" type="number" step="0.01" {...register('quoted_phcf', { valueAsNumber: true })} />
+                            <Input id="quoted_phcf" type="number" step="0.01" readOnly {...register('quoted_phcf', { valueAsNumber: true })} />
                             <InputError message={errors.quoted_phcf?.message} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="quoted_stamp_duty">Stamp duty</Label>
-                            <Input id="quoted_stamp_duty" type="number" step="0.01" {...register('quoted_stamp_duty', { valueAsNumber: true })} />
+                            <Input id="quoted_stamp_duty" type="number" step="0.01" readOnly {...register('quoted_stamp_duty', { valueAsNumber: true })} />
                             <InputError message={errors.quoted_stamp_duty?.message} />
                         </div>
                     </div>
@@ -664,12 +707,12 @@ export default function QuotationForm({
                                 type="button"
                                 variant="secondary"
                                 onClick={() => (window.location.href = onCancelHref)}
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || isSaving}
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? 'Saving...' : submitLabel}
+                            <Button type="submit" disabled={isSubmitting || isSaving} className={isSaving ? 'opacity-70' : ''}>
+                                {isSubmitting || isSaving ? 'Saving...' : submitLabel}
                             </Button>
                         </div>
                     </CardFooter>

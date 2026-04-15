@@ -156,7 +156,7 @@ TXT;
 
         $this->assertStringContainsString('POLICY DETAILS', $html);
         $this->assertStringContainsString('Hamaline Insurance Agency - Registration KDA123A', $html);
-        $this->assertStringContainsString('Motor Private Insurance Quotation', $html);
+        $this->assertStringContainsString('Motor Private Insurance Risk Note', $html);
         $this->assertStringContainsString('header-divider', $html);
         $this->assertStringContainsString('CLIENT DETAILS', $html);
         $this->assertStringContainsString('Time on Risk From', $html);

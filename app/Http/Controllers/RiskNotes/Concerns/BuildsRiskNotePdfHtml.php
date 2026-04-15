@@ -260,6 +260,9 @@ HTML;
         $riskTo = $riskPeriodParts[1] ?? '-';
 
         $coverType = $cover['Cover Type'] ?? '-';
+        $riskNoteTitle = stripos($coverType, 'Third Party') !== false
+            ? 'Motor Third Party Risk Note'
+            : 'Motor Private Insurance Risk Note';
         $coverDescription = 'Comprehensive - accidental loss or damage to insured motor vehicle and third party liabilities.';
         if (stripos($coverType, 'Third Party') !== false) {
             $coverDescription = 'Third Party cover - liabilities for death, bodily injury or damage to third party property.';
@@ -405,7 +408,7 @@ HTML;
         <p class="header-insurer">{$this->valueOrDash($insurerName)}</p>
         <p class="header-address">Tel: {$this->valueOrDash($insured['Tel (Others)'] ?? null)} &nbsp; Email: {$this->valueOrDash($insured['Email'] ?? null)}</p>
         <p class="header-agency">Hamaline Insurance Agency - Registration {$vehicleRegistration}</p>
-        <p class="header-product">Motor Private Insurance Quotation</p>
+        <p class="header-product">{$riskNoteTitle}</p>
     </div>
     <div class="header-divider"></div>
 

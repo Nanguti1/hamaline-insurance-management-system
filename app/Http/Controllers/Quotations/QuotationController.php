@@ -248,6 +248,11 @@ class QuotationController extends Controller
         $interestsInsured = $quotation->interests_insured ?? 'No blame no excess';
         $excessRemarks = $quotation->excess_remarks ?? 'Accidental damage 2.5% of value min 20,000';
         $insurer = $quotation->insurer?->name ?? 'INSURER';
+        $quotationTitle = match (strtolower((string) $quotation->policy_type)) {
+            'medical' => 'Medical Insurance Quotation',
+            'wiba' => 'WIBA Insurance Quotation',
+            default => 'Motor Private Insurance Quotation',
+        };
         $logoPath = public_path('hamaline-logo.png');
         $logoDataUri = null;
         if (is_file($logoPath)) {
@@ -300,7 +305,7 @@ th{background:#f1f1f1; text-align:left;}
         <div class="header-title">{$insurerHtml}</div>
         <div class="header-meta">Hamaline Insurance Agency</div>
         <div class="header-sub">Insured: {$clientHtml}</div>
-        <div class="header-sub">Motor Private Insurance Quotation</div>
+        <div class="header-sub">{$quotationTitle}</div>
     </div>
     <table>
         <thead>

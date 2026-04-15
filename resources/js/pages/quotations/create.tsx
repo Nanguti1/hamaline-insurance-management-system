@@ -7,7 +7,7 @@ import type { BreadcrumbItem } from '@/types';
 
 type ClientOption = { id: number; name?: string | null; company_name?: string | null };
 type SelectOption = { id: number; label: string };
-type UnderwriterOption = { id: number; name?: string | null; insurers?: Array<SelectOption> };
+type UnderwriterOption = { id: number; name?: string | null; insurers?: Array<SelectOption & { name?: string | null }> };
 
 type Props = {
     clients: ClientOption[];
@@ -42,7 +42,10 @@ export default function QuotationsCreate({ clients, underwriters, insurers }: Pr
                     underwriters={underwriters.map((u) => ({
                         id: u.id,
                         label: u.name ?? 'Underwriter',
-                        insurers: u.insurers,
+                        insurers: (u.insurers ?? []).map((insurer) => ({
+                            id: insurer.id,
+                            label: insurer.label ?? insurer.name ?? 'Company',
+                        })),
                     }))}
                     insurers={insurers}
                 />
