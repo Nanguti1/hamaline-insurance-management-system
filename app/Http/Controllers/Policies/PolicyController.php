@@ -131,6 +131,11 @@ class PolicyController extends Controller
                 $installmentAmount = $paymentPlanType === 'installments' && $installmentCount
                     ? round(((float) $validated['premium_amount']) / $installmentCount, 2)
                     : null;
+                $totalPremium = round((float) ($validated['premium_amount'] ?? 0), 2);
+                $policyholdersFund = round($totalPremium * 0.0025, 2);
+                $trainingLevy = round($totalPremium * 0.002, 2);
+                $firstPremiumTotal = $totalPremium;
+                $timeOnRiskTotalPremium = round($totalPremium - ($policyholdersFund + $trainingLevy + 40), 2);
 
                 MotorPolicyDetail::create([
                     'policy_id' => $policy->id,
@@ -175,10 +180,10 @@ class PolicyController extends Controller
                     'applicable_clauses' => $validated['applicable_clauses'] ?? null,
                     'exclusions' => $validated['exclusions'] ?? null,
                     'time_on_risk_premium' => $validated['time_on_risk_premium'] ?? null,
-                    'policyholders_fund' => $validated['policyholders_fund'] ?? null,
-                    'training_levy' => $validated['training_levy'] ?? null,
-                    'first_premium_total' => $validated['first_premium_total'] ?? null,
-                    'time_on_risk_total_premium' => $validated['time_on_risk_total_premium'] ?? null,
+                    'policyholders_fund' => $policyholdersFund,
+                    'training_levy' => $trainingLevy,
+                    'first_premium_total' => $firstPremiumTotal,
+                    'time_on_risk_total_premium' => $timeOnRiskTotalPremium,
                     'payment_method' => $validated['payment_method'] ?? null,
                     'payment_plan_type' => $paymentPlanType,
                     'installment_count' => $installmentCount,
