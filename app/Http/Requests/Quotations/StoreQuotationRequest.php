@@ -39,6 +39,21 @@ class StoreQuotationRequest extends FormRequest
                 'max:10',
                 'required_if:payment_plan,installments',
             ],
+            'vehicle_class' => ['nullable', 'string', 'max:100'],
+            'vehicle_make_model' => ['nullable', 'string', 'max:150'],
+            'year_of_manufacture' => ['nullable', 'integer', 'min:1900', 'max:2100'],
+            'registration_number' => ['nullable', 'string', 'max:50'],
+            'sum_insured' => ['nullable', 'numeric', 'min:0'],
+            'quoted_base_premium' => ['nullable', 'numeric', 'min:0'],
+            'quoted_training_levy' => ['nullable', 'numeric', 'min:0'],
+            'quoted_phcf' => ['nullable', 'numeric', 'min:0'],
+            'quoted_stamp_duty' => ['nullable', 'numeric', 'min:0'],
+            'quoted_total_premium' => ['nullable', 'numeric', 'min:0'],
+            'interests_insured' => ['nullable', 'string'],
+            'excess_remarks' => ['nullable', 'string'],
+            'prepared_by' => ['nullable', 'string', 'max:150'],
+            'reviewed_by' => ['nullable', 'string', 'max:150'],
+            'quoted_on' => ['nullable', 'date'],
         ];
     }
 }

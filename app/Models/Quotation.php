@@ -27,12 +27,34 @@ class Quotation extends Model
         'policy_type',
         'payment_plan',
         'installment_count',
+        'vehicle_class',
+        'vehicle_make_model',
+        'year_of_manufacture',
+        'registration_number',
+        'sum_insured',
+        'quoted_base_premium',
+        'quoted_training_levy',
+        'quoted_phcf',
+        'quoted_stamp_duty',
+        'quoted_total_premium',
+        'interests_insured',
+        'excess_remarks',
+        'prepared_by',
+        'reviewed_by',
+        'quoted_on',
     ];
 
     protected $casts = [
         'valid_until' => 'date',
         'premium_amount' => 'decimal:2',
         'installment_count' => 'integer',
+        'sum_insured' => 'decimal:2',
+        'quoted_base_premium' => 'decimal:2',
+        'quoted_training_levy' => 'decimal:2',
+        'quoted_phcf' => 'decimal:2',
+        'quoted_stamp_duty' => 'decimal:2',
+        'quoted_total_premium' => 'decimal:2',
+        'quoted_on' => 'date',
     ];
 
     public function client(): BelongsTo

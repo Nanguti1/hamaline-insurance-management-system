@@ -20,7 +20,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'New Quotation', href: '/quotations/create' },
 ];
 
-export default function QuotationsCreate({ clients, underwriters }: Props) {
+export default function QuotationsCreate({ clients, underwriters, insurers }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="New Quotation" />
@@ -50,4 +50,3 @@ export default function QuotationsCreate({ clients, underwriters }: Props) {
         </AppLayout>
     );
 }
-

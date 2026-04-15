@@ -210,10 +210,21 @@ HTML;
         $notes = $sections['Notes']['bullets'] ?? [];
 
         $premiumPayable = $this->normalizeCurrencyNumber($financials['Premium Payable'] ?? null);
-        $phcf = round($premiumPayable * 0.0025, 2);
-        $trainingLevy = round($premiumPayable * 0.002, 2);
+        $phcf = $this->normalizeCurrencyNumber($financials['Policyholders Fund'] ?? null);
+        if ($phcf <= 0) {
+            $phcf = round($premiumPayable * 0.0025, 2);
+        }
+        $trainingLevy = $this->normalizeCurrencyNumber($financials['Training Levy'] ?? null);
+        if ($trainingLevy <= 0) {
+            $trainingLevy = round($premiumPayable * 0.002, 2);
+        }
         $stampDuty = 40.00;
-        $basicPremium = round($premiumPayable - ($phcf + $trainingLevy + $stampDuty), 2);
+        $basicPremium = $this->normalizeCurrencyNumber($financials['Time on Risk Total Premium'] ?? null);
+        if ($basicPremium <= 0) {
+            $basicPremium = round($premiumPayable - ($phcf + $trainingLevy + $stampDuty), 2);
+        }
+        $timeOnRiskPremium = $this->normalizeCurrencyNumber($financials['Time on Risk Premium'] ?? null);
+        $firstPremiumTotal = $this->normalizeCurrencyNumber($financials['First Premium Total'] ?? null);
 
         $policyDetails = [
             'Insurer' => $header['Insurer'] ?? '-',
@@ -447,6 +458,12 @@ HTML;
         </tbody>
     </table>
 
+    <table class="details-grid">
+        <tr><td class="label">Chassis Number</td><td>{$this->valueOrDash($vehicle['Chassis Number'] ?? null)}</td><td class="label">Engine Number</td><td>{$this->valueOrDash($vehicle['Engine Number'] ?? null)}</td></tr>
+        <tr><td class="label">Body Type</td><td>{$this->valueOrDash($vehicle['Body Type'] ?? null)}</td><td class="label">Use of Vehicle</td><td>{$this->valueOrDash($vehicle['Use of Vehicle'] ?? null)}</td></tr>
+        <tr><td class="label">Cover Type</td><td>{$this->valueOrDash($cover['Cover Type'] ?? null)}</td><td class="label">Sum Insured</td><td>{$this->valueOrDash($cover['Sum Insured'] ?? null)}</td></tr>
+    </table>
+
     <table class="table">
         <thead>
             <tr>
@@ -468,6 +485,7 @@ HTML;
     <div class="heading">PREMIUM COMPUTATION(KSHS)</div>
     <table class="details-grid">
         <tr><td class="label">Premium (Total Premium)</td><td>{$this->formatAmount($premiumPayable)}</td><td class="label">Basic Premium</td><td>{$this->formatAmount($basicPremium)}</td></tr>
+        <tr><td class="label">Time on Risk Premium</td><td>{$this->formatAmount($timeOnRiskPremium)}</td><td class="label">First Premium Total</td><td>{$this->formatAmount($firstPremiumTotal)}</td></tr>
         <tr><td class="label">Policyholders Fund (0.25%)</td><td>{$this->formatAmount($phcf)}</td><td class="label">Training Levy (0.20%)</td><td>{$this->formatAmount($trainingLevy)}</td></tr>
         <tr><td class="label">Stamp Duty</td><td>{$this->formatAmount($stampDuty)}</td><td class="label">Payment Method</td><td>{$paymentMethod}</td></tr>
     </table>

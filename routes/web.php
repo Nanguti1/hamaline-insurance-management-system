@@ -111,6 +111,7 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::get('quotations/suggestions', [QuotationController::class, 'suggestions'])->middleware('permission:quotations.manage')->name('quotations.suggestions');
     Route::post('quotations', [QuotationController::class, 'store'])->middleware('permission:quotations.manage')->name('quotations.store');
     Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->middleware('permission:quotations.view')->name('quotations.show');
+    Route::get('quotations/{quotation}/download-pdf', [QuotationController::class, 'downloadPDF'])->middleware('permission:quotations.view')->name('quotations.download-pdf');
     Route::get('quotations/{quotation}/edit', [QuotationController::class, 'edit'])->middleware('permission:quotations.manage')->name('quotations.edit');
     Route::put('quotations/{quotation}', [QuotationController::class, 'update'])->middleware('permission:quotations.manage')->name('quotations.update');
     Route::patch('quotations/{quotation}', [QuotationController::class, 'update'])->middleware('permission:quotations.manage')->name('quotations.update.patch');

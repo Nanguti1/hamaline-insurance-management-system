@@ -128,8 +128,12 @@ Vehicle Details
 Registration Number: KDA123A
 Make & Model: Toyota Axio
 Year of Manufacture: 2017
+Chassis Number: KWW-222-002
+Engine Number: ENG-30234V
+Body Type: White
 Passengers: 5
 Logbook: COPY
+Use of Vehicle: commercial
 
 Insurance Cover
 Cover Type: Comprehensive
@@ -141,6 +145,11 @@ Limits of Liability
 
 Financials
 Premium Payable: 20000.00 KSH
+Time on Risk Premium: 450000.00
+Policyholders Fund: 450000.00
+Training Levy: 44999.98
+First Premium Total: 30000.00
+Time on Risk Total Premium: 650000.00
 TXT;
 
         $html = $renderer->renderDocument($content);
@@ -151,9 +160,14 @@ TXT;
         $this->assertStringContainsString('header-divider', $html);
         $this->assertStringContainsString('CLIENT DETAILS', $html);
         $this->assertStringContainsString('Time on Risk From', $html);
+        $this->assertStringContainsString('Chassis Number', $html);
+        $this->assertStringContainsString('Engine Number', $html);
+        $this->assertStringContainsString('Use of Vehicle', $html);
         $this->assertStringContainsString('PREMIUM COMPUTATION(KSHS)', $html);
         $this->assertStringContainsString('.signatures {', $html);
         $this->assertStringContainsString('background: #f4be00;', $html);
+        $this->assertStringContainsString('Time on Risk Premium', $html);
+        $this->assertStringContainsString('First Premium Total', $html);
         $this->assertStringContainsString('Policyholders Fund (0.25%)', $html);
         $this->assertStringContainsString('50.00', $html);
         $this->assertStringContainsString('Training Levy (0.20%)', $html);
