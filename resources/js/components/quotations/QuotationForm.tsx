@@ -42,6 +42,84 @@ function buildQuotationSchema(method: 'post' | 'put') {
                 },
                 z.number().int().min(2).max(10).optional(),
             ),
+            vehicle_class: z.string().trim().max(100).optional().or(z.literal('')),
+            vehicle_make_model: z.string().trim().max(150).optional().or(z.literal('')),
+            year_of_manufacture: z.preprocess(
+                (val) => {
+                    if (val === '' || val === undefined || val === null) {
+                        return undefined;
+                    }
+                    const n = Number(val);
+                    return Number.isNaN(n) ? undefined : n;
+                },
+                z.number().int().min(1900).max(2100).optional(),
+            ),
+            registration_number: z.string().trim().max(50).optional().or(z.literal('')),
+            sum_insured: z.preprocess(
+                (val) => {
+                    if (val === '' || val === undefined || val === null) {
+                        return undefined;
+                    }
+                    const n = Number(val);
+                    return Number.isNaN(n) ? undefined : n;
+                },
+                z.number().nonnegative().optional(),
+            ),
+            quoted_base_premium: z.preprocess(
+                (val) => {
+                    if (val === '' || val === undefined || val === null) {
+                        return undefined;
+                    }
+                    const n = Number(val);
+                    return Number.isNaN(n) ? undefined : n;
+                },
+                z.number().nonnegative().optional(),
+            ),
+            quoted_training_levy: z.preprocess(
+                (val) => {
+                    if (val === '' || val === undefined || val === null) {
+                        return undefined;
+                    }
+                    const n = Number(val);
+                    return Number.isNaN(n) ? undefined : n;
+                },
+                z.number().nonnegative().optional(),
+            ),
+            quoted_phcf: z.preprocess(
+                (val) => {
+                    if (val === '' || val === undefined || val === null) {
+                        return undefined;
+                    }
+                    const n = Number(val);
+                    return Number.isNaN(n) ? undefined : n;
+                },
+                z.number().nonnegative().optional(),
+            ),
+            quoted_stamp_duty: z.preprocess(
+                (val) => {
+                    if (val === '' || val === undefined || val === null) {
+                        return undefined;
+                    }
+                    const n = Number(val);
+                    return Number.isNaN(n) ? undefined : n;
+                },
+                z.number().nonnegative().optional(),
+            ),
+            quoted_total_premium: z.preprocess(
+                (val) => {
+                    if (val === '' || val === undefined || val === null) {
+                        return undefined;
+                    }
+                    const n = Number(val);
+                    return Number.isNaN(n) ? undefined : n;
+                },
+                z.number().nonnegative().optional(),
+            ),
+            interests_insured: z.string().trim().max(6000).optional().or(z.literal('')),
+            excess_remarks: z.string().trim().max(6000).optional().or(z.literal('')),
+            prepared_by: z.string().trim().max(150).optional().or(z.literal('')),
+            reviewed_by: z.string().trim().max(150).optional().or(z.literal('')),
+            quoted_on: z.string().trim().optional().or(z.literal('')),
         })
         .superRefine((data, ctx) => {
             if (data.payment_plan === 'installments') {
@@ -80,6 +158,21 @@ type Props = {
         policy_type?: string | null;
         payment_plan?: 'one_off' | 'installments' | null;
         installment_count?: number | null;
+        vehicle_class?: string | null;
+        vehicle_make_model?: string | null;
+        year_of_manufacture?: number | null;
+        registration_number?: string | null;
+        sum_insured?: number | null;
+        quoted_base_premium?: number | null;
+        quoted_training_levy?: number | null;
+        quoted_phcf?: number | null;
+        quoted_stamp_duty?: number | null;
+        quoted_total_premium?: number | null;
+        interests_insured?: string | null;
+        excess_remarks?: string | null;
+        prepared_by?: string | null;
+        reviewed_by?: string | null;
+        quoted_on?: string | null;
     };
     clients: SelectOption[];
     underwriters: Array<SelectOption & { insurers?: Array<SelectOption> }>;
@@ -121,6 +214,21 @@ export default function QuotationForm({
             policy_type: (initialValues?.policy_type as QuotationFormValues['policy_type']) ?? 'motor',
             payment_plan: initialValues?.payment_plan ?? 'one_off',
             installment_count: initialValues?.payment_plan === 'installments' ? (initialValues?.installment_count ?? 4) : undefined,
+            vehicle_class: initialValues?.vehicle_class ?? 'MOTOR PRIVATE',
+            vehicle_make_model: initialValues?.vehicle_make_model ?? '',
+            year_of_manufacture: initialValues?.year_of_manufacture ?? undefined,
+            registration_number: initialValues?.registration_number ?? '',
+            sum_insured: initialValues?.sum_insured ?? undefined,
+            quoted_base_premium: initialValues?.quoted_base_premium ?? undefined,
+            quoted_training_levy: initialValues?.quoted_training_levy ?? undefined,
+            quoted_phcf: initialValues?.quoted_phcf ?? undefined,
+            quoted_stamp_duty: initialValues?.quoted_stamp_duty ?? undefined,
+            quoted_total_premium: initialValues?.quoted_total_premium ?? undefined,
+            interests_insured: initialValues?.interests_insured ?? '',
+            excess_remarks: initialValues?.excess_remarks ?? '',
+            prepared_by: initialValues?.prepared_by ?? '',
+            reviewed_by: initialValues?.reviewed_by ?? '',
+            quoted_on: initialValues?.quoted_on ?? '',
         },
     });
 
@@ -211,6 +319,21 @@ export default function QuotationForm({
             policy_type: values.policy_type,
             payment_plan: values.payment_plan,
             installment_count: values.payment_plan === 'installments' ? values.installment_count : null,
+            vehicle_class: values.vehicle_class || null,
+            vehicle_make_model: values.vehicle_make_model || null,
+            year_of_manufacture: values.year_of_manufacture ?? null,
+            registration_number: values.registration_number || null,
+            sum_insured: values.sum_insured ?? null,
+            quoted_base_premium: values.quoted_base_premium ?? null,
+            quoted_training_levy: values.quoted_training_levy ?? null,
+            quoted_phcf: values.quoted_phcf ?? null,
+            quoted_stamp_duty: values.quoted_stamp_duty ?? null,
+            quoted_total_premium: values.quoted_total_premium ?? null,
+            interests_insured: values.interests_insured || null,
+            excess_remarks: values.excess_remarks || null,
+            prepared_by: values.prepared_by || null,
+            reviewed_by: values.reviewed_by || null,
+            quoted_on: values.quoted_on || null,
         };
 
         if (method === 'put') {
@@ -441,6 +564,98 @@ export default function QuotationForm({
                         <Label htmlFor="notes">Notes (optional)</Label>
                         <Textarea id="notes" {...register('notes')} />
                         <InputError message={errors.notes?.message} />
+                    </div>
+
+                    <div className="grid gap-2 md:grid-cols-2">
+                        <div className="grid gap-2">
+                            <Label htmlFor="vehicle_class">Class</Label>
+                            <Input id="vehicle_class" {...register('vehicle_class')} placeholder="MOTOR PRIVATE" />
+                            <InputError message={errors.vehicle_class?.message} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="registration_number">Registration</Label>
+                            <Input id="registration_number" {...register('registration_number')} placeholder="KDS 912T" />
+                            <InputError message={errors.registration_number?.message} />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-2 md:grid-cols-2">
+                        <div className="grid gap-2">
+                            <Label htmlFor="vehicle_make_model">Make / model</Label>
+                            <Input id="vehicle_make_model" {...register('vehicle_make_model')} placeholder="Toyota Probox" />
+                            <InputError message={errors.vehicle_make_model?.message} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="year_of_manufacture">Year of manufacture</Label>
+                            <Input id="year_of_manufacture" type="number" min={1900} max={2100} {...register('year_of_manufacture', { valueAsNumber: true })} />
+                            <InputError message={errors.year_of_manufacture?.message} />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-2 md:grid-cols-3">
+                        <div className="grid gap-2">
+                            <Label htmlFor="sum_insured">Sum insured</Label>
+                            <Input id="sum_insured" type="number" step="0.01" {...register('sum_insured', { valueAsNumber: true })} />
+                            <InputError message={errors.sum_insured?.message} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="quoted_base_premium">Base premium</Label>
+                            <Input id="quoted_base_premium" type="number" step="0.01" {...register('quoted_base_premium', { valueAsNumber: true })} />
+                            <InputError message={errors.quoted_base_premium?.message} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="quoted_total_premium">Total premium</Label>
+                            <Input id="quoted_total_premium" type="number" step="0.01" {...register('quoted_total_premium', { valueAsNumber: true })} />
+                            <InputError message={errors.quoted_total_premium?.message} />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-2 md:grid-cols-3">
+                        <div className="grid gap-2">
+                            <Label htmlFor="quoted_training_levy">Training levy</Label>
+                            <Input id="quoted_training_levy" type="number" step="0.01" {...register('quoted_training_levy', { valueAsNumber: true })} />
+                            <InputError message={errors.quoted_training_levy?.message} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="quoted_phcf">PHCF</Label>
+                            <Input id="quoted_phcf" type="number" step="0.01" {...register('quoted_phcf', { valueAsNumber: true })} />
+                            <InputError message={errors.quoted_phcf?.message} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="quoted_stamp_duty">Stamp duty</Label>
+                            <Input id="quoted_stamp_duty" type="number" step="0.01" {...register('quoted_stamp_duty', { valueAsNumber: true })} />
+                            <InputError message={errors.quoted_stamp_duty?.message} />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="interests_insured">Interests insured / benefits</Label>
+                        <Textarea id="interests_insured" rows={6} {...register('interests_insured')} />
+                        <InputError message={errors.interests_insured?.message} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="excess_remarks">Excess / remarks</Label>
+                        <Textarea id="excess_remarks" rows={6} {...register('excess_remarks')} />
+                        <InputError message={errors.excess_remarks?.message} />
+                    </div>
+
+                    <div className="grid gap-2 md:grid-cols-3">
+                        <div className="grid gap-2">
+                            <Label htmlFor="prepared_by">Prepared by</Label>
+                            <Input id="prepared_by" {...register('prepared_by')} />
+                            <InputError message={errors.prepared_by?.message} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="reviewed_by">Reviewed by</Label>
+                            <Input id="reviewed_by" {...register('reviewed_by')} />
+                            <InputError message={errors.reviewed_by?.message} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="quoted_on">Quoted on</Label>
+                            <Input id="quoted_on" type="date" {...register('quoted_on')} />
+                            <InputError message={errors.quoted_on?.message} />
+                        </div>
                     </div>
 
                     <CardFooter className="px-0">
