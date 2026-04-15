@@ -243,6 +243,7 @@ class QuotationController extends Controller
         $reviewedBy = $quotation->reviewed_by ?? 'Reviewed Officer';
         $registration = $quotation->registration_number ?? '-';
         $makeModel = $quotation->vehicle_make_model ?? '-';
+        $vehicleClass = $quotation->vehicle_class ?? 'MOTOR PRIVATE';
         $yom = $quotation->year_of_manufacture ?? '-';
         $interestsInsured = $quotation->interests_insured ?? 'No blame no excess';
         $excessRemarks = $quotation->excess_remarks ?? 'Accidental damage 2.5% of value min 20,000';
@@ -284,7 +285,7 @@ th{background:#f1f1f1; text-align:left;}
         </thead>
         <tbody>
             <tr>
-                <td><strong>{$quotation->vehicle_class ?? 'MOTOR PRIVATE'}</strong><br/>Make: {$makeModel}<br/>Y.O.M {$yom}</td>
+                <td><strong>{$vehicleClass}</strong><br/>Make: {$makeModel}<br/>Y.O.M {$yom}</td>
                 <td>Registration {$registration}<br/><br/>{$interestsInsured}</td>
                 <td class="num"><strong>{$this->formatMoney($sumInsured)}</strong><br/><br/>Training Levy<br/>PHCF<br/>Stamp Duty</td>
                 <td class="num">{$this->formatMoney($basePremium)}<br/><br/>{$this->formatMoney($trainingLevy)}<br/>{$this->formatMoney($phcf)}<br/>{$this->formatMoney($stampDuty)}</td>
