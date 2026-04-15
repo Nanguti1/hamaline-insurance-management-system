@@ -295,13 +295,16 @@ th,td{border:1px solid #222; vertical-align:top; padding:6px;}
 th{background:#f1f1f1; text-align:left;}
 .num{text-align:right;}
 .nowrap{white-space:nowrap;}
-.yellow{background:#f4be00; border:1px solid #d29e00; margin-top:0; padding:8px 12px;}
+.yellow{background:#062e4a; border:1px solid #062e4a; border-radius:2px; margin-top:0; padding:8px 12px; color:#fff;}
 .yellow td{border:none; padding:2px 6px;}
+.contact-meta{font-size:11px; margin:2px 0;}
 </style>
 </head>
 <body>
     <div class="header">
         {$logoHtml}
+        <div class="contact-meta">Phone Number: +254 713619381</div>
+        <div class="contact-meta">Email: info@hamalineagency.co.ke</div>
         <div class="header-title">{$insurerHtml}</div>
         <div class="header-meta">Hamaline Insurance Agency</div>
         <div class="header-sub">Insured: {$clientHtml}</div>
@@ -326,7 +329,7 @@ th{background:#f1f1f1; text-align:left;}
                 <td>{$excessRemarksHtml}</td>
             </tr>
             <tr>
-                <td colspan="3"></td>
+                <td colspan="3"><strong>Total Premium</strong></td>
                 <td class="num"><strong>{$this->formatMoney($totalPremium)}</strong></td>
                 <td></td>
             </tr>
@@ -334,7 +337,7 @@ th{background:#f1f1f1; text-align:left;}
     </table>
     <div class="yellow">
         <table>
-            <tr><td colspan="3"><strong>Subject to our standard policy terms and conditions</strong></td></tr>
+            <tr><td colspan="3"><strong>Subject to underwriter Policy, Terms and condition.</strong></td></tr>
             <tr><td class="nowrap"><strong>SIGNATURE :</strong> _____________________</td><td><strong>PREPARED BY:</strong> {$preparedByHtml}</td><td><strong>REVIEWED BY:</strong> {$reviewedByHtml}</td></tr>
             <tr><td></td><td>{$quotedOn}</td><td>{$quotedOn}</td></tr>
             <tr><td colspan="3"><strong>{$insurerHtml}</strong></td></tr>
