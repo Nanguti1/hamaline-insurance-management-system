@@ -257,6 +257,12 @@ class RiskNoteService
                 'notes' => $data['notes'] ?? null,
             ] + $this->withCreateAudit([]));
 
+            $totalPremium = round((float) ($riskNote->premium_amount ?? 0), 2);
+            $policyholdersFund = round($totalPremium * 0.0025, 2);
+            $trainingLevy = round($totalPremium * 0.002, 2);
+            $firstPremiumTotal = $totalPremium;
+            $timeOnRiskTotalPremium = round($totalPremium - ($policyholdersFund + $trainingLevy + 40), 2);
+
             MotorRiskNoteDetails::create([
                 'risk_note_id' => $riskNote->id,
 
@@ -299,10 +305,10 @@ class RiskNoteService
                 'applicable_clauses' => $data['applicable_clauses'] ?? null,
                 'exclusions' => $data['exclusions'] ?? null,
                 'time_on_risk_premium' => $data['time_on_risk_premium'] ?? null,
-                'policyholders_fund' => $data['policyholders_fund'] ?? null,
-                'training_levy' => $data['training_levy'] ?? null,
-                'first_premium_total' => $data['first_premium_total'] ?? null,
-                'time_on_risk_total_premium' => $data['time_on_risk_total_premium'] ?? null,
+                'policyholders_fund' => $policyholdersFund,
+                'training_levy' => $trainingLevy,
+                'first_premium_total' => $firstPremiumTotal,
+                'time_on_risk_total_premium' => $timeOnRiskTotalPremium,
                 'payment_method' => $data['payment_method'] ?? null,
                 'payment_plan_type' => $data['payment_plan_type'] ?? null,
                 'installment_count' => $data['installment_count'] ?? null,
@@ -394,15 +400,10 @@ class RiskNoteService
             'Insured Information',
             sprintf('Name: %s', $d?->insured_name ?? '-'),
             sprintf('Customer ID: %s', $d?->customer_id ?? '-'),
-            sprintf('Phone: %s', $d?->insured_phone ?? '-'),
+            sprintf('Email: %s', $d?->insured_email ?? '-'),
             sprintf('Mobile: %s', $d?->mobile_number ?? '-'),
             sprintf('Tel (Others): %s', $d?->telephone_other ?? '-'),
             sprintf('Postal Address: %s', $d?->insured_postal_address ?? '-'),
-            sprintf('Postal Code: %s', $d?->postal_code ?? '-'),
-            sprintf('Country: %s', $d?->country ?? '-'),
-            sprintf('Bank A/C Number: %s', $d?->bank_account_number ?? '-'),
-            sprintf('ID Number: %s', $d?->insured_id_number ?? '-'),
-            sprintf('Branch Code: %s', $d?->branch_code ?? '-'),
             sprintf('PIN Number: %s', $d?->pin_number ?? '-'),
             sprintf('Period of Insurance: %s', $period),
             sprintf('Time on Risk: %s', $timeOnRiskPeriod),

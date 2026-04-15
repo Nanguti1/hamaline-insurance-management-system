@@ -151,6 +151,11 @@ export default function QuotationsShow({ quotation }: Props) {
                         <Button type="button" variant="outline" onClick={() => window.print()}>
                             Print
                         </Button>
+                        <Button variant="outline" asChild>
+                            <a href={`/quotations/${quotation.id}/download-pdf`} target="_blank" rel="noreferrer">
+                                Download quotation
+                            </a>
+                        </Button>
                         <Button asChild>
                             <Link href={`/quotations/${quotation.id}/edit`}>Edit quotation</Link>
                         </Button>

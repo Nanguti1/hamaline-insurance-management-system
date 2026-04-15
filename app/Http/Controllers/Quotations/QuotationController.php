@@ -12,6 +12,7 @@ use App\Models\Quotation;
 use App\Models\Underwriter;
 use App\Services\Access\ResourceAccessService;
 use App\Services\Quotations\QuotationService;
+use Dompdf\Dompdf;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -128,6 +129,20 @@ class QuotationController extends Controller
         ]);
     }
 
+    public function downloadPDF(Quotation $quotation)
+    {
+        $this->access->assertCanViewQuotation(auth()->user(), $quotation);
+        $quotation->loadMissing(['client', 'insurer']);
+
+        $html = $this->buildQuotationPdfHtml($quotation);
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        return $dompdf->stream("{$quotation->quotation_number}.pdf");
+    }
+
     public function edit(Quotation $quotation): Response
     {
         $this->access->assertCanViewQuotation(auth()->user(), $quotation);
@@ -212,5 +227,91 @@ class QuotationController extends Controller
         }
 
         return Insurer::query()->orderBy('name')->get(['id', 'name']);
+    }
+
+    private function buildQuotationPdfHtml(Quotation $quotation): string
+    {
+        $client = $quotation->client?->name ?? $quotation->client?->company_name ?? '-';
+        $sumInsured = (float) ($quotation->sum_insured ?? $quotation->premium_amount ?? 0);
+        $basePremium = (float) ($quotation->quoted_base_premium ?? $quotation->premium_amount ?? 0);
+        $trainingLevy = (float) ($quotation->quoted_training_levy ?? round($basePremium * 0.002, 2));
+        $phcf = (float) ($quotation->quoted_phcf ?? round($basePremium * 0.0025, 2));
+        $stampDuty = (float) ($quotation->quoted_stamp_duty ?? 40);
+        $totalPremium = (float) ($quotation->quoted_total_premium ?? ($basePremium + $trainingLevy + $phcf + $stampDuty));
+        $quotedOn = $quotation->quoted_on?->format('d/m/Y') ?? now()->format('d/m/Y');
+        $preparedBy = $quotation->prepared_by ?? 'Prepared Officer';
+        $reviewedBy = $quotation->reviewed_by ?? 'Reviewed Officer';
+        $registration = $quotation->registration_number ?? '-';
+        $makeModel = $quotation->vehicle_make_model ?? '-';
+        $yom = $quotation->year_of_manufacture ?? '-';
+        $interestsInsured = $quotation->interests_insured ?? 'No blame no excess';
+        $excessRemarks = $quotation->excess_remarks ?? 'Accidental damage 2.5% of value min 20,000';
+        $insurer = $quotation->insurer?->name ?? 'INSURER';
+
+        return <<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body{font-family: DejaVu Sans, Arial, sans-serif; font-size:14px; color:#111; margin:12px;}
+.header{border:1px solid #000; text-align:center; padding:12px 8px; font-weight:700;}
+.header-title{font-size:34px; color:#b3202e; margin:0;}
+.header-sub{margin:4px 0 0 0;}
+table{width:100%; border-collapse:collapse;}
+th,td{border:1px solid #222; vertical-align:top; padding:6px;}
+th{background:#f1f1f1; text-align:left;}
+.num{text-align:right;}
+.yellow{background:#f4be00; border:1px solid #d29e00; margin-top:0; padding:8px 12px;}
+.yellow td{border:none; padding:2px 6px;}
+</style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">CIC GROUP</div>
+        <div class="header-sub">Hamaline Insurance Agency - {$client}</div>
+        <div class="header-sub">Motor Private Insurance Quotation</div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>CLASS</th>
+                <th>INTERESTS INSURED</th>
+                <th>SUMS INSURED</th>
+                <th>PREMIUM</th>
+                <th>EXCESS / REMARKS</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>{$quotation->vehicle_class ?? 'MOTOR PRIVATE'}</strong><br/>Make: {$makeModel}<br/>Y.O.M {$yom}</td>
+                <td>Registration {$registration}<br/><br/>{$interestsInsured}</td>
+                <td class="num"><strong>{$this->formatMoney($sumInsured)}</strong><br/><br/>Training Levy<br/>PHCF<br/>Stamp Duty</td>
+                <td class="num">{$this->formatMoney($basePremium)}<br/><br/>{$this->formatMoney($trainingLevy)}<br/>{$this->formatMoney($phcf)}<br/>{$this->formatMoney($stampDuty)}</td>
+                <td>{$excessRemarks}</td>
+            </tr>
+            <tr>
+                <td colspan="3"></td>
+                <td class="num"><strong>{$this->formatMoney($totalPremium)}</strong></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="yellow">
+        <table>
+            <tr><td colspan="3"><strong>Subject to our standard policy terms and conditions</strong></td></tr>
+            <tr><td><strong>SIGNATURE :</strong> _____________________</td><td><strong>PREPARED BY:</strong> {$preparedBy}</td><td><strong>REVIEWED BY:</strong> {$reviewedBy}</td></tr>
+            <tr><td></td><td>{$quotedOn}</td><td>{$quotedOn}</td></tr>
+            <tr><td colspan="3"><strong>{$insurer}</strong></td></tr>
+        </table>
+    </div>
+</body>
+</html>
+HTML;
+    }
+
+    private function formatMoney(float $amount): string
+    {
+        return number_format($amount, 2);
     }
 }
