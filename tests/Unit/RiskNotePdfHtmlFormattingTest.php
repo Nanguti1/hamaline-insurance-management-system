@@ -146,7 +146,7 @@ TXT;
         $html = $renderer->renderDocument($content);
 
         $this->assertStringContainsString('POLICY DETAILS', $html);
-        $this->assertStringContainsString('Hamaline Insurance Agency - Registration KDS 912', $html);
+        $this->assertStringContainsString('Hamaline Insurance Agency - Registration KDA123A', $html);
         $this->assertStringContainsString('Motor Private Insurance Quotation', $html);
         $this->assertStringContainsString('CLIENT DETAILS', $html);
         $this->assertStringContainsString('PREMIUM COMPUTATION(KSHS)', $html);

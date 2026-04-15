@@ -271,6 +271,7 @@ HTML;
         $paymentMethod = e($this->extractNoteValue($notes, 'Payment Method') ?? '-');
         $issuingOfficer = e($this->extractNoteValue($notes, 'Issuing Officer') ?? '-');
         $verifyingOfficer = e($this->extractNoteValue($notes, 'Verifying Officer') ?? '-');
+        $vehicleRegistration = $this->valueOrDash($vehicle['Registration Number'] ?? null);
 
         return <<<HTML
 <!DOCTYPE html>
@@ -290,7 +291,6 @@ HTML;
             margin: 0;
         }
         .header-box {
-            border: 1px solid #000000;
             text-align: center;
             margin-bottom: 8px;
             padding: 8px 10px 10px 10px;
@@ -384,7 +384,7 @@ HTML;
         {$headerLogoHtml}
         <p class="header-insurer">{$this->valueOrDash($insurerName)}</p>
         <p class="header-address">Tel: {$this->valueOrDash($insured['Tel (Others)'] ?? null)} &nbsp; Email: {$this->valueOrDash($insured['Email'] ?? null)}</p>
-        <p class="header-agency">Hamaline Insurance Agency - Registration KDS 912</p>
+        <p class="header-agency">Hamaline Insurance Agency - Registration {$vehicleRegistration}</p>
         <p class="header-product">Motor Private Insurance Quotation</p>
     </div>
 
