@@ -48,5 +48,10 @@ class QuotationPdfHtmlFormattingTest extends TestCase
         self::assertStringContainsString('TPPD - Nil', $html);
         self::assertStringContainsString('header-logo', $html);
         self::assertStringContainsString('Motor Private Insurance Quotation', $html);
+        self::assertStringContainsString('Phone Number: +254 713619381', $html);
+        self::assertStringContainsString('Email: info@hamalineagency.co.ke', $html);
+        self::assertStringContainsString('<strong>Total Premium</strong>', $html);
+        self::assertStringContainsString('Subject to underwriter Policy, Terms and condition.', $html);
+        self::assertStringContainsString('background:#062e4a', $html);
     }
 }

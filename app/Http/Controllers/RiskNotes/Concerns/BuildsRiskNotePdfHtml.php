@@ -224,7 +224,6 @@ HTML;
             $basicPremium = round($premiumPayable - ($phcf + $trainingLevy + $stampDuty), 2);
         }
         $timeOnRiskPremium = $this->normalizeCurrencyNumber($financials['Time on Risk Premium'] ?? null);
-        $firstPremiumTotal = $this->normalizeCurrencyNumber($financials['First Premium Total'] ?? null);
 
         $policyDetails = [
             'Insurer' => $header['Insurer'] ?? '-',
@@ -282,7 +281,6 @@ HTML;
 
         $conditionsText = e(implode(' | ', $conditions));
         $exclusionsText = e(implode(' | ', $exclusions));
-        $paymentMethod = e($this->extractNoteValue($notes, 'Payment Method') ?? '-');
         $issuingOfficer = e($this->extractNoteValue($notes, 'Issuing Officer') ?? '-');
         $vehicleRegistration = $this->valueOrDash($vehicle['Registration Number'] ?? null);
 
@@ -393,9 +391,11 @@ HTML;
             margin-bottom: 2px;
         }
         .signatures {
-            background: #f4be00;
-            border: 1px solid #d29e00;
+            background: #062e4a;
+            border: 1px solid #062e4a;
+            border-radius: 2px;
             margin-top: 6px;
+            color: #ffffff;
         }
         .signatures td {
             padding-top: 10px;
@@ -486,10 +486,9 @@ HTML;
 
     <div class="heading">PREMIUM COMPUTATION(KSHS)</div>
     <table class="details-grid">
-        <tr><td class="label">Premium (Total Premium)</td><td>{$this->formatAmount($premiumPayable)}</td><td class="label">Basic Premium</td><td>{$this->formatAmount($basicPremium)}</td></tr>
-        <tr><td class="label">Time on Risk Premium</td><td>{$this->formatAmount($timeOnRiskPremium)}</td><td class="label">First Premium Total</td><td>{$this->formatAmount($firstPremiumTotal)}</td></tr>
-        <tr><td class="label">Policyholders Fund (0.25%)</td><td>{$this->formatAmount($phcf)}</td><td class="label">Training Levy (0.20%)</td><td>{$this->formatAmount($trainingLevy)}</td></tr>
-        <tr><td class="label">Stamp Duty</td><td>{$this->formatAmount($stampDuty)}</td><td class="label">Payment Method</td><td>{$paymentMethod}</td></tr>
+        <tr><td class="label">Total Premium</td><td>{$this->formatAmount($premiumPayable)}</td><td class="label">Basic Premium</td><td>{$this->formatAmount($basicPremium)}</td></tr>
+        <tr><td class="label">PHCF</td><td>{$this->formatAmount($phcf)}</td><td class="label">Training Levy</td><td>{$this->formatAmount($trainingLevy)}</td></tr>
+        <tr><td class="label">Stamp Duty</td><td>{$this->formatAmount($stampDuty)}</td><td class="label">TOR</td><td>{$this->formatAmount($timeOnRiskPremium)}</td></tr>
     </table>
 
     <table class="details-grid signatures">
