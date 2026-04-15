@@ -223,6 +223,11 @@ HTML;
             'Risk Note No.' => $header['Risk Note Number'] ?? '-',
             'Currency' => $header['Currency'] ?? 'KES',
         ];
+        $insurerName = (string) ($policyDetails['Insurer'] ?? '');
+        $insurerLogoDataUri = $this->resolveInsurerLogoDataUri($insurerName);
+        $headerLogoHtml = $insurerLogoDataUri !== null
+            ? '<img src="'.$insurerLogoDataUri.'" alt="'.e($insurerName).' logo" class="header-logo" />'
+            : '<div class="header-logo-fallback">'.e($insurerName !== '' ? $insurerName : 'INSURER').'</div>';
 
         $clientDetails = [
             'Customer ID' => $insured['Customer ID'] ?? '-',
@@ -284,10 +289,46 @@ HTML;
             color: #111111;
             margin: 0;
         }
-        .section-title {
-            font-size: 20px;
+        .header-box {
+            border: 1px solid #000000;
+            text-align: center;
+            margin-bottom: 8px;
+            padding: 8px 10px 10px 10px;
+        }
+        .header-logo {
+            height: 56px;
+            width: auto;
+            max-width: 220px;
+            margin: 0 auto 4px auto;
+            display: block;
+        }
+        .header-logo-fallback {
+            font-size: 22px;
             font-weight: 700;
-            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+            color: #a11d2f;
+            margin-bottom: 4px;
+        }
+        .header-insurer {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #a11d2f;
+        }
+        .header-address {
+            margin: 2px 0 0 0;
+            font-size: 11px;
+        }
+        .header-agency {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .header-product {
+            margin: 1px 0 0 0;
+            font-size: 12px;
+            font-weight: 700;
         }
         .details-grid {
             width: 100%;
@@ -339,6 +380,14 @@ HTML;
     </style>
 </head>
 <body>
+    <div class="header-box">
+        {$headerLogoHtml}
+        <p class="header-insurer">{$this->valueOrDash($insurerName)}</p>
+        <p class="header-address">Tel: {$this->valueOrDash($insured['Tel (Others)'] ?? null)} &nbsp; Email: {$this->valueOrDash($insured['Email'] ?? null)}</p>
+        <p class="header-agency">Hamaline Insurance Agency - Registration KDS 912</p>
+        <p class="header-product">Motor Private Insurance Quotation</p>
+    </div>
+
     <div class="heading">POLICY DETAILS</div>
     <table class="details-grid">
         <tr><td class="label">Insurer:</td><td>{$policyDetails['Insurer']}</td><td class="label">Risk Note No.</td><td>{$policyDetails['Risk Note No.']}</td></tr>
@@ -644,6 +693,39 @@ HTML;
         }
 
         return null;
+    }
+
+    protected function resolveInsurerLogoDataUri(string $insurerName): ?string
+    {
+        $normalizedInsurer = strtolower(trim($insurerName));
+        $insurerCandidates = [];
+
+        if (str_contains($normalizedInsurer, 'cic')) {
+            $insurerCandidates = [
+                public_path('cic-logo.png'),
+                public_path('cic-logo.jpg'),
+                public_path('cic-group-logo.png'),
+            ];
+        }
+
+        foreach (array_merge($insurerCandidates, [
+            public_path('insurer-logo.png'),
+            public_path('insurer-logo.jpg'),
+        ]) as $path) {
+            if (! is_file($path)) {
+                continue;
+            }
+
+            $raw = @file_get_contents($path);
+            if ($raw === false) {
+                continue;
+            }
+
+            $mime = mime_content_type($path) ?: 'image/png';
+            return 'data:'.$mime.';base64,'.base64_encode($raw);
+        }
+
+        return $this->resolvePdfLogoDataUri();
     }
 
     /**
