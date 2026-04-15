@@ -301,6 +301,7 @@ HTML;
             max-width: 220px;
             margin: 0 auto 4px auto;
             display: block;
+            border-radius: 5px;
         }
         .header-logo-fallback {
             font-size: 22px;
@@ -334,6 +335,10 @@ HTML;
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 8px;
+        }
+        .header-divider {
+            border-top: 1px solid #1f2937;
+            margin: 0 0 8px 0;
         }
         .details-grid td {
             padding: 2px 4px;
@@ -387,6 +392,7 @@ HTML;
         <p class="header-agency">Hamaline Insurance Agency - Registration {$vehicleRegistration}</p>
         <p class="header-product">Motor Private Insurance Quotation</p>
     </div>
+    <div class="header-divider"></div>
 
     <div class="heading">POLICY DETAILS</div>
     <table class="details-grid">
@@ -407,7 +413,7 @@ HTML;
     <div class="heading">PERIOD OF INSURANCE</div>
     <table class="details-grid">
         <tr><td class="label">Cover From</td><td>{$coverFrom}</td><td class="label">Cover To</td><td>{$coverTo}</td></tr>
-        <tr><td class="label">Time on Risk Cover From</td><td>{$riskFrom}</td><td class="label">Cover To</td><td>{$riskTo}</td></tr>
+        <tr><td class="label">Time on Risk From</td><td>{$riskFrom}</td><td class="label">Time on Risk To</td><td>{$riskTo}</td></tr>
     </table>
 
     <div class="heading">COVER</div>
