@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Apr 10, 2026 at 09:21 AM
+-- Generation Time: Apr 14, 2026 at 01:08 PM
 -- Server version: 8.4.7
 -- PHP Version: 8.4.18
 
@@ -84,11 +84,49 @@ CREATE TABLE `clients` (
   `id_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `company_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `registration_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `kra_pin` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `kra_pin` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `phone` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `address` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `client_documents`
+--
+
+CREATE TABLE `client_documents` (
+  `id` bigint UNSIGNED NOT NULL,
+  `client_id` bigint UNSIGNED NOT NULL,
+  `document_type` enum('national_id','kra_pin','other') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `filename` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `original_filename` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `mime_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `size` bigint UNSIGNED NOT NULL,
+  `file_path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_required` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `client_medical_categories`
+--
+
+CREATE TABLE `client_medical_categories` (
+  `id` bigint UNSIGNED NOT NULL,
+  `client_id` bigint UNSIGNED NOT NULL,
+  `category_code` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `category_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `category_identifier` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -277,6 +315,30 @@ CREATE TABLE `medical_member_benefits` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `medical_policy_details`
+--
+
+CREATE TABLE `medical_policy_details` (
+  `id` bigint UNSIGNED NOT NULL,
+  `policy_id` bigint UNSIGNED NOT NULL,
+  `medical_category` enum('A','B','C','D') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `benefits` json DEFAULT NULL,
+  `outpatient_benefit` tinyint(1) NOT NULL DEFAULT '0',
+  `outpatient_amount` decimal(10,2) DEFAULT NULL,
+  `inpatient_benefit` tinyint(1) NOT NULL DEFAULT '0',
+  `inpatient_amount` decimal(10,2) DEFAULT NULL,
+  `optical_benefit` tinyint(1) NOT NULL DEFAULT '0',
+  `optical_amount` decimal(10,2) DEFAULT NULL,
+  `maternity_benefit` tinyint(1) NOT NULL DEFAULT '0',
+  `maternity_amount` decimal(10,2) DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `medical_risk_note_details`
 --
 
@@ -323,6 +385,38 @@ CREATE TABLE `model_has_roles` (
   `role_id` bigint UNSIGNED NOT NULL,
   `model_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `model_id` bigint UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `motor_policy_details`
+--
+
+CREATE TABLE `motor_policy_details` (
+  `id` bigint UNSIGNED NOT NULL,
+  `policy_id` bigint UNSIGNED NOT NULL,
+  `vehicle_use` enum('private','commercial') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cover_type` enum('third_party','comprehensive') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `private_use_class` enum('hire','chauffeur','taxi_hire','taxi_self_drive') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `commercial_class` enum('matatu','bus','truck','taxi','other') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `cover_plan` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `cover_addons` json DEFAULT NULL,
+  `capacity` decimal(10,2) DEFAULT NULL,
+  `capacity_unit` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `registration_number` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `vehicle_make` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `vehicle_model` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `year_of_manufacture` smallint UNSIGNED DEFAULT NULL,
+  `vehicle_value` decimal(14,2) DEFAULT NULL,
+  `vehicle_color` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `chassis_number` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `engine_number` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `carriage_capacity` decimal(10,2) DEFAULT NULL,
+  `engine_size` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -381,10 +475,10 @@ CREATE TABLE `payments` (
   `paid_at` date DEFAULT NULL,
   `reference` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `proof_file_path` varchar(254) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `proof_file_name` varchar(254) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `proof_mime_type` varchar(254) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `proof_size` bigint NOT NULL,
+  `proof_file_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `proof_file_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `proof_mime_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `proof_size` bigint UNSIGNED DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `created_by` bigint UNSIGNED DEFAULT NULL,
@@ -419,7 +513,7 @@ CREATE TABLE `policies` (
   `underwriter_id` bigint UNSIGNED NOT NULL,
   `insurer_id` bigint UNSIGNED DEFAULT NULL,
   `quotation_id` bigint UNSIGNED DEFAULT NULL,
-  `policy_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `policy_number` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `policy_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `status` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
   `start_date` date NOT NULL,
@@ -433,6 +527,28 @@ CREATE TABLE `policies` (
   `created_by` bigint UNSIGNED DEFAULT NULL,
   `updated_by` bigint UNSIGNED DEFAULT NULL,
   `approved_by` bigint UNSIGNED DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `policy_members`
+--
+
+CREATE TABLE `policy_members` (
+  `id` bigint UNSIGNED NOT NULL,
+  `policy_id` bigint UNSIGNED NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payroll_number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `id_number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `phone` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `annual_salary` decimal(12,2) DEFAULT NULL,
+  `relationship` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `date_of_birth` date DEFAULT NULL,
+  `gender` enum('male','female','other') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -521,6 +637,7 @@ CREATE TABLE `risk_notes` (
   `risk_note_number` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `client_id` bigint UNSIGNED NOT NULL,
   `underwriter_id` bigint UNSIGNED NOT NULL,
+  `insurer_id` bigint UNSIGNED DEFAULT NULL,
   `status` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'draft',
   `submitted_at` timestamp NULL DEFAULT NULL,
   `decided_at` timestamp NULL DEFAULT NULL,
@@ -655,6 +772,20 @@ CREATE TABLE `wiba_employees` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `wiba_policy_details`
+--
+
+CREATE TABLE `wiba_policy_details` (
+  `id` bigint UNSIGNED NOT NULL,
+  `policy_id` bigint UNSIGNED NOT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 --
 -- Indexes for dumped tables
 --
@@ -696,6 +827,21 @@ ALTER TABLE `clients`
   ADD UNIQUE KEY `clients_registration_number_unique` (`registration_number`),
   ADD UNIQUE KEY `clients_user_id_unique` (`user_id`),
   ADD KEY `clients_type_index` (`type`);
+
+--
+-- Indexes for table `client_documents`
+--
+ALTER TABLE `client_documents`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `client_documents_client_id_foreign` (`client_id`);
+
+--
+-- Indexes for table `client_medical_categories`
+--
+ALTER TABLE `client_medical_categories`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `client_medical_categories_client_id_category_code_unique` (`client_id`,`category_code`),
+  ADD KEY `client_medical_categories_client_id_foreign` (`client_id`);
 
 --
 -- Indexes for table `commissions`
@@ -779,6 +925,13 @@ ALTER TABLE `medical_member_benefits`
   ADD KEY `medical_member_benefits_medical_member_id_benefit_type_index` (`medical_member_id`,`benefit_type`);
 
 --
+-- Indexes for table `medical_policy_details`
+--
+ALTER TABLE `medical_policy_details`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `medical_policy_details_policy_id_foreign` (`policy_id`);
+
+--
 -- Indexes for table `medical_risk_note_details`
 --
 ALTER TABLE `medical_risk_note_details`
@@ -805,6 +958,13 @@ ALTER TABLE `model_has_roles`
   ADD KEY `model_has_roles_model_id_model_type_index` (`model_id`,`model_type`);
 
 --
+-- Indexes for table `motor_policy_details`
+--
+ALTER TABLE `motor_policy_details`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `motor_policy_details_policy_id_foreign` (`policy_id`);
+
+--
 -- Indexes for table `motor_risk_note_details`
 --
 ALTER TABLE `motor_risk_note_details`
@@ -827,7 +987,8 @@ ALTER TABLE `payments`
   ADD KEY `payments_created_by_foreign` (`created_by`),
   ADD KEY `payments_updated_by_foreign` (`updated_by`),
   ADD KEY `payments_approved_by_foreign` (`approved_by`),
-  ADD KEY `payments_received_by_foreign` (`received_by`);
+  ADD KEY `payments_received_by_foreign` (`received_by`),
+  ADD KEY `payments_flow_index` (`flow`);
 
 --
 -- Indexes for table `permissions`
@@ -850,6 +1011,13 @@ ALTER TABLE `policies`
   ADD KEY `policies_updated_by_foreign` (`updated_by`),
   ADD KEY `policies_approved_by_foreign` (`approved_by`),
   ADD KEY `policies_insurer_id_foreign` (`insurer_id`);
+
+--
+-- Indexes for table `policy_members`
+--
+ALTER TABLE `policy_members`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `policy_members_policy_id_foreign` (`policy_id`);
 
 --
 -- Indexes for table `quotations`
@@ -896,7 +1064,8 @@ ALTER TABLE `risk_notes`
   ADD KEY `risk_notes_approved_by_foreign` (`approved_by`),
   ADD KEY `risk_notes_status_index` (`status`),
   ADD KEY `risk_notes_line_type_index` (`line_type`),
-  ADD KEY `risk_notes_client_id_status_index` (`client_id`,`status`);
+  ADD KEY `risk_notes_client_id_status_index` (`client_id`,`status`),
+  ADD KEY `risk_notes_insurer_id_foreign` (`insurer_id`);
 
 --
 -- Indexes for table `risk_note_underwriting_decisions`
@@ -954,6 +1123,13 @@ ALTER TABLE `wiba_employees`
   ADD KEY `wiba_employees_risk_note_id_payroll_number_index` (`risk_note_id`,`payroll_number`);
 
 --
+-- Indexes for table `wiba_policy_details`
+--
+ALTER TABLE `wiba_policy_details`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `wiba_policy_details_policy_id_foreign` (`policy_id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -967,6 +1143,18 @@ ALTER TABLE `claims`
 -- AUTO_INCREMENT for table `clients`
 --
 ALTER TABLE `clients`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `client_documents`
+--
+ALTER TABLE `client_documents`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `client_medical_categories`
+--
+ALTER TABLE `client_medical_categories`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -1024,10 +1212,22 @@ ALTER TABLE `medical_member_benefits`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `medical_policy_details`
+--
+ALTER TABLE `medical_policy_details`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
   MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `motor_policy_details`
+--
+ALTER TABLE `motor_policy_details`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `payments`
@@ -1045,6 +1245,12 @@ ALTER TABLE `permissions`
 -- AUTO_INCREMENT for table `policies`
 --
 ALTER TABLE `policies`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `policy_members`
+--
+ALTER TABLE `policy_members`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -1102,6 +1308,12 @@ ALTER TABLE `wiba_employees`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `wiba_policy_details`
+--
+ALTER TABLE `wiba_policy_details`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- Constraints for dumped tables
 --
 
@@ -1120,6 +1332,18 @@ ALTER TABLE `claims`
 --
 ALTER TABLE `clients`
   ADD CONSTRAINT `clients_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `client_documents`
+--
+ALTER TABLE `client_documents`
+  ADD CONSTRAINT `client_documents_client_id_foreign` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `client_medical_categories`
+--
+ALTER TABLE `client_medical_categories`
+  ADD CONSTRAINT `client_medical_categories_client_id_foreign` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `commissions`
@@ -1165,6 +1389,12 @@ ALTER TABLE `medical_member_benefits`
   ADD CONSTRAINT `medical_member_benefits_medical_member_id_foreign` FOREIGN KEY (`medical_member_id`) REFERENCES `medical_members` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `medical_policy_details`
+--
+ALTER TABLE `medical_policy_details`
+  ADD CONSTRAINT `medical_policy_details_policy_id_foreign` FOREIGN KEY (`policy_id`) REFERENCES `policies` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `medical_risk_note_details`
 --
 ALTER TABLE `medical_risk_note_details`
@@ -1181,6 +1411,12 @@ ALTER TABLE `model_has_permissions`
 --
 ALTER TABLE `model_has_roles`
   ADD CONSTRAINT `model_has_roles_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `motor_policy_details`
+--
+ALTER TABLE `motor_policy_details`
+  ADD CONSTRAINT `motor_policy_details_policy_id_foreign` FOREIGN KEY (`policy_id`) REFERENCES `policies` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `motor_risk_note_details`
@@ -1209,6 +1445,12 @@ ALTER TABLE `policies`
   ADD CONSTRAINT `policies_quotation_id_foreign` FOREIGN KEY (`quotation_id`) REFERENCES `quotations` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `policies_underwriter_id_foreign` FOREIGN KEY (`underwriter_id`) REFERENCES `underwriters` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `policies_updated_by_foreign` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `policy_members`
+--
+ALTER TABLE `policy_members`
+  ADD CONSTRAINT `policy_members_policy_id_foreign` FOREIGN KEY (`policy_id`) REFERENCES `policies` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `quotations`
@@ -1240,6 +1482,7 @@ ALTER TABLE `risk_notes`
   ADD CONSTRAINT `risk_notes_approved_by_foreign` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `risk_notes_client_id_foreign` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `risk_notes_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `risk_notes_insurer_id_foreign` FOREIGN KEY (`insurer_id`) REFERENCES `insurers` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `risk_notes_policy_id_foreign` FOREIGN KEY (`policy_id`) REFERENCES `policies` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `risk_notes_underwriter_id_foreign` FOREIGN KEY (`underwriter_id`) REFERENCES `underwriters` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `risk_notes_updated_by_foreign` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
@@ -1270,6 +1513,12 @@ ALTER TABLE `underwriters`
 --
 ALTER TABLE `wiba_employees`
   ADD CONSTRAINT `wiba_employees_risk_note_id_foreign` FOREIGN KEY (`risk_note_id`) REFERENCES `risk_notes` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `wiba_policy_details`
+--
+ALTER TABLE `wiba_policy_details`
+  ADD CONSTRAINT `wiba_policy_details_policy_id_foreign` FOREIGN KEY (`policy_id`) REFERENCES `policies` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
