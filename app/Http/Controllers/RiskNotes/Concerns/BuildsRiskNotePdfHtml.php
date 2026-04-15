@@ -281,7 +281,6 @@ HTML;
         $exclusionsText = e(implode(' | ', $exclusions));
         $paymentMethod = e($this->extractNoteValue($notes, 'Payment Method') ?? '-');
         $issuingOfficer = e($this->extractNoteValue($notes, 'Issuing Officer') ?? '-');
-        $verifyingOfficer = e($this->extractNoteValue($notes, 'Verifying Officer') ?? '-');
         $vehicleRegistration = $this->valueOrDash($vehicle['Registration Number'] ?? null);
 
         return <<<HTML
@@ -308,11 +307,11 @@ HTML;
         }
         .header-logo {
             height: 56px;
-            width: auto;
-            max-width: 220px;
+            width: 220px;
             margin: 0 auto 4px auto;
             display: block;
             border-radius: 5px;
+            object-fit: contain;
         }
         .header-logo-fallback {
             font-size: 22px;
@@ -491,9 +490,7 @@ HTML;
     </table>
 
     <table class="details-grid signatures">
-        <tr><td class="label">CUSTOMER SIGNATURE:</td><td>________________________</td><td class="label">DATE:</td><td>________________</td></tr>
         <tr><td class="label">ISSUING INSURANCE OFFICER:</td><td>{$issuingOfficer}</td><td class="label">DATE:</td><td>{$this->valueOrDash($header['Date of Issue'] ?? null)}</td></tr>
-        <tr><td class="label">VERIFIED OPERATIONS MANAGER:</td><td>{$verifyingOfficer}</td><td class="label">DATE:</td><td>{$this->valueOrDash($header['Date of Issue'] ?? null)}</td></tr>
     </table>
 </body>
 </html>
@@ -698,6 +695,7 @@ HTML;
     protected function resolvePdfLogoDataUri(): ?string
     {
         $candidates = [
+            public_path('hamaline-logo.png'),
             public_path('hamline-logo.png'),
             public_path('hamline-logo.jpg'),
             public_path('hamline-logo.jpeg'),
@@ -726,6 +724,11 @@ HTML;
 
     protected function resolveInsurerLogoDataUri(string $insurerName): ?string
     {
+        $defaultLogo = $this->resolvePdfLogoDataUri();
+        if ($defaultLogo !== null) {
+            return $defaultLogo;
+        }
+
         $normalizedInsurer = strtolower(trim($insurerName));
         $insurerCandidates = [];
 

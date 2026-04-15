@@ -23,6 +23,21 @@ type Quotation = {
     policy_type?: string | null;
     payment_plan?: string | null;
     installment_count?: number | null;
+    vehicle_class?: string | null;
+    vehicle_make_model?: string | null;
+    year_of_manufacture?: number | null;
+    registration_number?: string | null;
+    sum_insured?: number | null;
+    quoted_base_premium?: number | null;
+    quoted_training_levy?: number | null;
+    quoted_phcf?: number | null;
+    quoted_stamp_duty?: number | null;
+    quoted_total_premium?: number | null;
+    interests_insured?: string | null;
+    excess_remarks?: string | null;
+    prepared_by?: string | null;
+    reviewed_by?: string | null;
+    quoted_on?: string | null;
 };
 
 type Props = {
@@ -70,6 +85,21 @@ export default function QuotationsEdit({ quotation, clients, underwriters, insur
                         payment_plan: (quotation.payment_plan as 'one_off' | 'installments') ?? 'one_off',
                         installment_count:
                             quotation.payment_plan === 'installments' ? (quotation.installment_count ?? 4) : undefined,
+                        vehicle_class: quotation.vehicle_class ?? 'MOTOR PRIVATE',
+                        vehicle_make_model: quotation.vehicle_make_model ?? '',
+                        year_of_manufacture: quotation.year_of_manufacture ?? undefined,
+                        registration_number: quotation.registration_number ?? '',
+                        sum_insured: quotation.sum_insured ?? undefined,
+                        quoted_base_premium: quotation.quoted_base_premium ?? undefined,
+                        quoted_training_levy: quotation.quoted_training_levy ?? undefined,
+                        quoted_phcf: quotation.quoted_phcf ?? undefined,
+                        quoted_stamp_duty: quotation.quoted_stamp_duty ?? undefined,
+                        quoted_total_premium: quotation.quoted_total_premium ?? undefined,
+                        interests_insured: quotation.interests_insured ?? '',
+                        excess_remarks: quotation.excess_remarks ?? '',
+                        prepared_by: quotation.prepared_by ?? '',
+                        reviewed_by: quotation.reviewed_by ?? '',
+                        quoted_on: quotation.quoted_on?.slice(0, 10) ?? '',
                     }}
                     clients={clients.map((c) => ({
                         id: c.id,
