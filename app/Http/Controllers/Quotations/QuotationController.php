@@ -287,7 +287,6 @@ body{font-family: DejaVu Sans, Arial, sans-serif; font-size:14px; color:#111; ma
 .header{border:1px solid #000; text-align:center; padding:8px 8px; font-weight:700;}
 .header-logo{height:62px; width:auto; max-width:260px; margin:0 auto 6px auto; display:block; object-fit:contain;}
 .header-logo-fallback{font-size:20px; font-weight:700; margin-bottom:6px;}
-.header-title{font-size:34px; color:#b3202e; margin:0;}
 .header-meta{margin:2px 0; font-size:14px;}
 .header-sub{margin:2px 0 0 0;}
 table{width:100%; border-collapse:collapse;}
@@ -305,8 +304,8 @@ th{background:#f1f1f1; text-align:left;}
         {$logoHtml}
         <div class="contact-meta">Phone Number: +254 713619381</div>
         <div class="contact-meta">Email: info@hamalineagency.co.ke</div>
-        <div class="header-title">{$insurerHtml}</div>
         <div class="header-meta">Hamaline Insurance Agency</div>
+        <div class="header-sub">Insurer: {$insurerHtml}</div>
         <div class="header-sub">Insured: {$clientHtml}</div>
         <div class="header-sub">{$quotationTitle}</div>
     </div>
@@ -340,7 +339,6 @@ th{background:#f1f1f1; text-align:left;}
             <tr><td colspan="3"><strong>Subject to underwriter Policy, Terms and condition.</strong></td></tr>
             <tr><td class="nowrap"><strong>SIGNATURE :</strong> _____________________</td><td><strong>PREPARED BY:</strong> {$preparedByHtml}</td><td><strong>REVIEWED BY:</strong> {$reviewedByHtml}</td></tr>
             <tr><td></td><td>{$quotedOn}</td><td>{$quotedOn}</td></tr>
-            <tr><td colspan="3"><strong>{$insurerHtml}</strong></td></tr>
         </table>
     </div>
 </body>

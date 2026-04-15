@@ -167,6 +167,8 @@ TXT;
         $this->assertStringContainsString('.signatures {', $html);
         $this->assertStringContainsString('background: #062e4a;', $html);
         $this->assertStringContainsString('border-radius: 2px;', $html);
+        $this->assertStringContainsString('.signatures .label {', $html);
+        $this->assertStringContainsString('color: #ffffff;', $html);
         $this->assertStringContainsString('ISSUING INSURANCE OFFICER', $html);
         $this->assertStringNotContainsString('CUSTOMER SIGNATURE', $html);
         $this->assertStringNotContainsString('VERIFIED OPERATIONS MANAGER', $html);

@@ -50,8 +50,11 @@ class QuotationPdfHtmlFormattingTest extends TestCase
         self::assertStringContainsString('Motor Private Insurance Quotation', $html);
         self::assertStringContainsString('Phone Number: +254 713619381', $html);
         self::assertStringContainsString('Email: info@hamalineagency.co.ke', $html);
+        self::assertStringContainsString('Insurer: CIC GROUP', $html);
         self::assertStringContainsString('<strong>Total Premium</strong>', $html);
         self::assertStringContainsString('Subject to underwriter Policy, Terms and condition.', $html);
         self::assertStringContainsString('background:#062e4a', $html);
+        self::assertStringNotContainsString('<div class="header-title">', $html);
+        self::assertStringNotContainsString('<tr><td colspan="3"><strong>CIC GROUP</strong></td></tr>', $html);
     }
 }

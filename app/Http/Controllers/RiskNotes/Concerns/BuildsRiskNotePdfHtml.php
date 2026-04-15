@@ -400,6 +400,9 @@ HTML;
         .signatures td {
             padding-top: 10px;
         }
+        .signatures .label {
+            color: #ffffff;
+        }
     </style>
 </head>
 <body>
