@@ -253,7 +253,7 @@ class QuotationController extends Controller
             'wiba' => 'WIBA Insurance Quotation',
             default => 'Motor Private Insurance Quotation',
         };
-        $logoPath = public_path('hamaline-logo.png');
+        $logoPath = public_path('hamaline-logo.jpeg');
         $logoDataUri = null;
         if (is_file($logoPath)) {
             $raw = @file_get_contents($logoPath);
@@ -306,7 +306,7 @@ th{background:#f1f1f1; text-align:left;}
         <div class="contact-meta">Email: info@hamalineagency.co.ke</div>
         <div class="header-meta">Hamaline Insurance Agency</div>
         <div class="header-sub">Insurer: {$insurerHtml}</div>
-        <div class="header-sub">Insured: {$clientHtml}</div>
+        <!-- <div class="header-sub">Insured: {$clientHtml}</div> -->
         <div class="header-sub">{$quotationTitle}</div>
     </div>
     <table>
@@ -336,7 +336,7 @@ th{background:#f1f1f1; text-align:left;}
     </table>
     <div class="yellow">
         <table>
-            <tr><td colspan="3"><strong>Subject to underwriter Policy, Terms and condition.</strong></td></tr>
+            <tr><td colspan="3"><strong>Subject to underwriter policy, terms and condition.</strong></td></tr>
             <tr><td class="nowrap"><strong>SIGNATURE :</strong> _____________________</td><td><strong>PREPARED BY:</strong> {$preparedByHtml}</td><td><strong>REVIEWED BY:</strong> {$reviewedByHtml}</td></tr>
             <tr><td></td><td>{$quotedOn}</td><td>{$quotedOn}</td></tr>
         </table>

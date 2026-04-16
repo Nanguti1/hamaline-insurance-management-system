@@ -700,10 +700,10 @@ HTML;
     protected function resolvePdfLogoDataUri(): ?string
     {
         $candidates = [
+            public_path('hamaline-logo.jpeg'),
             public_path('hamaline-logo.png'),
-            public_path('hamline-logo.png'),
-            public_path('hamline-logo.jpg'),
-            public_path('hamline-logo.jpeg'),
+            public_path('hamaline-logo.png'),
+            public_path('hamaline-logo.jpg'),
             public_path('logo.png'),
             public_path('logo.jpg'),
             public_path('logo.jpeg'),
